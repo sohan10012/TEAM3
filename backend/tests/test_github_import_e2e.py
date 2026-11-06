@@ -44,7 +44,7 @@ def test_dry_run_preview_generic_repo(admin):
     res = admin.post(
         "/projects/import-repo",
         json={
-            "repo_url": "https://github.com/pypa/samplemod.git",
+            "repo_url": "https://github.com/pypa/sampleproject.git",
             "branch": "main",
             "project_key": "PYSAMP",
             "dry_run": True,
@@ -77,7 +77,7 @@ def test_askpass_token_isolation():
         assert token not in config_text
 
         # Assert askpass temp files were cleaned up
-        for p in Path("/tmp").glob("tt-git-askpass-*"):
+        for p in Path(tempfile.gettempdir()).glob("tt-git-askpass-*"):
             # Check if any file contains our token
             for child in p.iterdir():
                 if child.is_file():
@@ -104,7 +104,7 @@ def test_independent_project_isolation(admin):
     r2 = admin.post(
         "/projects/import-repo",
         json={
-            "repo_url": "https://github.com/pypa/samplemod.git",
+            "repo_url": "https://github.com/pypa/sampleproject.git",
             "branch": "main",
             "project_key": "SAMP",
             "project_name": "Sample Python Module",

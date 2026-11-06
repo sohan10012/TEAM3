@@ -33,6 +33,9 @@ This authoritative document details all environment variables recognized across 
 | `TRACETEST_QA_EMAIL` | Identity email for senior QA automation specialist persona. | Optional | `qa.engineer@dayforce-qa.local` | `backend/app/core/config.py` | No |
 | `TRACETEST_REVIEWER_EMAIL` | Identity email for the independent QA Lead / Reviewer persona. | Optional | `reviewer@dayforce-qa.local` | `backend/app/core/config.py` | No |
 | `TRACETEST_LLM_MODE` | AI provider operational mode (`live` for real LLM APIs, `mock` for test fixtures). | Optional | `live` | `backend/app/core/config.py` | No |
+| `TRACETEST_PRIMARY_PROVIDER` | Primary LLM provider for generation (`groq`, `gemini`, `ollama`, `mock`). | Optional | `groq` | `backend/app/core/config.py` | No |
+| `TRACETEST_JUDGE_PROVIDER` | LLM-as-a-Judge provider for independent test evaluation (`gemini`, `groq`, `ollama`, `mock`). | Optional | `gemini` | `backend/app/core/config.py` | No |
+| `TRACETEST_JUDGE_MODEL` | Model identifier used by the LLM Judge. | Optional | `gemini-2.5-flash` | `backend/app/core/config.py` | No |
 | `GROQ_API_KEY` | Primary API credential for Groq provider (Slot 1). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GROQ_API_KEY2` | Secondary API credential for Groq provider (Slot 2). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GROQ_API_KEY3` | Tertiary API credential for Groq provider (Slot 3). | Optional | None | `backend/app/core/config.py` | **Yes** |

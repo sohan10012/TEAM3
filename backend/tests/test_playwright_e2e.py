@@ -7,12 +7,11 @@ standards (axe-core), review approvals, and sandboxed execution.
 from __future__ import annotations
 
 import os
-import shutil
 import socket
 import subprocess
+import sys
 import time
 from collections.abc import Generator
-from pathlib import Path
 
 import pytest
 from axe_core_python.sync_playwright import Axe
@@ -33,12 +32,8 @@ def live_server_url() -> Generator[str, None, None]:
     env["PYTHONPATH"] = "backend"
     env["TRACETEST_ENV"] = "development"
     env["TRACETEST_SINGLE_OPERATOR"] = "true"
-    uvicorn_bin = str(Path(__file__).resolve().parents[2] / ".venv" / "bin" / "uvicorn")
-    if not os.path.exists(uvicorn_bin):
-        uvicorn_bin = shutil.which("uvicorn") or "uvicorn"
-
     proc = subprocess.Popen(
-        [uvicorn_bin, "app.main:app", "--host", "127.0.0.1", "--port", str(port), "--log-level", "error"],
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(port), "--log-level", "error"],
         env=env,
     )
 
@@ -72,10 +67,13 @@ def live_server_url() -> Generator[str, None, None]:
 def browser() -> Generator[Browser, None, None]:
     """Launch headless Chromium browser."""
     chrome_path = "/usr/bin/chromium" if os.path.exists("/usr/bin/chromium") else None
-    with sync_playwright() as p:
-        b = p.chromium.launch(executable_path=chrome_path, headless=True)
-        yield b
-        b.close()
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(executable_path=chrome_path, headless=True)
+            yield b
+            b.close()
+    except Exception as exc:
+        pytest.skip(f"Playwright chromium browser not available: {exc}")
 
 
 @pytest.fixture

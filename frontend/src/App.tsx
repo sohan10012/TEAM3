@@ -7,12 +7,15 @@ import { DefectDetailPage, DefectsPage, ExecutionDetailPage, ExecutionsPage } fr
 import { AnalyticsPage, AuditPage, EvaluationsPage, IntegrationsPage, SettingsPage, TraceabilityPage } from "@/pages/InsightPages";
 import { ProjectDetailPage, ProjectsPage } from "@/pages/ProjectsPage";
 import { RequirementDetailPage, RequirementsPage } from "@/pages/RequirementsPages";
-import { ReviewWorkspacePage, SuiteDetailPage, SuitesPage, TestDetailPage, TestsPage } from "@/pages/TestPages";
+import SimulationPage from "@/pages/SimulationPage";
+import { ConsumerMonitoringPage, ReviewWorkspacePage, SuiteDetailPage, SuitesPage, TestDetailPage, TestsPage } from "@/pages/TestPages";
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, "Overview"],
+  [/^\/simulation/, "Simulation & Agent Health"],
   [/^\/projects/, "Projects"],
   [/^\/requirements/, "Requirements"],
+  [/^\/tests\/monitoring/, "Consumer Policy Monitoring"],
   [/^\/tests\/review/, "Approval workspace"],
   [/^\/tests/, "Test cases"],
   [/^\/suites/, "Test suites"],
@@ -42,9 +45,11 @@ export default function App() {
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
+          <Route path="simulation" element={<SimulationPage />} />
           <Route path="requirements" element={<RequirementsPage />} />
           <Route path="requirements/:id" element={<RequirementDetailPage />} />
           <Route path="tests" element={<TestsPage />} />
+          <Route path="tests/monitoring" element={<ConsumerMonitoringPage />} />
           <Route path="tests/review" element={<ReviewWorkspacePage />} />
           <Route path="tests/:id" element={<TestDetailPage />} />
           <Route path="executions" element={<ExecutionsPage />} />

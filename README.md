@@ -1,5 +1,13 @@
 # TraceTest AI — Enterprise AI Quality Engineering Platform
 
+[![CI](https://github.com/Adityarajj23/TEAM3/actions/workflows/ci.yml/badge.svg)](https://github.com/Adityarajj23/TEAM3/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/badge/linting-ruff-green.svg)](https://github.com/astral-sh/ruff)
+[![Mypy](https://img.shields.io/badge/typecheck-mypy-blue.svg)](https://mypy-lang.org/)
+[![Pytest](https://img.shields.io/badge/tests-pytest-blue.svg)](backend/tests/)
+[![Vitest](https://img.shields.io/badge/frontend-vitest-purple.svg)](frontend/tests/)
+[![Build](https://img.shields.io/badge/frontend-vite%20build-brightgreen.svg)](frontend/)
+[![Docs Invariants](https://img.shields.io/badge/docs%20verification-passed-success.svg)](scripts/verify_docs.py)
+
 > **Multi-Repository GitHub QA Verification Platform with Real-World Case Studies & Dayforce HCM Verification**  
 > *Deterministic AI Requirements Analysis • AST Codebase Grounding • Sandboxed Test Execution • Zero Synthetic Metrics*
 

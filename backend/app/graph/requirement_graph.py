@@ -19,7 +19,9 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.db.base import session_scope, utcnow
 from app.db.models import AcceptanceCriterion, Clause, Requirement, TestCase
+from app.execution.sandbox import ScriptSpec, run_pytest
 from app.guardrails.ambiguity import detect_ambiguity, detect_missing_information
+from app.guardrails.ast_validator import validate_script
 from app.guardrails.coverage import clause_coverage
 from app.guardrails.quotes import verify_quote
 from app.guardrails.sanitize import as_untrusted_block, detect_injection
@@ -231,44 +233,59 @@ def _generate_tests(state: ReqState, edge: bool) -> ReqState:
         if not res:
             continue
 
-        valid_tests = []
-        pending = []
-        for item in res.data.tests:
-            unknown = [k for k in item.clause_keys if k not in texts]
-            verified = not unknown and verify_quote(item.source_quote, [texts[k] for k in item.clause_keys])
-            if verified:
-                valid_tests.append(item)
-            else:
-                reason = f"Unknown clauses {unknown}" if unknown else f"Source quotation '{item.source_quote}' not found verbatim in cited clauses {item.clause_keys}"
-                pending.append({"item": item, "clause_keys": item.clause_keys, "title": item.title,
-                                "source_quote": item.source_quote, "_failure_reason": reason})
+        def _check_items(items):
+            passed = []
+            quote_errs = []
+            script_errs = []
+            for item in items:
+                unknown = [k for k in item.clause_keys if k not in texts]
+                verified = not unknown and verify_quote(item.source_quote, [texts[k] for k in item.clause_keys])
+                if not verified:
+                    reason = f"Unknown clauses {unknown}" if unknown else f"Source quotation '{item.source_quote}' not found verbatim in cited clauses {item.clause_keys}"
+                    quote_errs.append({"item": item, "clause_keys": item.clause_keys, "title": item.title,
+                                       "source_quote": item.source_quote, "_failure_reason": reason})
+                    continue
+                if item.automation == "pytest" and item.script:
+                    rep = validate_script(item.script, env_kind="reference_hcm")
+                    if not rep.valid:
+                        script_errs.append({"item": item, "title": item.title, "script": item.script,
+                                            "error": "AST error: " + "; ".join(rep.errors)})
+                        continue
+                    try:
+                        trial = run_pytest([ScriptSpec("TC-TRIAL", item.script)], hcm_version="1.1", timeout_s=4, env_kind="reference_hcm")
+                        o = trial.outcomes.get("TC-TRIAL")
+                        if o and o.status not in ("passed", "skipped"):
+                            script_errs.append({"item": item, "title": item.title, "script": item.script,
+                                                "error": f"Trial run {o.status}: {(o.message or o.stack_trace)[:300]}"})
+                            continue
+                    except Exception:
+                        pass
+                passed.append(item)
+            return passed, quote_errs, script_errs
 
+        valid_tests, pending_quotes, pending_scripts = _check_items(res.data.tests)
         attempt = 0
-        while pending and attempt < 2:
+        while (pending_quotes or pending_scripts) and attempt < 2:
             attempt += 1
-            repair_msg = prompts.quote_repair_prompt(task, prompt_text, pending, texts)
+            if pending_quotes:
+                repair_msg = prompts.quote_repair_prompt(task, prompt_text, pending_quotes, texts)
+            else:
+                repair_msg = prompts.test_repair_prompt(task, prompt_text, pending_scripts)
             rep_res, _ = _llm(merged, task, repair_msg, TestCaseBatch)
             if not rep_res:
                 break
-            new_pending = []
-            for item in rep_res.data.tests:
-                unknown = [k for k in item.clause_keys if k not in texts]
-                verified = not unknown and verify_quote(item.source_quote, [texts[k] for k in item.clause_keys])
-                if verified:
-                    valid_tests.append(item)
-                else:
-                    reason = f"Unknown clauses {unknown}" if unknown else f"Source quotation '{item.source_quote}' not found verbatim in cited clauses {item.clause_keys}"
-                    new_pending.append({"item": item, "clause_keys": item.clause_keys, "title": item.title,
-                                        "source_quote": item.source_quote, "_failure_reason": reason})
-            pending = new_pending
+            repaired_valid, pending_quotes, pending_scripts = _check_items(rep_res.data.tests)
+            valid_tests.extend(repaired_valid)
 
-        for p in pending:
+        for p in pending_quotes:
             out["invalid_items"].append({
-                "task": task,
-                "description": p["title"],
-                "clause_keys": p["clause_keys"],
-                "quote": p["source_quote"],
-                "error": f"Ungrounded: {p['_failure_reason']} (rejected after {attempt} repair attempts)"
+                "task": task, "description": p["title"], "clause_keys": p["clause_keys"],
+                "quote": p["source_quote"], "error": f"Ungrounded quote: {p['_failure_reason']} (after {attempt} repairs)"
+            })
+        for s in pending_scripts:
+            out["invalid_items"].append({
+                "task": task, "description": s["title"], "clause_keys": getattr(s["item"], "clause_keys", []),
+                "quote": getattr(s["item"], "source_quote", ""), "error": f"Script failure: {s['error']} (after {attempt} repairs)"
             })
 
         with session_scope() as db:

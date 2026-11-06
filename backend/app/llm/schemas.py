@@ -96,3 +96,29 @@ class FailureAnalysisOut(BaseModel):
         if v not in FAILURE_CATEGORIES:
             raise ValueError(f"category must be one of {FAILURE_CATEGORIES}")
         return v
+
+
+class JudgeIssue(BaseModel):
+    category: Literal[
+        "ungrounded_assertion",
+        "missing_boundary",
+        "syntax_error",
+        "logic_inconsistency",
+        "policy_violation",
+        "weak_assertion",
+    ]
+    severity: Literal["critical", "high", "medium", "low"] = "medium"
+    item_type: str = "test_case"
+    item_title: str
+    description: str
+    suggested_correction: str
+
+
+class JudgeEvaluation(BaseModel):
+    requirement_key: str
+    has_issues: bool
+    issues: list[JudgeIssue] = Field(default_factory=list)
+    grounding_score: float = Field(ge=0.0, le=1.0)
+    completeness_score: float = Field(ge=0.0, le=1.0)
+    confidence: float = Field(ge=0.0, le=1.0)
+    summary_verdict: str

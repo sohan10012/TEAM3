@@ -14,6 +14,7 @@ import {
   PlayCircle,
   Search,
   Settings,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -33,6 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: "WORKSPACE",
     items: [
       { to: "/", label: "Overview", icon: LayoutDashboard, end: true },
+      { to: "/simulation", label: "Agent Simulation", icon: Sparkles },
       { to: "/requirements", label: "Requirements", icon: FileText },
     ],
   },
@@ -470,6 +472,16 @@ export function AppShell() {
               <span className="font-medium text-slate-500">Sandbox:</span>
               <span className="font-mono text-slate-800">{cfg.data?.isolation_level || "netns+rlimits"}</span>
             </div>
+
+            {/* 1-Click Multi-Agent Simulation Link */}
+            <Link
+              to="/simulation"
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-2xs font-semibold text-[#3067DB] border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors shadow-2xs"
+              title="Interactive Multi-Agent Simulation & Agent Health Monitoring"
+            >
+              <Sparkles className="h-3 w-3 text-[#3067DB]" />
+              <span className="hidden sm:inline">Simulation</span>
+            </Link>
 
             <Link
               to="/settings"

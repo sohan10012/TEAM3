@@ -1,0 +1,22 @@
+{
+  "policies_count": 8,
+  "total_clauses": 9,
+  "total_tests": 9,
+  "clause_coverage_rate": 1.0,
+  "ungrounded_quotes_count": 0,
+  "ungrounded_quotes_rate": 0.0,
+  "safety_scan_rate": 1.0,
+  "hcm_10_execution": {
+    "version": "1.0",
+    "passed": 1,
+    "failed_faults_detected": 8,
+    "status": "expected_faults_detected"
+  },
+  "hcm_11_execution": {
+    "version": "1.1",
+    "passed": 9,
+    "failed": 0,
+    "pass_rate": 1.0,
+    "status": "clean_pass"
+  }
+}

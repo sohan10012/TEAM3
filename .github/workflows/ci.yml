@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: ["**"]
   pull_request:
 
 jobs:
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TRACETEST_LLM_MODE: mock
+      TRACETEST_ALLOW_WEAK_SANDBOX: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

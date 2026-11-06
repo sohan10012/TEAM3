@@ -121,20 +121,26 @@ class SandboxedProbeResult:
 
 def _limits(memory_mb: int | None, cpu_seconds: int, is_bwrap: bool = False):
     def apply() -> None:  # runs in the child (POSIX only)
-        import resource
-        os.setsid()
-        limits = [(resource.RLIMIT_CPU, cpu_seconds), (resource.RLIMIT_FSIZE, 50 * 1024 * 1024),
-                  (resource.RLIMIT_CORE, 0)]
-        if not is_bwrap and hasattr(resource, "RLIMIT_NPROC"):
-            # Block fork bombs by capping max concurrent processes per user (skipped under bwrap which unshares PID namespace)
-            limits.append((resource.RLIMIT_NPROC, 64))
-        if memory_mb:  # browsers reserve large virtual address spaces, so Playwright runs skip RLIMIT_AS
-            limits += [(resource.RLIMIT_AS, memory_mb * 1024 * 1024), (resource.RLIMIT_NOFILE, 256)]
-        for lim, val in limits:
-            try:
-                resource.setrlimit(lim, (val, val))
-            except (ValueError, OSError):
-                pass
+        if hasattr(os, "setsid"):
+            os.setsid()
+        try:
+            import resource
+            limits = [(getattr(resource, "RLIMIT_CPU", 0), cpu_seconds),
+                      (getattr(resource, "RLIMIT_FSIZE", 0), 50 * 1024 * 1024),
+                      (getattr(resource, "RLIMIT_CORE", 0), 0)]
+            if not is_bwrap and hasattr(resource, "RLIMIT_NPROC"):
+                # Block fork bombs by capping max concurrent processes per user (skipped under bwrap which unshares PID namespace)
+                limits.append((resource.RLIMIT_NPROC, 64))
+            if memory_mb and hasattr(resource, "RLIMIT_AS"):  # browsers reserve large virtual address spaces, so Playwright runs skip RLIMIT_AS
+                limits += [(resource.RLIMIT_AS, memory_mb * 1024 * 1024), (getattr(resource, "RLIMIT_NOFILE", 0), 256)]
+            for lim, val in limits:
+                try:
+                    if hasattr(resource, "setrlimit"):
+                        resource.setrlimit(lim, (val, val))
+                except (ValueError, OSError):
+                    pass
+        except ImportError:
+            pass
     return apply
 
 
@@ -298,7 +304,15 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
                     env[k] = os.environ[k]
             env["HOME"] = os.environ.get("HOME", str(work))
         if os.name == "nt":
-            env["SYSTEMROOT"] = os.environ.get("SYSTEMROOT", "")
+            sys_root = os.environ.get("SYSTEMROOT", "C:\\Windows")
+            sys_32 = str(Path(sys_root) / "System32")
+            py_dir = str(Path(sys.executable).parent)
+            env["SYSTEMROOT"] = sys_root
+            env["PATH"] = f"{py_dir};{sys_32};{sys_root};" + os.environ.get("PATH", "")
+            if "PATHEXT" in os.environ:
+                env["PATHEXT"] = os.environ["PATHEXT"]
+            if "VIRTUAL_ENV" in os.environ:
+                env["VIRTUAL_ENV"] = os.environ["VIRTUAL_ENV"]
         cmd = [sys.executable, "-I", "-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-o",
                "console_output_style=classic", f"--junitxml={junit}", "--rootdir", str(work), str(work)]
         iso_level = detect_isolation_level()
@@ -354,7 +368,12 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
                 use_netns = True
                 cmd = [shutil.which("unshare") or "unshare", "-rn", *cmd]
             else:
-                allow_weak = settings.allow_weak_sandbox or os.environ.get("TRACETEST_ALLOW_WEAK_SANDBOX", "0") in ("1", "true", "True")
+                if os.environ.get("TRACETEST_ALLOW_WEAK_SANDBOX") == "0":
+                    allow_weak = False
+                elif os.environ.get("TRACETEST_ALLOW_WEAK_SANDBOX") in ("1", "true", "True"):
+                    allow_weak = True
+                else:
+                    allow_weak = settings.allow_weak_sandbox
                 if not allow_weak:
                     raise RuntimeError(
                         f"Sandbox execution refused: network namespace isolation ('unshare -rn') is unavailable "
@@ -381,8 +400,8 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
         except subprocess.TimeoutExpired:
             timed_out = True
             try:
-                if os.name == "posix":
-                    os.killpg(proc.pid, signal.SIGKILL)
+                if os.name == "posix" and hasattr(os, "killpg"):
+                    os.killpg(proc.pid, getattr(signal, "SIGKILL", signal.SIGTERM))
                 else:
                     proc.kill()
             except ProcessLookupError:

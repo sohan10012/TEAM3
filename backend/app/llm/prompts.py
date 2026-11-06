@@ -34,6 +34,38 @@ approvals.has_permission(role, permission) -> bool
 Allowed imports: pytest, decimal, datetime, math, re, json, typing, reference_hcm. Nothing else.
 No file, network, os, sys, subprocess, eval/exec, while loops or dunder attribute access."""
 
+FEW_SHOT_HCM_EXAMPLES = """### Grounded Pytest Script Examples:
+
+# Example 1: Overtime Boundary (Cites Clause: "Hours worked above 40 in a payroll week must be paid as overtime.")
+from reference_hcm import payroll
+
+def test_overtime_above_forty():
+    assert payroll.calculate_overtime_hours(42, threshold=40) == 2.0
+    assert payroll.calculate_overtime_hours(40, threshold=40) == 0.0
+
+# Example 2: Negative Hours ValueError Handling
+import pytest
+from reference_hcm import payroll
+
+def test_negative_weekly_hours_rejected():
+    with pytest.raises(ValueError):
+        payroll.calculate_overtime_hours(-5, threshold=40)
+
+# Example 3: Meal Break Compliance (Cites Clause: "Shifts longer than 6 hours must have a 30-minute break.")
+from reference_hcm import attendance
+
+def test_meal_break_compliant():
+    assert attendance.meal_break_compliant(shift_hours=6.5, break_minutes=30) is True
+    assert attendance.meal_break_compliant(shift_hours=7.0, break_minutes=20) is False
+
+# Example 4: Statutory Penny Rounding
+from decimal import Decimal
+from reference_hcm import payroll
+
+def test_gross_pay_rounding():
+    assert payroll.round_pay(Decimal("100.255")) == Decimal("100.26")
+"""
+
 
 def payload(task: str, data: dict) -> str:
     return f"TASK: {task}\nPAYLOAD_JSON:\n{json.dumps(data, ensure_ascii=False, indent=1)}"
@@ -70,6 +102,7 @@ def test_prompt(req_key: str, clauses: list[dict], criteria: list[dict], untrust
     return (payload("edge_case_tests" if edge_cases else "test_cases",
                     {"requirement": req_key, "clauses": clauses, "acceptance_criteria": criteria})
             + "\n\nSource:\n" + untrusted + "\n\n" + focus + "\n" + HCM_API_REFERENCE + "\n\n"
+            + FEW_SHOT_HCM_EXAMPLES + "\n\n"
             "Exact clauses to cover:\n" + clause_bullets + "\n\n"
             "Each test MUST cite clause_keys from the payload and MUST include a `source_quote` copied EXACTLY VERBATIM "
             "(at least 12 characters) from the text of one cited clause. Do NOT paraphrase or alter words. "
@@ -124,3 +157,27 @@ def repair_prompt(original_user: str, bad_output: str, errors: str) -> str:
             + "\n\nPrevious response:\n" + bad_output[:6000]
             + "\n\nReturn a corrected JSON object only. Do not change cited facts to satisfy validation; "
               "if something cannot be grounded, remove it.")
+
+
+def test_repair_prompt(task: str, original_user: str, script_errors: list[dict]) -> str:
+    lines = [
+        original_user,
+        "\n\nYour previous test generation output FAILED AST validation or trial sandbox execution.",
+        "The following test script(s) failed with runtime errors or prohibited syntax:\n"
+    ]
+    for err in script_errors:
+        title = err.get("title", "Test")
+        error_msg = err.get("error", "Failed execution")
+        script = err.get("script", "")
+        lines.append(f"- Test '{title}':")
+        lines.append(f"  Error traceback / AST diagnostic: {error_msg}")
+        if script:
+            lines.append("  Previous script attempted:\n```python\n" + script[:1500] + "\n```")
+    lines.extend([
+        "\nCORRECTION INSTRUCTION:",
+        "For each failing test above, fix the `script` so that it uses strictly permitted imports and executes cleanly.",
+        "Ensure all functions start with `test_` and make concrete assertions against the requirement.",
+        "Do NOT use forbidden imports (os, sys, subprocess, socket).",
+        "Return the complete corrected JSON object only."
+    ])
+    return "\n".join(lines)

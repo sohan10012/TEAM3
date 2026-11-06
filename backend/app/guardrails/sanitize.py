@@ -5,8 +5,8 @@ import re
 import unicodedata
 
 INJECTION_PATTERNS = [
-    r"ignore (all|any|the)? ?(previous|prior|above) (instructions|prompts|rules)",
-    r"disregard (all|any|the)? ?(previous|prior|above)",
+    r"ignore (all|any|the)? ?(previous|prior|above)? ?(instructions|prompts|rules)",
+    r"disregard (all|any|the)? ?(previous|prior|above)?",
     r"you are now",
     r"system prompt",
     r"act as (an?|the) ",
@@ -14,7 +14,9 @@ INJECTION_PATTERNS = [
     r"</?(system|assistant|user)>",
     r"reveal (your|the) (prompt|instructions|api key|secrets?)",
     r"mark (all|every) tests? as (passed|approved)",
-    r"approve (all|every)",
+    r"approve (all|every|the|this|any)?",
+    r"ignore .* rules",
+    r"bypass .* (review|checks?|validation)",
 ]
 _PATTERNS = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")

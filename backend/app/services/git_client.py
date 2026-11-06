@@ -37,6 +37,15 @@ def run_hardened_git(
         "GIT_TERMINAL_PROMPT": "0",
         "GIT_ALLOW_PROTOCOL": "https",
     }
+    if os.name == "nt":
+        if "SYSTEMROOT" in os.environ:
+            env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+        if "SystemRoot" in os.environ:
+            env["SystemRoot"] = os.environ["SystemRoot"]
+        if "TEMP" in os.environ:
+            env["TEMP"] = os.environ["TEMP"]
+        if "TMP" in os.environ:
+            env["TMP"] = os.environ["TMP"]
     askpass_script: Path | None = None
 
     if auth_token and auth_token.strip():
@@ -57,6 +66,8 @@ def run_hardened_git(
         env["TRACETEST_GIT_TOKEN"] = auth_token.strip()
 
     extra_config: list[str] = []
+    if os.name == "nt":
+        extra_config.extend(["-c", "http.sslbackend=schannel"])
     if pinned_ip and pinned_ip.strip():
         # Pin DNS to defeat DNS rebinding attacks
         extra_config.extend(["-c", f"http.curloptResolve=github.com:443:{pinned_ip.strip()}"])
@@ -107,7 +118,7 @@ def clone_repository(
         ]
         proc = run_hardened_git(clone_args, auth_token=auth_token, pinned_ip=pinned_ip, timeout=DEFAULT_TIMEOUT)
         if proc.returncode != 0:
-            err = (proc.stderr or "").replace(auth_token or "", "[REDACTED]")
+            err = (proc.stderr or "").replace(auth_token, "[REDACTED]") if auth_token else (proc.stderr or "")
             raise BadRequest(f"Git clone failed: {err[:200]}")
 
         # Post-clone security assertions

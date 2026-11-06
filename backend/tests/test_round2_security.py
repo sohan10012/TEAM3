@@ -68,6 +68,9 @@ def test_dns_resolution_pins_public_ip_for_git():
 
 def test_isolation_level_detects_bwrap():
     """Asserts that bwrap+rlimits is detected on Linux when bwrap is available."""
+    import sys
+    if not sys.platform.startswith("linux"):
+        pytest.skip("Bubblewrap isolation only applicable on Linux")
     iso = detect_isolation_level()
     # On this Linux host bubblewrap 0.13.1 is installed
     assert iso in ("bwrap+rlimits", "netns+rlimits")
@@ -174,6 +177,9 @@ def test_api_payload_size_limit():
 
 def test_secret_key_file_permissions():
     """Verifies that the secret key file on disk has restrictive permissions (0600)."""
+    import os
+    if os.name != "posix":
+        pytest.skip("POSIX permission checks not applicable on Windows NTFS")
     key_path = REPO_ROOT / "var" / ".secret_key"
     if not key_path.exists():
         # Ensure it is created and verified

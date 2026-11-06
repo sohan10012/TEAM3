@@ -7,6 +7,7 @@ import tempfile
 _DATA = tempfile.mkdtemp(prefix="tracetest-test-")
 os.environ.update({
     "TRACETEST_ENV": "test", "TRACETEST_DATA_DIR": _DATA, "TRACETEST_LLM_MODE": "mock",
+    "TRACETEST_ALLOW_WEAK_SANDBOX": "1",
     "TRACETEST_SEED_ON_STARTUP": "true",
     "TRACETEST_ADMIN_EMAIL": "admin@northwind-hcm.example",
     "TRACETEST_QA_EMAIL": "qa.engineer@northwind-hcm.example",

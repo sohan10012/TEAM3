@@ -1,0 +1,14 @@
+{
+  "total_scenarios": 6,
+  "confusion_matrix": {
+    "tp": 2,
+    "tn": 4,
+    "fp": 0,
+    "fn": 0
+  },
+  "agreement_rate": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "cohens_kappa": 1.0
+}

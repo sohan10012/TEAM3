@@ -1155,6 +1155,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/simulation/agent-traces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Agent Traces
+         * @description Return real-time and simulated multi-agent execution traces, thought logs, token usage, latency, and AST validation status.
+         */
+        get: operations["get_agent_traces_api_v1_simulation_agent_traces_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/simulation/golden-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Golden Policies
+         * @description Return the 5 preloaded golden HCM policies (POL001-POL005) for instant 1-click simulation demo.
+         */
+        get: operations["list_golden_policies_api_v1_simulation_golden_policies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/simulation/ingest-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest Policy
+         * @description Ingest policy text/scenario, decompose into clauses, detect ambiguities, generate criteria, test cases, and YAML spec.
+         */
+        post: operations["ingest_policy_api_v1_simulation_ingest_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/simulation/run-interpreter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Interpreter
+         * @description Run table tests against YAML rules via safe interpreter, producing Red (stub), Green (actual), and Mutation (mutated).
+         */
+        post: operations["run_interpreter_api_v1_simulation_run_interpreter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/suites": {
         parameters: {
             query?: never;
@@ -1589,6 +1669,30 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** IngestPolicyIn */
+        IngestPolicyIn: {
+            /**
+             * Policy Id
+             * @description Policy key or identifier (e.g. POL001)
+             */
+            policy_id?: string | null;
+            /**
+             * Policy Text
+             * @description Raw HCM policy text or scenario description
+             */
+            policy_text: string;
+            /**
+             * Title
+             * @description Policy title
+             */
+            title?: string | null;
+            /**
+             * Use Llm
+             * @description Optionally trigger live LLM provider
+             * @default false
+             */
+            use_llm: boolean;
+        };
         /** LinkIn */
         LinkIn: {
             /**
@@ -1761,6 +1865,24 @@ export interface components {
             comment: string;
             /** Decision */
             decision: string;
+        };
+        /** RunInterpreterIn */
+        RunInterpreterIn: {
+            /**
+             * Policy Id
+             * @description Golden policy identifier for preset tests
+             */
+            policy_id?: string | null;
+            /**
+             * Test Cases
+             * @description Custom test matrices
+             */
+            test_cases?: Record<string, never>[] | null;
+            /**
+             * Yaml Spec
+             * @description Policy YAML string or structured dictionary
+             */
+            yaml_spec: string | Record<string, never>;
         };
         /** StepIn */
         StepIn: {
@@ -4256,6 +4378,123 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_agent_traces_api_v1_simulation_agent_traces_get: {
+        parameters: {
+            query?: {
+                policy_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_golden_policies_api_v1_simulation_golden_policies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    ingest_policy_api_v1_simulation_ingest_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IngestPolicyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_interpreter_api_v1_simulation_run_interpreter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunInterpreterIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

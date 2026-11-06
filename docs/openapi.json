@@ -567,6 +567,51 @@
     "title": "ImportItem",
     "type": "object"
    },
+   "IngestPolicyIn": {
+    "properties": {
+     "policy_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Policy key or identifier (e.g. POL001)",
+      "title": "Policy Id"
+     },
+     "policy_text": {
+      "description": "Raw HCM policy text or scenario description",
+      "minLength": 1,
+      "title": "Policy Text",
+      "type": "string"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Policy title",
+      "title": "Title"
+     },
+     "use_llm": {
+      "default": false,
+      "description": "Optionally trigger live LLM provider",
+      "title": "Use Llm",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "policy_text"
+    ],
+    "title": "IngestPolicyIn",
+    "type": "object"
+   },
    "LinkIn": {
     "properties": {
      "link_type": {
@@ -994,6 +1039,54 @@
      "decision"
     ],
     "title": "ReviewIn",
+    "type": "object"
+   },
+   "RunInterpreterIn": {
+    "properties": {
+     "policy_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Golden policy identifier for preset tests",
+      "title": "Policy Id"
+     },
+     "test_cases": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "object"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Custom test matrices",
+      "title": "Test Cases"
+     },
+     "yaml_spec": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ],
+      "description": "Policy YAML string or structured dictionary",
+      "title": "Yaml Spec"
+     }
+    },
+    "required": [
+     "yaml_spec"
+    ],
+    "title": "RunInterpreterIn",
     "type": "object"
    },
    "StepIn": {
@@ -5306,6 +5399,148 @@
     "summary": "Search",
     "tags": [
      "search"
+    ]
+   }
+  },
+  "/api/v1/simulation/agent-traces": {
+   "get": {
+    "description": "Return real-time and simulated multi-agent execution traces, thought logs, token usage, latency, and AST validation status.",
+    "operationId": "get_agent_traces_api_v1_simulation_agent_traces_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "policy_id",
+      "required": false,
+      "schema": {
+       "default": "POL001",
+       "title": "Policy Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Agent Traces",
+    "tags": [
+     "simulation"
+    ]
+   }
+  },
+  "/api/v1/simulation/golden-policies": {
+   "get": {
+    "description": "Return the 5 preloaded golden HCM policies (POL001-POL005) for instant 1-click simulation demo.",
+    "operationId": "list_golden_policies_api_v1_simulation_golden_policies_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Golden Policies",
+    "tags": [
+     "simulation"
+    ]
+   }
+  },
+  "/api/v1/simulation/ingest-policy": {
+   "post": {
+    "description": "Ingest policy text/scenario, decompose into clauses, detect ambiguities, generate criteria, test cases, and YAML spec.",
+    "operationId": "ingest_policy_api_v1_simulation_ingest_policy_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/IngestPolicyIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Ingest Policy",
+    "tags": [
+     "simulation"
+    ]
+   }
+  },
+  "/api/v1/simulation/run-interpreter": {
+   "post": {
+    "description": "Run table tests against YAML rules via safe interpreter, producing Red (stub), Green (actual), and Mutation (mutated).",
+    "operationId": "run_interpreter_api_v1_simulation_run_interpreter_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunInterpreterIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Run Interpreter",
+    "tags": [
+     "simulation"
     ]
    }
   },

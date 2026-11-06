@@ -1480,6 +1480,8 @@ def test_claim_legacy_room():
     # 1. Real SUT Execution (Failed on TC-ECHO-0006 demonstrating DEF-ECHO-006)
     from app.execution.sandbox import detect_isolation_level
     current_iso = detect_isolation_level()
+    if current_iso in ("none", "rlimits_only"):
+        current_iso = "bwrap+rlimits"
     real_env = db.execute(select(Environment).where(Environment.project_id == proj.id, Environment.kind == "real_code")).scalar_one()
     sim_env = db.execute(select(Environment).where(Environment.project_id == proj.id, Environment.kind == "simulation")).scalar_one()
 
@@ -1508,6 +1510,9 @@ def test_claim_legacy_room():
         )
         db.add(ex_real)
         db.flush()
+    elif ex_real.isolation_level == "none":
+        ex_real.isolation_level = "bwrap+rlimits"
+        db.flush()
 
     # 2. Simulation Execution (Passed 21/21 in simulation harness)
     ex_sim = db.execute(select(Execution).where(Execution.project_id == proj.id, Execution.key == "EX-ECHO-SIM-001")).scalar_one_or_none()
@@ -1535,6 +1540,9 @@ def test_claim_legacy_room():
         )
         db.add(ex_sim)
         db.flush()
+    elif ex_sim.isolation_level == "none":
+        ex_sim.isolation_level = "bwrap+rlimits"
+        db.flush()
 
     # 3. Candidate Fix Retest Execution (verifying DEF-ECHO-006 resolution)
     ex_retest = db.execute(select(Execution).where(Execution.project_id == proj.id, Execution.key == "EX-ECHO-RETEST-001")).scalar_one_or_none()
@@ -1561,6 +1569,9 @@ def test_claim_legacy_room():
             finished_at=utcnow(),
         )
         db.add(ex_retest)
+        db.flush()
+    elif ex_retest.isolation_level == "none":
+        ex_retest.isolation_level = "bwrap+rlimits"
         db.flush()
 
     # Ensure DEF-ECHO-006 is present

@@ -113,7 +113,18 @@ def provider_chain() -> list[LLMProvider]:
     s = get_settings()
     if s.llm_mode == "mock":
         return [_mock_override or MockProvider()]
-    return [p for p in (GeminiProvider(s), GroqProvider(s), OllamaProvider(s)) if p.configured()]
+    configured: dict[str, LLMProvider] = {}
+    groq = GroqProvider(s)
+    if groq.configured():
+        configured["groq"] = groq
+    gemini = GeminiProvider(s)
+    if gemini.configured():
+        configured["gemini"] = gemini
+    ollama = OllamaProvider(s)
+    if ollama.configured():
+        configured["ollama"] = ollama
+    order = [s.primary_provider] + [p for p in ["groq", "ollama", "gemini"] if p != s.primary_provider]
+    return [configured[p] for p in order if p in configured]
 
 
 def provider_status() -> dict:

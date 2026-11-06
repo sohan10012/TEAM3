@@ -402,6 +402,7 @@ def generate_tests_for_generic_requirement(
     acs = list(db.execute(select(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == req.id)).scalars())
 
     target_file = clauses[0].source_paths if clauses and clauses[0].source_paths else "operations.py"
+    target_file = target_file.replace("\\", "/")
     target_path = Path(target_file)
     mod_parts = list(target_path.with_suffix("").parts)
     mod_name = ".".join(mod_parts)
@@ -511,7 +512,11 @@ def diff_aware_refresh(
             clauses = list(db.execute(select(Clause).where(Clause.requirement_id == req.id)).scalars())
             # Check if any clause source_path matches one of changed_files
             is_affected = any(
-                any(cf == c.source_paths or (c.source_paths and cf in c.source_paths) for cf in changed_files)
+                any(
+                    (cf.replace("\\", "/") == (c.source_paths or "").replace("\\", "/"))
+                    or (c.source_paths and cf.replace("\\", "/") in c.source_paths.replace("\\", "/"))
+                    for cf in changed_files
+                )
                 for c in clauses
             )
             if is_affected:
