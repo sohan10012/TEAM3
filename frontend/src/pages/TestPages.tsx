@@ -365,7 +365,7 @@ export function TestDetailPage() {
                   className="w-full text-xs text-accent hover:bg-accent/10 border border-dashed border-accent/40"
                   onClick={() => setComment(`Approved based on LLM-as-a-Judge audit: verified verbatim against clause ${t.clause_keys.join(', ')} with ${Math.round(t.confidence * 100)}% grounding consensus.`)}
                 >
-                  Use Judge Recommendation in Comment
+                  ✨ Auto-populate Reviewer Note
                 </Button>
               )}
             </div>
