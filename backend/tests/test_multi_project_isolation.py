@@ -10,6 +10,7 @@ Verifies:
 from __future__ import annotations
 
 import pytest
+from sqlalchemy import select
 
 from app.core.errors import AppError
 from app.db.base import session_scope
@@ -151,3 +152,81 @@ def test_import_repository_dry_run_analysis(app):
         assert "file_count" in analysis
         assert analysis["file_count"] > 0
         assert "ECHO-ROOMS" in [m["code"] for m in analysis["modules"]]
+
+
+def test_ensure_identity_does_not_create_demo_projects():
+    """Verifies that calling ensure_identity() does not recreate unwanted demo projects."""
+    from app.seed.seed import ensure_identity
+    with session_scope() as db:
+        initial_keys = set(db.execute(select(Project.key)).scalars())
+
+    ensure_identity()
+
+    with session_scope() as db:
+        post_keys = set(db.execute(select(Project.key)).scalars())
+        # No new projects created
+        assert post_keys == initial_keys
+        # No Dayforce demo projects exist
+        for k in ("DF-PAY", "DF-WFM", "DF-LVE", "DF-BEN", "OCTO", "SMPL"):
+            assert k not in post_keys
+
+
+def test_real_database_retains_only_echo_and_cureon():
+    """Verifies that the production application database retains ONLY ECHO and CUREON."""
+    import sqlite3
+
+    from app.core.config import REPO_ROOT
+
+    real_db_path = REPO_ROOT / "var" / "tracetest.db"
+    if not real_db_path.exists():
+        pytest.skip("Production database var/tracetest.db not found")
+
+    con = sqlite3.connect(str(real_db_path))
+    cur = con.cursor()
+    cur.execute("SELECT id, key, name FROM projects ORDER BY id")
+    rows = cur.fetchall()
+    con.close()
+
+    keys = [r[1] for r in rows]
+    assert keys == ["ECHO", "CUREON"], f"Expected only ECHO and CUREON in production DB, found: {keys}"
+
+
+def test_real_database_echo_and_cureon_data_isolation():
+    """Verifies that ECHO and CUREON records are completely intact and isolated in var/tracetest.db."""
+    import sqlite3
+
+    from app.core.config import REPO_ROOT
+
+    real_db_path = REPO_ROOT / "var" / "tracetest.db"
+    if not real_db_path.exists():
+        pytest.skip("Production database var/tracetest.db not found")
+
+    con = sqlite3.connect(str(real_db_path))
+    cur = con.cursor()
+
+    # EchoBox (project 5)
+    cur.execute("SELECT count(*) FROM requirements WHERE project_id = 5")
+    assert cur.fetchone()[0] == 21
+    cur.execute("SELECT count(*) FROM test_cases WHERE project_id = 5")
+    assert cur.fetchone()[0] == 21
+    cur.execute("SELECT count(*) FROM executions WHERE project_id = 5")
+    assert cur.fetchone()[0] == 9
+    cur.execute("SELECT count(*) FROM defects WHERE project_id = 5")
+    assert cur.fetchone()[0] == 7
+
+    # Cureonix (project 8)
+    cur.execute("SELECT count(*) FROM requirements WHERE project_id = 8")
+    assert cur.fetchone()[0] == 23
+    cur.execute("SELECT count(*) FROM test_cases WHERE project_id = 8")
+    assert cur.fetchone()[0] == 0
+    cur.execute("SELECT count(*) FROM executions WHERE project_id = 8")
+    assert cur.fetchone()[0] == 0
+    cur.execute("SELECT count(*) FROM defects WHERE project_id = 8")
+    assert cur.fetchone()[0] == 0
+
+    # Zero cross-project leakage
+    cur.execute("SELECT count(*) FROM requirements WHERE project_id NOT IN (5, 8)")
+    assert cur.fetchone()[0] == 0
+
+    con.close()
+

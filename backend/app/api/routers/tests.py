@@ -31,11 +31,14 @@ router = APIRouter(prefix="/tests", tags=["test cases"])
 def list_tests(pp: PageParams = Depends(page_params), project_id: int | None = None,
                requirement_id: int | None = None, status: str | None = None, test_type: str | None = None,
                automation: str | None = None, validation_status: str | None = None, provider: str | None = None,
+               test_category: str | None = None, execution_capability: str | None = None, approval_status: str | None = None,
                p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
     stmt = select(TestCase).where(TestCase.project_id.in_(scoped_project_ids(db, p, project_id) or [-1]))
     for col, val in ((TestCase.requirement_id, requirement_id), (TestCase.status, status),
                      (TestCase.test_type, test_type), (TestCase.automation, automation),
-                     (TestCase.validation_status, validation_status), (TestCase.provider, provider)):
+                     (TestCase.validation_status, validation_status), (TestCase.provider, provider),
+                     (TestCase.test_category, test_category), (TestCase.execution_capability, execution_capability),
+                     (TestCase.approval_status, approval_status)):
         if val is not None:
             stmt = stmt.where(col == val)
     if pp.q:
@@ -187,3 +190,48 @@ def deprecate(test_id: int, p: Principal = Depends(require("test.write")), db: S
     audit.record(db, p.id, "test.deprecated", "test_case", t.id, t.key, t.project_id)
     db.commit()
     return S.test_case(db, t)
+
+
+@router.post("/{test_id}/validate")
+def validate_specification(
+    test_id: int,
+    p: Principal = Depends(require("test.write")),
+    db: Session = Depends(get_db),
+):
+    from app.services.test_design import validate_test_specification
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    errors = validate_test_specification(db, t)
+    db.commit()
+    return {"id": t.id, "key": t.key, "validation_status": t.validation_status, "validation_errors": errors}
+
+
+@router.post("/{test_id}/approve")
+def approve_test_specification(
+    test_id: int,
+    p: Principal = Depends(require("test.review")),
+    db: Session = Depends(get_db),
+):
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    t.approval_status = "approved"
+    t.status = "approved"
+    t.reviewer_id = p.id
+    db.add(Review(entity_type="test_case", entity_id=t.id, decision="approve", comment="Specification approved", reviewer_id=p.id))
+    audit.record(db, p.id, "test.approved", "test_case", t.id, t.key, t.project_id)
+    db.commit()
+    return S.test_case(db, t, full=True)
+
+
+@router.post("/{test_id}/reject")
+def reject_test_specification(
+    test_id: int,
+    p: Principal = Depends(require("test.review")),
+    db: Session = Depends(get_db),
+):
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    t.approval_status = "rejected"
+    t.status = "rejected"
+    t.reviewer_id = p.id
+    db.add(Review(entity_type="test_case", entity_id=t.id, decision="reject", comment="Specification rejected", reviewer_id=p.id))
+    audit.record(db, p.id, "test.rejected", "test_case", t.id, t.key, t.project_id)
+    db.commit()
+    return S.test_case(db, t, full=True)

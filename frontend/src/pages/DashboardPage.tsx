@@ -32,6 +32,8 @@ import {
 } from "recharts";
 import { EmptyState, ErrorState, LoadingBlock, PageHeader, Panel, Skeleton, Stat } from "@/components/ui";
 import { CountUp } from "@/components/common/CountUp";
+import { ProductionProjectDashboard } from "@/components/dashboard/ProductionProjectDashboard";
+import { RequirementsProjectDashboard } from "@/components/dashboard/RequirementsProjectDashboard";
 import { useProjects } from "@/hooks/useProjects";
 import { ConnectRepoDialog } from "@/pages/ProjectsPage";
 import { api } from "@/services/api";
@@ -59,7 +61,6 @@ const axis = { fontSize: 11, fill: "#64748B" };
 
 function ProjectOnboardingHub({ current }: { current?: any }) {
   const nav = useNavigate();
-  const isDayforce = Boolean(current?.key?.startsWith("DF") || current?.name?.toLowerCase().includes("dayforce"));
   const isEcho = Boolean(current?.key === "ECHO" || current?.name?.toLowerCase().includes("echobox"));
 
   return (
@@ -177,7 +178,7 @@ function ProjectOnboardingHub({ current }: { current?: any }) {
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-[#3067DB]" />
             <h3 className="text-xs font-semibold text-slate-900">
-              {isEcho ? "EchoBox Target Architecture Components" : isDayforce ? "Dayforce Active Verification Domains" : (current ? `${current.name} Verification Modules` : "Target System Modules")}
+              {isEcho ? "EchoBox Target Architecture Components" : (current ? `${current.name} Verification Modules` : "Target System Modules")}
             </h3>
           </div>
           <Link to="/projects" className="text-xs font-medium text-[#3067DB] hover:underline">
@@ -208,33 +209,6 @@ function ProjectOnboardingHub({ current }: { current?: any }) {
               <span className="font-semibold text-slate-800 block">ECHO-MOD: Moderation & Export</span>
               <span className="text-[11px] text-slate-500 block mt-1">
                 Content filtering, room closing, CSV/JSON export, soft-delete archival.
-              </span>
-            </div>
-          </div>
-        ) : isDayforce ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">DF-PAY: Payroll</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Gross-to-net, FLSA overtime thresholds, statutory penny rounding, shift differentials.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">DF-WFM: Workforce Mgmt</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Electronic punch pairing, meal break compliance (30 min / 5 hr), rest intervals.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">DF-LVE: Absence & Leave</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Pay-period accrual rates, annual carryover caps, forfeiture boundaries, payouts.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">DF-BEN: Benefits & Eligibility</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Full-time hours threshold (≥30 hr), contractor exclusions, enrollment windows.
               </span>
             </div>
           </div>
@@ -271,8 +245,7 @@ function ProjectOnboardingHub({ current }: { current?: any }) {
   );
 }
 
-export default function DashboardPage() {
-  const { projectId, current } = useProjects();
+function AnalyticsDashboardView({ projectId, current }: { projectId: number | null; current: any }) {
   const nav = useNavigate();
   const [range, setRange] = useState({ from: "", to: "" });
   const [connectOpen, setConnectOpen] = useState(false);
@@ -783,4 +756,16 @@ export default function DashboardPage() {
       <ConnectRepoDialog open={connectOpen} onOpenChange={setConnectOpen} />
     </>
   );
+}
+
+export default function DashboardPage() {
+  const { projectId, current } = useProjects();
+  if (projectId && current && current.key !== "SMPL" && current.key !== "PAY") {
+    const fallback = <AnalyticsDashboardView projectId={projectId} current={current} />;
+    if (current?.project_type === "requirements_based") {
+      return <RequirementsProjectDashboard projectId={projectId} fallback={fallback} />;
+    }
+    return <ProductionProjectDashboard projectId={projectId} fallback={fallback} />;
+  }
+  return <AnalyticsDashboardView projectId={projectId} current={current} />;
 }

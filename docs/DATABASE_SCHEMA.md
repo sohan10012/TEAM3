@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-TraceTest AI uses SQLite 3 operating with Write-Ahead Logging (`WAL`), immediate transaction locks, strict foreign key constraints, and 64-bit integer primary keys managed through SQLAlchemy 2.0 ORM. All 36 database tables are fully normalized, indexed for high-concurrency read operations, and audited with append-only logs.
+TraceTest AI uses SQLite 3 operating with Write-Ahead Logging (`WAL`), immediate transaction locks, strict foreign key constraints, and 64-bit integer primary keys managed through SQLAlchemy 2.0 ORM. All 39 database tables are fully normalized, indexed for high-concurrency read operations, and audited with append-only logs.
 
 ---
 
@@ -64,18 +64,21 @@ erDiagram
 8. **`notifications`**: User alerts and notifications (`id`, `user_id`, `title`, `body`, `link`, `read`, `created_at`).
 
 ### 3.2 Projects & Environment Domain
-9. **`projects`**: Project workspaces (`id`, `key`, `name`, `description`, `status`, `organisation_id`, `owner_id`).
+9. **`projects`**: Project workspaces (`id`, `key`, `name`, `description`, `status`, `project_type`, `business_domain`, `product_type`, `target_users_and_roles`, `objectives`, `business_scenarios`, `functional_expectations`, `non_functional_expectations`, `constraints_and_assumptions`, `explicit_exclusions`, `organisation_id`, `owner_id`).
 10. **`modules`**: Functional domain areas (`id`, `project_id`, `code`, `name`, `description`).
 11. **`environments`**: Target systems under test (`id`, `project_id`, `name`, `kind`, `base_url`, `hcm_version`, `is_default`).
-12. **`integrations`**: External connectors e.g. GitHub (`id`, `project_id`, `kind`, `status`, `config`, `created_at`).
-13. **`integration_events`**: Audit trail of incoming webhooks and sync events (`id`, `integration_id`, `event_type`, `payload`, `created_at`).
+12. **`documents`**: Ingested product & specification documents (`id`, `project_id`, `filename`, `file_path`, `file_type`, `file_size_bytes`, `purpose`, `description`, `status`, `error_message`, `extracted_text`, `metadata_json`, `created_at`, `updated_at`).
+13. **`simulation_models`**: Behavior simulation models (`id`, `project_id`, `name`, `version`, `domain`, `definition_json`, `status`, `created_at`, `updated_at`).
+14. **`integrations`**: External connectors e.g. GitHub (`id`, `project_id`, `kind`, `status`, `config`, `created_at`).
+15. **`integration_events`**: Audit trail of incoming webhooks and sync events (`id`, `integration_id`, `event_type`, `payload`, `created_at`).
 
 ### 3.3 Requirements Engineering Domain
-14. **`requirements`**: Master requirement records (`id`, `key`, `project_id`, `module_id`, `title`, `category`, `priority`, `status`, `origin`, `source_commit_sha`, `confidence`, `current_version`).
-15. **`requirement_versions`**: Immutable requirement snapshots (`id`, `requirement_id`, `version`, `title`, `description`, `business_objective`, `content_hash`, `change_summary`).
-16. **`clauses`**: Atomic segmented clauses (`id`, `version_id`, `requirement_id`, `clause_key`, `position`, `text`, `source_paths`, `source_line_start`, `source_line_end`, `normalized_hash`, `ambiguity_flags`, `analysis`).
-17. **`acceptance_criteria`**: Grounded verification criteria (`id`, `key`, `requirement_id`, `requirement_version`, `clause_keys`, `description`, `preconditions`, `expected_behaviour`, `source_quote`, `quote_verified`, `confidence`, `review_status`).
-18. **`reviews`**: Dual-control approval decisions (`id`, `subject_type`, `subject_id`, `reviewer_id`, `decision`, `comment`, `created_at`).
+16. **`requirements`**: Master requirement records (`id`, `key`, `project_id`, `module_id`, `document_id`, `title`, `category`, `priority`, `status`, `origin`, `source_commit_sha`, `source_section`, `source_page`, `evidence_excerpt`, `related_scenario`, `dependencies`, `extraction_provenance`, `review_status`, `confidence`, `current_version`).
+17. **`requirement_versions`**: Immutable requirement snapshots (`id`, `requirement_id`, `version`, `title`, `description`, `business_objective`, `content_hash`, `change_summary`).
+18. **`clauses`**: Atomic segmented clauses (`id`, `version_id`, `requirement_id`, `clause_key`, `position`, `text`, `source_paths`, `source_line_start`, `source_line_end`, `normalized_hash`, `ambiguity_flags`, `analysis`).
+19. **`requirement_clarifications`**: Ambiguities, contradictions, and question items (`id`, `project_id`, `requirement_id`, `type`, `question`, `context`, `impact`, `suggested_resolution`, `user_response`, `status`, `created_at`, `resolved_at`).
+20. **`acceptance_criteria`**: Grounded verification criteria (`id`, `key`, `requirement_id`, `requirement_version`, `clause_keys`, `description`, `preconditions`, `expected_behaviour`, `actor`, `action`, `input_conditions`, `expected_output`, `business_rules`, `source_quote`, `quote_verified`, `confidence`, `review_status`).
+21. **`reviews`**: Dual-control approval decisions (`id`, `subject_type`, `subject_id`, `reviewer_id`, `decision`, `comment`, `created_at`).
 
 ### 3.4 Test Management Domain
 19. **`test_cases`**: Test specifications (`id`, `key`, `project_id`, `requirement_id`, `requirement_version`, `clause_keys`, `ac_keys`, `title`, `description`, `priority`, `test_type`, `confidence`, `source_quote`, `quote_verified`, `automation`, `script`, `script_hash`, `validation_status`, `version`, `status`).

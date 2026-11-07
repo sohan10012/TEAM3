@@ -54,19 +54,8 @@ from app.services.tests import create_test, review_test
 
 log = logging.getLogger("tracetest.seed")
 SEED = 20261105
-ORG = "Dayforce Quality Engineering"
-ORG_SLUG = "dayforce-qe"
-
-DAYFORCE_PROJECTS = [
-    ("DF-PAY", "Dayforce Payroll Verification", "Verification of Dayforce Gross-to-Net, FLSA overtime thresholds, statutory rounding, and shift differential matrices.",
-     [("OVT", "Overtime & Differentials"), ("ADJ", "Adjustments & Cut-off"), ("CMP", "Statutory Compliance")]),
-    ("DF-WFM", "Dayforce Workforce Management", "Verification of Dayforce punch pairing, timesheet intervals, and meal break compliance rules.",
-     [("PCH", "Punches & Timesheets"), ("BRK", "Breaks & Rest Compliance")]),
-    ("DF-LVE", "Dayforce Absence & Leave", "Verification of Dayforce leave accrual policies, annual carryover caps, and termination payouts.",
-     [("ACR", "Accrual & Requests"), ("CFW", "Carry-forward & Payout")]),
-    ("DF-BEN", "Dayforce Benefits & Eligibility", "Verification of Dayforce full-time employee benefit eligibility, waiting periods, and enrollment windows.",
-     [("ELG", "Eligibility Rules"), ("ENR", "Enrollment")]),
-]
+ORG = "TraceTest Quality Engineering"
+ORG_SLUG = "tracetest-qe"
 
 PROJECTS = [
     ("PAY", "Payroll Management", "Gross-to-net payroll rules, overtime, differentials, adjustments and cut-off.",
@@ -96,33 +85,8 @@ OWNERS = {"PAY": "taylor.nguyen", "TNA": "casey.ramirez", "LVE": "alex.kowalski"
 _FN = re.compile(r"(?:payroll|attendance|leave|eligibility|approvals)\.(\w+)\(")
 
 
-def _ensure_dayforce_projects(db, org: Organisation, owner: User) -> None:
-    now = utcnow()
-    existing_keys = set(db.execute(select(Project.key)).scalars())
-    for key, name, desc, mods in DAYFORCE_PROJECTS:
-        if key not in existing_keys:
-            p = Project(key=key, name=name, description=desc, organisation_id=org.id, owner_id=owner.id,
-                        created_at=now, updated_at=now)
-            db.add(p)
-            db.flush()
-            for code, mname in mods:
-                m = Module(project_id=p.id, code=code, name=mname, description=f"{mname} rules for {name}.")
-                db.add(m)
-            e10 = Environment(project_id=p.id, name="QA — Reference HCM Harness 1.0", kind="reference_hcm", hcm_version="1.0",
-                              is_default=True, created_at=now)
-            e11 = Environment(project_id=p.id, name="Candidate — Reference HCM Harness 1.1", kind="reference_hcm",
-                              hcm_version="1.1", created_at=now)
-            db.add_all([e10, e11])
-            db.flush()
-            for u in db.execute(select(User)).scalars():
-                if not db.execute(select(ProjectMember).where(ProjectMember.project_id == p.id, ProjectMember.user_id == u.id)).scalar_one_or_none():
-                    db.add(ProjectMember(project_id=p.id, user_id=u.id, project_role="owner" if u.id == owner.id else "member"))
-            db.add(Integration(project_id=p.id, kind="github", config={}, status="not_configured"))
-    db.flush()
-
-
 def ensure_identity() -> None:
-    """Roles, organisation, local development actor, and Dayforce clean workspace."""
+    """Roles, organisation, and local development actor identity."""
     s = get_settings()
     with session_scope() as db:
         for name, desc in ROLES.items():
@@ -208,8 +172,6 @@ def ensure_identity() -> None:
                 u.can_login = True
             elif u.password_hash is None:
                 u.can_login = False
-
-        _ensure_dayforce_projects(db, org, dev_user)
 
 
 def _seeded(db) -> bool:

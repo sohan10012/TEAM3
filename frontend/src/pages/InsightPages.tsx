@@ -43,7 +43,28 @@ export function TraceabilityPage() {
           <Select className="w-60" value={pid} onChange={(e) => set("project_id", e.target.value)} aria-label="Project">{projects.map((p) => <option key={p.id} value={p.id}>{p.key} — {p.name}</option>)}</Select>
           <Select className="w-72" value={rid} onChange={(e) => set("requirement_id", e.target.value)} aria-label="Requirement">
             <option value="">All requirements</option>{reqs.data?.items.map((r) => <option key={r.id} value={r.id}>{r.key} {r.title}</option>)}</Select>
-          <a className="text-sm text-accent hover:underline" href={downloadUrl("/exports/traceability.csv", { project_id: pid })}>Export CSV</a></>} />
+          <a className="text-sm text-accent hover:underline" href={downloadUrl("/exports/traceability.csv", { project_id: pid })}>Export CSV</a>
+          {pid && (
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <a
+                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-[#3067DB] text-white hover:bg-[#2554B8] transition-colors"
+                href={`/api/v1/projects/${pid}/quality-report.html`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                HTML Report
+              </a>
+              <a
+                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+                href={`/api/v1/projects/${pid}/quality-report`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                JSON
+              </a>
+            </div>
+          )}
+        </>} />
       {q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : !d ? <LoadingBlock rows={10} /> : <>
         <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
           <Stat label="Clauses" value={d.summary.total_clauses} />

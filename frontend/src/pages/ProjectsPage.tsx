@@ -1,17 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DataTable } from "@/components/DataTable";
 import { PipelineStepper, type PipelineStep } from "@/components/common/PipelineStepper";
 import { useToast } from "@/components/Toast";
-import { Badge, Button, Dialog, ErrorState, Field, Input, KV, LoadingBlock, PageHeader, Panel, Select, Stat, Tabs, Textarea } from "@/components/ui";
+import { Badge, Button, Dialog, ErrorState, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
+import { ProductionProjectDashboard } from "@/components/dashboard/ProductionProjectDashboard";
+import { RequirementsProjectDashboard } from "@/components/dashboard/RequirementsProjectDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useListState } from "@/hooks/useListState";
 import { useProjects } from "@/hooks/useProjects";
-import { api, type Schemas } from "@/services/api";
-import type { Page, Project, User } from "@/types/models";
-import { fmtDate, pct } from "@/utils/format";
-import { AlertCircle, AlertTriangle, CheckCircle2, FileCode, GitBranch, Shield } from "lucide-react";
+import { api } from "@/services/api";
+import type { Page, Project } from "@/types/models";
+import { cn, pct } from "@/utils/format";
+import { AlertCircle, AlertTriangle, CheckCircle2, FileCode, GitBranch, Plus, Shield } from "lucide-react";
 
 export function ProjectsPage() {
   const st = useListState(["status"], { sort: "key", order: "asc" });
@@ -22,26 +24,87 @@ export function ProjectsPage() {
   const [repoOpen, setRepoOpen] = useState(false);
   return (
     <>
-      <PageHeader title="Projects" subtitle="Software projects and repositories under verification, each with isolated requirements, environments, and execution evidence."
+      <PageHeader
+        title="Projects"
+        subtitle="Requirements-Based quality engineering platforms and ingested code repositories with isolated evidence."
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="primary" onClick={() => setRepoOpen(true)}>Connect GitHub Repository</Button>
-            {can("project.admin") && <Button onClick={() => setOpen(true)}>New project</Button>}
+            {can("project.admin") && (
+              <Button variant="primary" onClick={() => setOpen(true)} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                New Requirements Project
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setRepoOpen(true)} className="gap-1.5">
+              <GitBranch className="h-4 w-4 text-slate-500" />
+              Connect GitHub Repository
+            </Button>
           </div>
-        } />
-      <DataTable query={q} state={st} onRowClick={(p) => nav(`/projects/${p.id}`)}
-        toolbar={<><Input placeholder="Search projects" className="w-60" defaultValue={st.q} onKeyDown={(e) => e.key === "Enter" && st.setQ((e.target as HTMLInputElement).value)} />
-          <Select className="w-40" value={st.filters.status} onChange={(e) => st.setFilter("status", e.target.value)} aria-label="Status">
-            <option value="">Any status</option><option value="active">Active</option><option value="archived">Archived</option></Select></>}
+        }
+      />
+      <DataTable
+        query={q}
+        state={st}
+        onRowClick={(p) => nav(`/projects/${p.id}`)}
+        toolbar={
+          <>
+            <Input
+              placeholder="Search projects"
+              className="w-60"
+              defaultValue={st.q}
+              onKeyDown={(e) => e.key === "Enter" && st.setQ((e.target as HTMLInputElement).value)}
+            />
+            <Select
+              className="w-40"
+              value={st.filters.status}
+              onChange={(e) => st.setFilter("status", e.target.value)}
+              aria-label="Status"
+            >
+              <option value="">Any status</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+            </Select>
+          </>
+        }
         columns={[
-          { id: "key", header: "Key", sortKey: "key", cell: (p) => <span className="font-mono text-xs">{p.key}</span> },
-          { id: "name", header: "Project", sortKey: "name", cell: (p) => <><p className="font-medium">{p.name}</p><p className="text-xs text-slate-500">{p.description}</p></> },
+          { id: "key", header: "Key", sortKey: "key", cell: (p) => <span className="font-mono text-xs font-semibold">{p.key}</span> },
+          {
+            id: "name",
+            header: "Project",
+            sortKey: "name",
+            cell: (p) => (
+              <>
+                <p className="font-medium text-slate-900">{p.name}</p>
+                <p className="text-xs text-slate-500 truncate max-w-sm">{p.description}</p>
+              </>
+            ),
+          },
+          {
+            id: "type",
+            header: "Type",
+            cell: (p) => {
+              const isReq = p.project_type === "requirements_based" || !p.project_type;
+              return (
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-2xs font-medium border",
+                    isReq
+                      ? "bg-blue-50 text-[#3067DB] border-blue-200"
+                      : "bg-slate-100 text-slate-700 border-slate-200"
+                  )}
+                >
+                  {isReq ? "Requirements-Based" : "Code-Based"}
+                </span>
+              );
+            },
+          },
           { id: "status", header: "Status", cell: (p) => <Badge value={p.status} /> },
-          { id: "req", header: "Requirements", cell: (p) => p.stats.requirements, className: "tabular-nums" },
-          { id: "tests", header: "Tests", cell: (p) => p.stats.tests, className: "tabular-nums" },
-          { id: "cov", header: "Coverage", cell: (p) => pct(p.stats.coverage_pct), className: "tabular-nums" },
+          { id: "req", header: "Requirements", cell: (p) => p.stats.requirements, className: "tabular-nums font-medium" },
+          { id: "tests", header: "Tests", cell: (p) => p.stats.tests, className: "tabular-nums font-medium" },
+          { id: "cov", header: "Coverage", cell: (p) => pct(p.stats.coverage_pct), className: "tabular-nums font-medium" },
           { id: "def", header: "Open defects", cell: (p) => p.stats.open_defects, className: "tabular-nums" },
-        ]} />
+        ]}
+      />
       <ProjectDialog open={open} onOpenChange={setOpen} />
       <ConnectRepoDialog open={repoOpen} onOpenChange={setRepoOpen} />
     </>
@@ -421,133 +484,253 @@ export function ConnectRepoDialog({ open, onOpenChange }: { open: boolean; onOpe
 function ProjectDialog({ open, onOpenChange, project }: { open: boolean; onOpenChange: (o: boolean) => void; project?: Project }) {
   const qc = useQueryClient();
   const toast = useToast();
-  const [f, setF] = useState({ key: project?.key ?? "", name: project?.name ?? "", description: project?.description ?? "" });
-  const m = useMutation({
-    mutationFn: () => project ? api.patch(`/projects/${project.id}`, { name: f.name, description: f.description })
-      : api.post("/projects", f satisfies Schemas["ProjectIn"]),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.ok(project ? "Project updated" : "Project created"); onOpenChange(false); },
-    onError: toast.error,
+  const [f, setF] = useState({
+    key: project?.key ?? "",
+    name: project?.name ?? "",
+    description: project?.description ?? "",
+    project_type: project?.project_type ?? "requirements_based",
+    business_domain: project?.business_domain ?? "Enterprise SaaS",
+    product_type: project?.product_type ?? "Web Application",
+    regulatory_standard: project?.regulatory_standard ?? "SOC 2 Type II",
+    default_language: project?.default_language ?? "English (US)",
+    business_scenarios: "",
+    functional_expectations: "",
+    constraints_and_assumptions: "",
   });
+
+  const m = useMutation({
+    mutationFn: () => {
+      if (project) {
+        return api.patch(`/projects/${project.id}`, { name: f.name, description: f.description });
+      }
+      const scenarios = f.business_scenarios.split("\n").map((s) => s.trim()).filter(Boolean);
+      const expectations = f.functional_expectations.split("\n").map((s) => s.trim()).filter(Boolean);
+      const constraints = f.constraints_and_assumptions.split("\n").map((s) => s.trim()).filter(Boolean);
+      return api.post("/projects", {
+        key: f.key,
+        name: f.name,
+        description: f.description,
+        project_type: f.project_type,
+        business_domain: f.business_domain,
+        product_type: f.product_type,
+        regulatory_standard: f.regulatory_standard,
+        default_language: f.default_language,
+        business_scenarios: scenarios.length > 0 ? scenarios : undefined,
+        functional_expectations: expectations.length > 0 ? expectations : undefined,
+        constraints_and_assumptions: constraints.length > 0 ? constraints : undefined,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.ok(project ? "Project updated" : "Requirements project created");
+      onOpenChange(false);
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to create project"),
+  });
+
   const keyOk = /^[A-Za-z0-9_-]{2,10}$/.test(f.key);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={project ? "Edit project" : "New project"}
-      footer={<><Button onClick={() => onOpenChange(false)}>Cancel</Button>
-        <Button variant="primary" loading={m.isPending} disabled={f.name.length < 3 || (!project && !keyOk)} onClick={() => m.mutate()}>
-          {project ? "Save changes" : "Create project"}</Button></>}>
-      {!project && <Field label="Key" htmlFor="pk" hint="2–6 letters, used as the prefix for record IDs" error={f.key && !keyOk ? "Use 2–6 letters" : undefined}>
-        <Input id="pk" value={f.key} onChange={(e) => setF({ ...f, key: e.target.value.toUpperCase() })} /></Field>}
-      <Field label="Name" htmlFor="pn"><Input id="pn" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
-      <Field label="Description" htmlFor="pd"><Textarea id="pd" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={project ? "Edit Project" : "New Requirements-Based Quality Project"}
+      footer={
+        <>
+          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            variant="primary"
+            loading={m.isPending}
+            disabled={f.name.length < 3 || (!project && !keyOk)}
+            onClick={() => m.mutate()}
+          >
+            {project ? "Save changes" : "Create Requirements Project"}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1 text-xs">
+        {!project && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field
+              label="Project Key"
+              htmlFor="pk"
+              hint="2–6 letters, record prefix (e.g. MED, FIN, PAY)"
+              error={f.key && !keyOk ? "Use 2–6 alphanumeric characters" : undefined}
+            >
+              <Input
+                id="pk"
+                value={f.key}
+                placeholder="e.g. CARE"
+                onChange={(e) => setF({ ...f, key: e.target.value.toUpperCase() })}
+              />
+            </Field>
+
+            <Field label="Project Type" htmlFor="pt">
+              <Select
+                id="pt"
+                value={f.project_type}
+                onChange={(e) => setF({ ...f, project_type: e.target.value as any })}
+              >
+                <option value="requirements_based">Requirements-Based (Default)</option>
+                <option value="code_based">Code-Based Repository</option>
+              </Select>
+            </Field>
+          </div>
+        )}
+
+        <Field label="Project Name" htmlFor="pn">
+          <Input
+            id="pn"
+            value={f.name}
+            placeholder="e.g. Patient Clinical Portal"
+            onChange={(e) => {
+              const name = e.target.value;
+              const autoKey = !project && !f.key ? name.replace(/[^A-Za-z0-9]/g, "").slice(0, 5).toUpperCase() : f.key;
+              setF({ ...f, name, key: autoKey || f.key });
+            }}
+          />
+        </Field>
+
+        <Field label="Description" htmlFor="pd">
+          <Textarea
+            id="pd"
+            rows={2}
+            value={f.description}
+            placeholder="Executive purpose and functional scope..."
+            onChange={(e) => setF({ ...f, description: e.target.value })}
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Business Domain" htmlFor="pbd">
+            <Select
+              id="pbd"
+              value={f.business_domain}
+              onChange={(e) => setF({ ...f, business_domain: e.target.value })}
+            >
+              <option value="Healthcare">Healthcare / HealthTech</option>
+              <option value="FinTech">FinTech / Banking & Payments</option>
+              <option value="E-Commerce">E-Commerce & Retail</option>
+              <option value="Enterprise SaaS">Enterprise SaaS</option>
+              <option value="Logistics">Logistics & Supply Chain</option>
+              <option value="EdTech">EdTech & Learning Platforms</option>
+              <option value="Cybersecurity">Cybersecurity & Identity</option>
+              <option value="Telecommunications">Telecommunications</option>
+              <option value="General Software">General Software</option>
+            </Select>
+          </Field>
+
+          <Field label="Product Type" htmlFor="pprod">
+            <Select
+              id="pprod"
+              value={f.product_type}
+              onChange={(e) => setF({ ...f, product_type: e.target.value })}
+            >
+              <option value="Web Application">Web Application (React / Next.js / Vue)</option>
+              <option value="Mobile Application">Mobile Application (iOS / Android / Flutter)</option>
+              <option value="REST API">REST API / OpenAPI Service</option>
+              <option value="Microservice Architecture">Microservice Architecture</option>
+              <option value="Enterprise Software Suite">Enterprise Software Suite</option>
+              <option value="Embedded / IoT System">Embedded / IoT System</option>
+            </Select>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Regulatory Standard" htmlFor="preg">
+            <Select
+              id="preg"
+              value={f.regulatory_standard}
+              onChange={(e) => setF({ ...f, regulatory_standard: e.target.value })}
+            >
+              <option value="SOC 2 Type II">SOC 2 Type II</option>
+              <option value="HIPAA">HIPAA (Health Insurance Portability)</option>
+              <option value="PCI-DSS">PCI-DSS (Payment Card Industry)</option>
+              <option value="GDPR">GDPR (EU Data Protection)</option>
+              <option value="ISO 27001">ISO 27001 Information Security</option>
+              <option value="FDA 21 CFR Part 11">FDA 21 CFR Part 11</option>
+              <option value="None / General">None / General Commercial</option>
+            </Select>
+          </Field>
+
+          <Field label="Default Locale / Language" htmlFor="plang">
+            <Select
+              id="plang"
+              value={f.default_language}
+              onChange={(e) => setF({ ...f, default_language: e.target.value })}
+            >
+              <option value="English (US)">English (US)</option>
+              <option value="English (UK)">English (UK)</option>
+              <option value="German (de-DE)">German (de-DE)</option>
+              <option value="French (fr-FR)">French (fr-FR)</option>
+              <option value="Spanish (es-ES)">Spanish (es-ES)</option>
+              <option value="Japanese (ja-JP)">Japanese (ja-JP)</option>
+            </Select>
+          </Field>
+        </div>
+
+        {!project && (
+          <>
+            <Field
+              label="Business Scenarios (Optional, 1 per line)"
+              htmlFor="pbsc"
+              hint="Free-form stakeholder workflows or user journey goals"
+            >
+              <Textarea
+                id="pbsc"
+                rows={2}
+                value={f.business_scenarios}
+                placeholder="e.g. Registered doctor conducts telehealth consultation and prescribes medicine"
+                onChange={(e) => setF({ ...f, business_scenarios: e.target.value })}
+              />
+            </Field>
+
+            <Field
+              label="Functional Expectations (Optional, 1 per line)"
+              htmlFor="pfx"
+              hint="Key acceptance expectations or critical validation rules"
+            >
+              <Textarea
+                id="pfx"
+                rows={2}
+                value={f.functional_expectations}
+                placeholder="e.g. System must enforce password length >= 12 characters&#10;System must reject room capacity > 50"
+                onChange={(e) => setF({ ...f, functional_expectations: e.target.value })}
+              />
+            </Field>
+          </>
+        )}
+      </div>
     </Dialog>
   );
 }
 
 export function ProjectDetailPage() {
   const { id } = useParams();
-  const { can } = useAuth();
-  const qc = useQueryClient();
-  const toast = useToast();
-  const { setProjectId } = useProjects();
-  const q = useQuery({ queryKey: ["project", id], queryFn: () => api.get<Project>(`/projects/${id}`) });
-  const users = useQuery({ queryKey: ["users"], enabled: can("project.admin"), queryFn: () => api.get<Page<User>>("/users", { page_size: 200 }) });
-  const [edit, setEdit] = useState(false);
-  const [repoOpen, setRepoOpen] = useState(false);
-  const [member, setMember] = useState("");
-  const [env, setEnv] = useState({ name: "", kind: "reference_hcm", hcm_version: "1.1", base_url: "" });
-  const [mod, setMod] = useState({ code: "", name: "" });
-  const inv = () => qc.invalidateQueries({ queryKey: ["project", id] });
-  const act = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { inv(); toast.ok("Saved"); }, onError: toast.error });
-  if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />;
-  if (!q.data) return <LoadingBlock rows={8} />;
-  const p = q.data;
-  const admin = can("project.admin");
-  return (
-    <>
-      <PageHeader title={<span className="flex items-center gap-2">{p.name}<Badge value={p.status} /></span>} subtitle={p.description}
-        actions={<>
-          <Button onClick={() => setProjectId(p.id)}>Focus workspace on this project</Button>
-          {admin && <Button onClick={() => setEdit(true)}>Edit</Button>}
-          {admin && <Button variant={p.status === "active" ? "danger" : "secondary"} onClick={() => act.mutate(() =>
-            api.patch(`/projects/${p.id}`, { status: p.status === "active" ? "archived" : "active" }))}>
-            {p.status === "active" ? "Archive project" : "Restore project"}</Button>}</>} />
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Stat label="Requirements" value={p.stats.requirements} />
-        <Stat label="Test cases" value={p.stats.tests} />
-        <Stat label="Suites" value={p.stats.suites} />
-        <Stat label="Coverage" value={pct(p.stats.coverage_pct)} />
-        <Stat label="Open defects" value={p.stats.open_defects} />
+  const projectId = Number(id);
+  const q = useQuery({
+    queryKey: ["project_detail_info", projectId],
+    queryFn: () => api.get<Project>(`/projects/${projectId}`),
+    enabled: Boolean(projectId),
+  });
+
+  if (!projectId) {
+    return <ErrorState error="Invalid Project ID" />;
+  }
+
+  if (q.isLoading) {
+    return (
+      <div className="py-20 text-center space-y-3">
+        <div className="h-6 w-6 animate-spin mx-auto border-2 border-[#3067DB] border-t-transparent rounded-full" />
+        <p className="text-xs text-slate-500">Loading project configuration...</p>
       </div>
-      <Tabs tabs={[
-        { value: "overview", label: "Overview", content: <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Modules" bodyClass="p-0">
-            <ul className="divide-y divide-slate-100">{p.modules?.map((m) => <li key={m.id} className="px-4 py-2 text-sm">
-              <span className="font-mono text-xs text-slate-500">{m.code}</span> <span className="font-medium">{m.name}</span>
-              <p className="text-xs text-slate-500">{m.description}</p></li>)}</ul>
-            {admin && <div className="flex gap-2 border-t border-slate-200 p-3">
-              <Input placeholder="Code" className="w-24" value={mod.code} onChange={(e) => setMod({ ...mod, code: e.target.value })} aria-label="Module code" />
-              <Input placeholder="Module name" value={mod.name} onChange={(e) => setMod({ ...mod, name: e.target.value })} aria-label="Module name" />
-              <Button disabled={mod.code.length < 2 || mod.name.length < 2} onClick={() => act.mutate(() => api.post(`/projects/${p.id}/modules`, mod).then(() => setMod({ code: "", name: "" })))}>Add</Button></div>}
-          </Panel>
-          <Panel title="Environments" bodyClass="p-0">
-            <ul className="divide-y divide-slate-100">{p.environments?.map((e) => <li key={e.id} className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>{e.name}{e.is_default && <span className="ml-2 text-xs text-slate-500">default</span>}</span>
-              <span className="text-xs text-slate-500">{e.kind === "web" ? e.base_url : `Reference HCM ${e.hcm_version}`}</span></li>)}</ul>
-            {admin && <div className="grid grid-cols-2 gap-2 border-t border-slate-200 p-3 sm:grid-cols-4">
-              <Input placeholder="Name" value={env.name} onChange={(e) => setEnv({ ...env, name: e.target.value })} aria-label="Environment name" />
-              <Select value={env.kind} onChange={(e) => setEnv({ ...env, kind: e.target.value })} aria-label="Kind">
-                <option value="reference_hcm">Reference HCM</option><option value="web">Web (Playwright)</option></Select>
-              {env.kind === "web" ? <Input placeholder="https://…" value={env.base_url} onChange={(e) => setEnv({ ...env, base_url: e.target.value })} aria-label="Base URL" />
-                : <Select value={env.hcm_version} onChange={(e) => setEnv({ ...env, hcm_version: e.target.value })} aria-label="HCM version">
-                  <option value="1.0">1.0</option><option value="1.1">1.1</option></Select>}
-              <Button disabled={env.name.length < 2} onClick={() => act.mutate(() => api.post(`/projects/${p.id}/environments`,
-                env.kind === "web" ? { name: env.name, kind: "web", base_url: env.base_url } : { name: env.name, kind: env.kind, hcm_version: env.hcm_version }))}>Add</Button></div>}
-          </Panel>
-        </div> },
-        { value: "members", label: `Members (${p.members?.length ?? 0})`, content: <Panel bodyClass="p-0">
-          <table className="w-full text-sm"><tbody>{p.members?.map((m) => <tr key={m.user.id} className="border-b border-slate-100">
-            <td className="px-4 py-2 font-medium">{m.user.full_name}</td><td className="px-4 py-2 text-slate-600">{m.user.title}</td>
-            <td className="px-4 py-2">{m.user.roles.map((r) => <Badge key={r} value={r} className="mr-1" />)}</td>
-            <td className="px-4 py-2 text-right">{admin && <Button size="sm" variant="ghost" onClick={() => act.mutate(() => api.delete(`/projects/${p.id}/members/${m.user.id}`))}>Remove</Button>}</td>
-          </tr>)}</tbody></table>
-          {admin && <div className="flex gap-2 border-t border-slate-200 p-3">
-            <Select value={member} onChange={(e) => setMember(e.target.value)} aria-label="User to add" className="max-w-xs">
-              <option value="">Select a user</option>
-              {users.data?.items.filter((u) => !p.members?.some((m) => m.user.id === u.id)).map((u) => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-            </Select>
-            <Button disabled={!member} onClick={() => act.mutate(() => api.post(`/projects/${p.id}/members`, { user_id: Number(member) }).then(() => setMember("")))}>Add member</Button></div>}
-        </Panel> },
-        { value: "records", label: "Linked records", content: <Panel>
-          <KV items={[["Requirements", <Link className="text-accent hover:underline" to={`/requirements?project_id=${p.id}`}>{p.stats.requirements} requirements</Link>],
-            ["Test cases", <Link className="text-accent hover:underline" to={`/tests?project_id=${p.id}`}>{p.stats.tests} tests</Link>],
-            ["Suites", <Link className="text-accent hover:underline" to={`/suites?project_id=${p.id}`}>{p.stats.suites} suites</Link>],
-            ["Defects", <Link className="text-accent hover:underline" to={`/defects?project_id=${p.id}`}>{p.stats.open_defects} open</Link>],
-            ["Traceability", <Link className="text-accent hover:underline" to={`/traceability?project_id=${p.id}`}>Open matrix</Link>],
-            ["Created", fmtDate((p as any).created_at)]]} />
-        </Panel> },
-        { value: "github", label: "GitHub Repository", content: <Panel title="Connected Source Repository">
-          {(p as any).github ? (
-            <div className="space-y-4">
-              <KV items={[
-                ["Repository", <a href={(p as any).github.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-mono text-xs">{(p as any).github.repo}</a>],
-                ["Default Branch", <span className="font-mono text-xs">{(p as any).github.branch || "main"}</span>],
-                ["Last Analyzed Commit", <span className="font-mono text-xs">{(p as any).github.commit_sha || "Latest"}</span>],
-                ["Status", <Badge value={(p as any).github.status || "connected"} />],
-              ]} />
-              <div className="flex gap-2 pt-2 border-t border-slate-100">
-                <Button onClick={() => act.mutate(() => api.post(`/projects/${p.id}/refresh-repo`, {}))}>Refresh Repository & AST</Button>
-                <Button variant="danger" onClick={() => act.mutate(() => api.delete(`/projects/${p.id}/disconnect-repo`))}>Disconnect Repository</Button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-4 text-center space-y-3">
-              <p className="text-xs text-slate-500">No GitHub repository is connected to this project.</p>
-              <Button variant="primary" onClick={() => setRepoOpen(true)}>Connect GitHub Repository</Button>
-            </div>
-          )}
-        </Panel> },
-      ]} />
-      {edit && <ProjectDialog open={edit} onOpenChange={setEdit} project={p} />}
-      <ConnectRepoDialog open={repoOpen} onOpenChange={setRepoOpen} />
-    </>
-  );
+    );
+  }
+
+  const isReq = q.data?.project_type === "requirements_based" || !q.data?.project_type;
+  if (isReq) {
+    return <RequirementsProjectDashboard projectId={projectId} isDetailView={true} />;
+  }
+  return <ProductionProjectDashboard projectId={projectId} isDetailView={true} />;
 }

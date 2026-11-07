@@ -60,6 +60,35 @@
     "title": "Body_upload_api_v1_requirements_upload_post",
     "type": "object"
    },
+   "Body_upload_document_api_v1_projects__project_id__documents_post": {
+    "properties": {
+     "auto_process": {
+      "default": true,
+      "title": "Auto Process",
+      "type": "boolean"
+     },
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     },
+     "file": {
+      "format": "binary",
+      "title": "File",
+      "type": "string"
+     },
+     "purpose": {
+      "default": "prd",
+      "title": "Purpose",
+      "type": "string"
+     }
+    },
+    "required": [
+     "file"
+    ],
+    "title": "Body_upload_document_api_v1_projects__project_id__documents_post",
+    "type": "object"
+   },
    "BulkReviewIn": {
     "properties": {
      "comment": {
@@ -124,6 +153,20 @@
      "junit_xml"
     ],
     "title": "CIResultIn",
+    "type": "object"
+   },
+   "ClarificationResolveIn": {
+    "properties": {
+     "user_response": {
+      "minLength": 2,
+      "title": "User Response",
+      "type": "string"
+     }
+    },
+    "required": [
+     "user_response"
+    ],
+    "title": "ClarificationResolveIn",
     "type": "object"
    },
    "CommentIn": {
@@ -392,7 +435,7 @@
       "title": "Hcm Version"
      },
      "kind": {
-      "default": "reference_hcm",
+      "default": "simulation",
       "pattern": "^(reference_hcm|web|real_code|python_lib|simulation|static_only)$",
       "title": "Kind",
       "type": "string"
@@ -700,10 +743,43 @@
    },
    "ProjectIn": {
     "properties": {
+     "business_domain": {
+      "default": "",
+      "title": "Business Domain",
+      "type": "string"
+     },
+     "business_scenarios": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Business Scenarios",
+      "type": "array"
+     },
+     "constraints_and_assumptions": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Constraints And Assumptions",
+      "type": "array"
+     },
      "description": {
       "default": "",
       "title": "Description",
       "type": "string"
+     },
+     "explicit_exclusions": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Explicit Exclusions",
+      "type": "array"
+     },
+     "functional_expectations": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Functional Expectations",
+      "type": "array"
      },
      "key": {
       "maxLength": 10,
@@ -716,6 +792,37 @@
       "minLength": 3,
       "title": "Name",
       "type": "string"
+     },
+     "non_functional_expectations": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Non Functional Expectations",
+      "type": "array"
+     },
+     "objectives": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Objectives",
+      "type": "array"
+     },
+     "product_type": {
+      "default": "",
+      "title": "Product Type",
+      "type": "string"
+     },
+     "project_type": {
+      "default": "requirements_based",
+      "title": "Project Type",
+      "type": "string"
+     },
+     "target_users_and_roles": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Target Users And Roles",
+      "type": "array"
      }
     },
     "required": [
@@ -2182,6 +2289,96 @@
     ]
    }
   },
+  "/api/v1/clarifications/{clarification_id}/dismiss": {
+   "post": {
+    "operationId": "dismiss_clarification_api_v1_clarifications__clarification_id__dismiss_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "clarification_id",
+      "required": true,
+      "schema": {
+       "title": "Clarification Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Dismiss Clarification",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
+  "/api/v1/clarifications/{clarification_id}/resolve": {
+   "post": {
+    "operationId": "resolve_clarification_api_v1_clarifications__clarification_id__resolve_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "clarification_id",
+      "required": true,
+      "schema": {
+       "title": "Clarification Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ClarificationResolveIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Resolve Clarification",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
   "/api/v1/config": {
    "get": {
     "operationId": "config_api_v1_config_get",
@@ -2961,6 +3158,159 @@
     ]
    }
   },
+  "/api/v1/documents/{document_id}": {
+   "delete": {
+    "operationId": "delete_document_api_v1_documents__document_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Document",
+    "tags": [
+     "documents"
+    ]
+   },
+   "get": {
+    "operationId": "get_document_details_api_v1_documents__document_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Document Details",
+    "tags": [
+     "documents"
+    ]
+   }
+  },
+  "/api/v1/documents/{document_id}/download": {
+   "get": {
+    "operationId": "download_document_api_v1_documents__document_id__download_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Download Document",
+    "tags": [
+     "documents"
+    ]
+   }
+  },
+  "/api/v1/documents/{document_id}/process": {
+   "post": {
+    "operationId": "trigger_document_process_api_v1_documents__document_id__process_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Document Process",
+    "tags": [
+     "documents"
+    ]
+   }
+  },
   "/api/v1/evaluations": {
    "get": {
     "operationId": "list_evals_api_v1_evaluations_get",
@@ -3501,6 +3851,86 @@
      }
     },
     "summary": "Execution Logs",
+    "tags": [
+     "test suites & executions"
+    ]
+   }
+  },
+  "/api/v1/executions/{ex_id}/report.html": {
+   "get": {
+    "operationId": "view_html_report_api_v1_executions__ex_id__report_html_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "ex_id",
+      "required": true,
+      "schema": {
+       "title": "Ex Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "View Html Report",
+    "tags": [
+     "test suites & executions"
+    ]
+   }
+  },
+  "/api/v1/executions/{ex_id}/report.junit": {
+   "get": {
+    "operationId": "download_junit_report_api_v1_executions__ex_id__report_junit_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "ex_id",
+      "required": true,
+      "schema": {
+       "title": "Ex Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Download Junit Report",
     "tags": [
      "test suites & executions"
     ]
@@ -4194,6 +4624,247 @@
     ]
    }
   },
+  "/api/v1/projects/{project_id}/acceptance-criteria": {
+   "get": {
+    "operationId": "list_project_criteria_api_v1_projects__project_id__acceptance_criteria_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "requirement_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Requirement Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Project Criteria",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/analyze-requirements": {
+   "post": {
+    "operationId": "trigger_requirements_analysis_api_v1_projects__project_id__analyze_requirements_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Requirements Analysis",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/clarifications": {
+   "get": {
+    "operationId": "list_project_clarifications_api_v1_projects__project_id__clarifications_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Project Clarifications",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/dashboard": {
+   "get": {
+    "description": "Returns aggregated, production-ready telemetry for the project dashboard.",
+    "operationId": "get_project_dashboard_api_v1_projects__project_id__dashboard_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "in": "query",
+      "name": "execution_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Execution Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Project Dashboard",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
   "/api/v1/projects/{project_id}/disconnect-repo": {
    "delete": {
     "operationId": "disconnect_repository_api_v1_projects__project_id__disconnect_repo_delete",
@@ -4231,6 +4902,94 @@
     "summary": "Disconnect Repository",
     "tags": [
      "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/documents": {
+   "get": {
+    "operationId": "list_project_documents_api_v1_projects__project_id__documents_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Project Documents",
+    "tags": [
+     "documents"
+    ]
+   },
+   "post": {
+    "operationId": "upload_document_api_v1_projects__project_id__documents_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_upload_document_api_v1_projects__project_id__documents_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Upload Document",
+    "tags": [
+     "documents"
     ]
    }
   },
@@ -4279,6 +5038,86 @@
      }
     },
     "summary": "Add Environment",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/generate-acceptance-criteria": {
+   "post": {
+    "operationId": "trigger_generate_criteria_api_v1_projects__project_id__generate_acceptance_criteria_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Generate Criteria",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/generate-tests": {
+   "post": {
+    "operationId": "trigger_generate_tests_api_v1_projects__project_id__generate_tests_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Generate Tests",
     "tags": [
      "projects"
     ]
@@ -4433,6 +5272,86 @@
     ]
    }
   },
+  "/api/v1/projects/{project_id}/quality-report": {
+   "get": {
+    "operationId": "get_project_quality_report_api_v1_projects__project_id__quality_report_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Project Quality Report",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/quality-report.html": {
+   "get": {
+    "operationId": "get_project_quality_report_html_api_v1_projects__project_id__quality_report_html_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Project Quality Report Html",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
   "/api/v1/projects/{project_id}/refresh-repo": {
    "post": {
     "operationId": "refresh_repository_api_v1_projects__project_id__refresh_repo_post",
@@ -4468,6 +5387,206 @@
      }
     },
     "summary": "Refresh Repository",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/requirements-dashboard": {
+   "get": {
+    "operationId": "get_requirements_dashboard_api_v1_projects__project_id__requirements_dashboard_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Requirements Dashboard",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/run-simulation": {
+   "post": {
+    "operationId": "trigger_behaviour_simulation_api_v1_projects__project_id__run_simulation_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Behaviour Simulation",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/simulation-models": {
+   "get": {
+    "operationId": "list_project_simulation_models_api_v1_projects__project_id__simulation_models_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Project Simulation Models",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/traceability": {
+   "get": {
+    "operationId": "get_project_traceability_api_v1_projects__project_id__traceability_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Project Traceability",
+    "tags": [
+     "projects"
+    ]
+   }
+  },
+  "/api/v1/projects/{project_id}/validate-specifications": {
+   "post": {
+    "operationId": "trigger_specification_validation_api_v1_projects__project_id__validate_specifications_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "project_id",
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Trigger Specification Validation",
     "tags": [
      "projects"
     ]
@@ -4935,6 +6054,46 @@
     ]
    }
   },
+  "/api/v1/requirements/{req_id}/approve": {
+   "post": {
+    "operationId": "approve_requirement_api_v1_requirements__req_id__approve_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "req_id",
+      "required": true,
+      "schema": {
+       "title": "Req Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Approve Requirement",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
   "/api/v1/requirements/{req_id}/clauses": {
    "get": {
     "operationId": "clauses_api_v1_requirements__req_id__clauses_get",
@@ -4993,7 +6152,7 @@
   },
   "/api/v1/requirements/{req_id}/confirm": {
    "post": {
-    "operationId": "confirm_requirement_api_v1_requirements__req_id__confirm_post",
+    "operationId": "confirm_inferred_requirement_api_v1_requirements__req_id__confirm_post",
     "parameters": [
      {
       "in": "path",
@@ -5025,7 +6184,7 @@
       "description": "Validation Error"
      }
     },
-    "summary": "Confirm Requirement",
+    "summary": "Confirm Inferred Requirement",
     "tags": [
      "requirements"
     ]
@@ -5169,6 +6328,46 @@
     ]
    }
   },
+  "/api/v1/requirements/{req_id}/history": {
+   "get": {
+    "operationId": "get_requirement_history_api_v1_requirements__req_id__history_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "req_id",
+      "required": true,
+      "schema": {
+       "title": "Req Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Requirement History",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
   "/api/v1/requirements/{req_id}/impact-analysis": {
    "get": {
     "operationId": "impact_api_v1_requirements__req_id__impact_analysis_get",
@@ -5236,6 +6435,86 @@
      }
     },
     "summary": "Impact",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
+  "/api/v1/requirements/{req_id}/reject": {
+   "post": {
+    "operationId": "reject_requirement_api_v1_requirements__req_id__reject_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "req_id",
+      "required": true,
+      "schema": {
+       "title": "Req Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Reject Requirement",
+    "tags": [
+     "requirements"
+    ]
+   }
+  },
+  "/api/v1/requirements/{req_id}/request-clarification": {
+   "post": {
+    "operationId": "mark_requirement_needs_clarification_api_v1_requirements__req_id__request_clarification_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "req_id",
+      "required": true,
+      "schema": {
+       "title": "Req Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Mark Requirement Needs Clarification",
     "tags": [
      "requirements"
     ]
@@ -5987,6 +7266,54 @@
      },
      {
       "in": "query",
+      "name": "test_category",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Test Category"
+      }
+     },
+     {
+      "in": "query",
+      "name": "execution_capability",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Execution Capability"
+      }
+     },
+     {
+      "in": "query",
+      "name": "approval_status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Approval Status"
+      }
+     },
+     {
+      "in": "query",
       "name": "page",
       "required": false,
       "schema": {
@@ -6244,6 +7571,46 @@
     ]
    }
   },
+  "/api/v1/tests/{test_id}/approve": {
+   "post": {
+    "operationId": "approve_test_specification_api_v1_tests__test_id__approve_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "test_id",
+      "required": true,
+      "schema": {
+       "title": "Test Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Approve Test Specification",
+    "tags": [
+     "test cases"
+    ]
+   }
+  },
   "/api/v1/tests/{test_id}/deprecate": {
    "post": {
     "operationId": "deprecate_api_v1_tests__test_id__deprecate_post",
@@ -6279,6 +7646,46 @@
      }
     },
     "summary": "Deprecate",
+    "tags": [
+     "test cases"
+    ]
+   }
+  },
+  "/api/v1/tests/{test_id}/reject": {
+   "post": {
+    "operationId": "reject_test_specification_api_v1_tests__test_id__reject_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "test_id",
+      "required": true,
+      "schema": {
+       "title": "Test Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Reject Test Specification",
     "tags": [
      "test cases"
     ]
@@ -6329,6 +7736,46 @@
      }
     },
     "summary": "Review",
+    "tags": [
+     "test cases"
+    ]
+   }
+  },
+  "/api/v1/tests/{test_id}/validate": {
+   "post": {
+    "operationId": "validate_specification_api_v1_tests__test_id__validate_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "test_id",
+      "required": true,
+      "schema": {
+       "title": "Test Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Validate Specification",
     "tags": [
      "test cases"
     ]

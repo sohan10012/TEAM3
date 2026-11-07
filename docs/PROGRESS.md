@@ -589,3 +589,56 @@ Secret & Leak Scan:       0 leaked keys/tokens in repo, screenshots, or git hist
 
 
 
+
+
+- **Phase 1: Real Repository Ingestion & Multi-Project Isolation**:
+  - Investigated and resolved root causes of generic platform module discovery, spurious markdown requirement extraction, and hardcoded `Reference HCM` environment leakage.
+  - Upgraded `backend/app/services/repo_ingest/ast_analyzer.py` with multi-language/framework detection (Flutter/Dart + FastAPI/Python), dual-tier architectural module discovery, AST route prefixing (`APIRouter`), and precise line ranges (`line_start`, `line_end`).
+  - Upgraded `backend/app/services/repo_ingest/generic_derivation.py` with `BANNED_DOC_HEADERS` filtering, capability table and bullet-point parsing, four-tier requirement categorization (`documented`, `inferred_from_code`, `inferred_technical`, `operational`), confidence scoring, human confirmation status tracking, and multi-stage lifecycle reporting (`_import_summary`).
+  - Updated `backend/app/api/routers/projects.py` to scope `Reference HCM` environments exclusively to Dayforce projects and provision generic projects with isolated application sandboxes and simulations.
+  - Successfully imported real repository `https://github.com/sohan10012/Cureonix.git` at commit `f5f2c9c826409bc8e00d3618d7df80c6252c0715`: 194 files, 11 architectural modules, 23 grounded requirements, zero tests/executions/defects.
+  - Verified 100% data preservation and isolation for EchoBox (project 5: 21 requirements, 21 tests, 9 executions, 7 defects intact).
+  - Authored acceptance suite `backend/tests/test_cureonix_real_ingest.py` (4/4 passed).
+  - Authored comprehensive deliverable `docs/PHASE_1_REPOSITORY_INGESTION.md`.
+  - 159 backend tests passed, 13 frontend tests passed, 0 ruff errors, 0 mypy errors, 8/8 `scripts/verify_docs.py` checks passed.
+
+
+- **Demo Project Cleanup & Workspace Selector Deduplication**:
+  - Identified and eliminated automatic demo project generation in `backend/app/seed/seed.py` by removing `_ensure_dayforce_projects()` and `DAYFORCE_PROJECTS`.
+  - Backed up database to `var/backups/tracetest-20261106T205501.db` and cleanly purged 6 unwanted legacy demo projects (`DF-PAY`, `DF-WFM`, `DF-LVE`, `DF-BEN`, `OCTO`, `SMPL`) and all associated child entities from `var/tracetest.db`.
+  - Verified that `var/tracetest.db` retains strictly two real projects: `ECHO` (EchoBox: 21 requirements, 21 tests, 9 executions, 7 defects) and `CUREON` (Cureonix: 23 requirements, 0 tests, 0 executions, 0 defects).
+  - Resolved duplicated "All Project Workspaces" entries in `CustomSelect` and `AppShell.tsx`.
+  - Removed obsolete Dayforce UI cards from `DashboardPage.tsx` and updated application title in `index.html`.
+  - Added test coverage in `test_multi_project_isolation.py` and `components.test.tsx` verifying zero demo project creation, exact 2-project database state, and dropdown option deduplication.
+  - All tests passing: 162 passed backend tests, 14 passed frontend tests, 0 ruff errors, 0 mypy errors, 8/8 `scripts/verify_docs.py` checks.
+
+- **Phase 2: Production Project Dashboard & Telemetry Backend**:
+  - Implemented high-performance, database-backed telemetry service in `backend/app/services/project_dashboard.py` calculating repository metadata, requirements, atomic clauses, test ratios, execution metrics, defect breakdowns, quality coverage, and audit feeds in a single optimized pass.
+  - Added execution report download endpoints: `GET /api/v1/executions/{ex_id}/report.junit` (standard JUnit XML) and `GET /api/v1/executions/{ex_id}/report.html` (standalone interactive HTML report).
+  - Registered `GET /api/v1/projects/{project_id}/dashboard` in `backend/app/api/routers/projects.py`.
+  - Created pixel-accurate frontend component `frontend/src/components/dashboard/ProductionProjectDashboard.tsx` matching Screenshots 1 & 2:
+    - 5-column metadata card (Repository, Branch, Latest Commit SHA with copy action, Last Tested timestamp, Environment).
+    - 6 Test Summary cards (Requirements with atomic clauses, Test Cases with per-req ratio, Passed tests with green tint, Failed tests with red tint, Open Defects with Critical badge and breakdown, Execution Time).
+    - 4 functional tabs (`Recent Runs` table with View button, `Requirements` breakdown, `Defects` table with severity pills, `Configuration`).
+    - Lower dashboard section: Execution Details with JUnit/HTML report links, Quality & Coverage progress bars (Requirement, Clause, Pass Rate), Open Defects table with severity pills, Requirements Status breakdown, and Recent Activity feed.
+  - Updated `ProjectDetailPage` in `frontend/src/pages/ProjectsPage.tsx` to render `ProductionProjectDashboard` with detail view back navigation.
+  - Updated sidebar navigation in `frontend/src/layouts/AppShell.tsx` to include `Projects`, `Monitoring`, and `Reports`.
+  - Verified zero fake data fallbacks: Cureonix cleanly shows 23 requirements, 32 clauses, 0 test cases, 0 executions, 0 defects, duration `—`, pass rate `—`, and `Not Tested` badge.
+  - Authored comprehensive test suites: `backend/tests/test_project_dashboard.py` (4/4 passed) and `frontend/tests/dashboard.test.tsx` (2/2 passed).
+  - 166 passed backend tests, 16 passed frontend tests, 0 ruff errors, 0 mypy errors, 8/8 `scripts/verify_docs.py` checks passed.
+  - Documented deliverable in `docs/PHASE_2_PROJECT_DASHBOARD.md` and ADR-035 in `docs/DECISIONS.md`.
+
+- **Phase 3: Requirements-Based Quality Engineering Platform (Product Requirements-to-Test Assistant)**:
+  - Transformed TraceTest AI into a Requirements-Based Quality Engineering platform as its primary product direction, while preserving legacy code-based projects (`ECHO` and `CUREON`) intact.
+  - Implemented multi-format document parser in `backend/app/services/document_processor.py` for `.pdf` (`pypdf`), `.docx` (`python-docx`), `.xlsx` (`openpyxl`), `.csv`, `.txt`, and `.md` with section and page/sheet provenance and SHA-256 integrity digests.
+  - Created document management endpoints: `POST /api/v1/projects/{project_id}/documents/upload`, `GET /api/v1/projects/{project_id}/documents`, `GET /api/v1/documents/{document_id}`, `POST /api/v1/documents/{document_id}/process`.
+  - Implemented requirement intelligence engine in `backend/app/services/requirement_intelligence.py` for grounded extraction, categorization (`functional`, `non_functional`, `security`, `performance`, `compliance`, `integration`), ambiguity detection (weak modals, unquantified adjectives, vague quantifiers), contradiction detection, and the clarification lifecycle (`open` -> `in_review` -> `resolved`).
+  - Implemented test design engine in `backend/app/services/test_design.py` generating Given/When/Then acceptance criteria and authoring 10 scenario categories: positive, negative, boundary, edge case, input validation, business rule, permission/role, security, error handling, and integration.
+  - Implemented execution segregation in `backend/app/services/simulation_engine.py`: deterministic specification validation (`VAL-XXXXXX`) and state machine behavior simulation (`SIM-XXXXXX`), strictly segregated from live code tests (`EX-XXXXXX`).
+  - Implemented requirements dashboard telemetry, bidirectional traceability matrix (`Document <-> Requirement <-> Acceptance Criteria <-> Test Case <-> Outcome`), and 19-section enterprise quality reports in JSON and standalone HTML in `backend/app/services/requirements_dashboard.py`.
+  - Created Alembic migration `backend/migrations/versions/0004_requirements_based_platform.py` updating database schema to 39 tables (adding `documents`, `requirement_clarifications`, `simulation_models`).
+  - Built frontend `RequirementsProjectDashboard.tsx` with light enterprise styling, 4 telemetry cards, tabs for Execution Runs (`VAL-*` and `SIM-*`), Document Ingestion, Clarifications & Ambiguities, Traceability Matrix, and 19-Section Quality Reports.
+  - Implemented dual dashboard routing in `DashboardPage.tsx` and `ProjectsPage.tsx` dynamically routing to `RequirementsProjectDashboard` for requirements-based projects and `ProductionProjectDashboard` for code-based projects.
+  - Authored comprehensive test suite in `backend/tests/test_requirements_based_platform.py` (7/7 passed).
+  - All test suites passing: 173 passed backend tests (0 failures, 1 skipped, 1 xfailed), 16 passed frontend tests, 4 passed Playwright E2E tests, clean Vite production build.
+  - Documented complete architecture in `docs/REQUIREMENTS_BASED_PLATFORM.md` and recorded ADR-036 in `docs/DECISIONS.md`.

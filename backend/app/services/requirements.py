@@ -67,17 +67,23 @@ def create_requirement(db: Session, project: Project, *, title: str, description
                        priority: str = "medium", category: str = "functional", module_id: int | None = None,
                        author_id: int | None = None, source_type: str = "manual", key: str | None = None,
                        origin: str = "manual", source_commit_sha: str | None = None, confidence: float | None = None,
-                       created_at=None, audit_source: str = "platform") -> Requirement:
+                       document_id: int | None = None, source_section: str | None = None, source_page: str | None = None,
+                       evidence_excerpt: str | None = None, related_scenario: str | None = None,
+                       dependencies: list[str] | None = None, extraction_provenance: str = "explicit_documented",
+                       review_status: str = "pending_review", created_at=None, audit_source: str = "platform") -> Requirement:
     description = sanitize_text(description)
     if len(description) < 10:
         raise BadRequest("Requirement description is too short")
     key = key or next_key(db, Requirement, f"{project.key}-REQ", 3)
     ts = created_at or utcnow()
-    initial_status = "needs_confirmation" if origin == "inferred_from_code" else "draft"
-    req = Requirement(key=key, project_id=project.id, module_id=module_id, title=title.strip(), category=category,
-                      priority=priority, status=initial_status, current_version=1, author_id=author_id,
-                      source_type=source_type, origin=origin, source_commit_sha=source_commit_sha,
-                      confidence=confidence, created_at=ts, updated_at=ts)
+    initial_status = "needs_confirmation" if (origin == "inferred_from_code" or extraction_provenance == "ai_inferred") else "draft"
+    req = Requirement(key=key, project_id=project.id, module_id=module_id, document_id=document_id,
+                      title=title.strip(), category=category, priority=priority, status=initial_status,
+                      current_version=1, author_id=author_id, source_type=source_type, origin=origin,
+                      source_commit_sha=source_commit_sha, source_section=source_section, source_page=source_page,
+                      evidence_excerpt=evidence_excerpt, related_scenario=related_scenario,
+                      dependencies=dependencies or [], extraction_provenance=extraction_provenance,
+                      review_status=review_status, confidence=confidence, created_at=ts, updated_at=ts)
     db.add(req)
     db.flush()
     v = RequirementVersion(requirement_id=req.id, version=1, title=req.title, description=description,
@@ -88,15 +94,16 @@ def create_requirement(db: Session, project: Project, *, title: str, description
     db.flush()
     _insert_clauses(db, req, v, description, None)
     audit.record(db, author_id, "requirement.created", "requirement", req.id, req.key, project.id,
-                 {"version": 1, "injection_markers": detect_injection(description)}, source=audit_source,
-                 created_at=ts)
+                 {"version": 1, "injection_markers": detect_injection(description), "provenance": extraction_provenance},
+                 source=audit_source, created_at=ts)
     return req
 
 
 def update_requirement(db: Session, req: Requirement, *, actor_id: int | None, title: str | None = None,
                        description: str | None = None, business_objective: str | None = None,
                        priority: str | None = None, category: str | None = None, module_id: int | None = None,
-                       status: str | None = None, change_summary: str = "", created_at=None,
+                       status: str | None = None, review_status: str | None = None, dependencies: list[str] | None = None,
+                       change_summary: str = "", created_at=None,
                        audit_source: str = "platform") -> dict:
     """Metadata edits update the requirement row; content edits create a new immutable version."""
     cur = current_version(db, req)
@@ -104,7 +111,14 @@ def update_requirement(db: Session, req: Requirement, *, actor_id: int | None, t
     new_desc = sanitize_text(description) if description is not None else cur.description
     new_obj = business_objective.strip() if business_objective is not None else cur.business_objective
     ts = created_at or utcnow()
-    for attr, val in (("priority", priority), ("category", category), ("module_id", module_id), ("status", status)):
+    for attr, val in (
+        ("priority", priority),
+        ("category", category),
+        ("module_id", module_id),
+        ("status", status),
+        ("review_status", review_status),
+        ("dependencies", dependencies),
+    ):
         if val is not None:
             setattr(req, attr, val)
     result: dict = {"new_version": False}

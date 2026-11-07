@@ -56,7 +56,9 @@ export const CustomSelect = forwardRef<HTMLSelectElement, CustomSelectProps>(
           )}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {placeholder && !options.some((opt) => opt.value === "" || opt.value === "ALL" || opt.label.toLowerCase() === placeholder.toLowerCase()) && (
+            <option value="">{placeholder}</option>
+          )}
           {options.map((opt) => (
             <option key={opt.value} value={opt.value} disabled={opt.disabled}>
               {opt.label}

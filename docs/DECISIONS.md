@@ -597,3 +597,117 @@ TraceTest AI requires enterprise AI resilience with Google Gemini as the primary
 
 
 
+
+
+---
+
+## ADR-033: Real Repository Ingestion and Architectural Multi-Project Isolation
+
+### Status
+Accepted
+
+### Context
+TraceTest AI previously suffered from ingestion inaccuracies where imported repositories were assigned generic mobile platform build wrapper modules (`ANDROID`, `IOS`, `LINUX`, `MACOS`), spurious documentation requirements (such as table of contents, architecture diagrams, and equation headers), and hardcoded `Reference HCM` enterprise environments. Multi-project data isolation was also compromised by default seeding.
+
+### Decision
+1. In `backend/app/services/repo_ingest/ast_analyzer.py`, implement architecture-aware module discovery for dual-tier applications (`backend/` API routes, agents, models, services; `lib/` screens, services, providers, models). Ignore platform wrapper folders (`android`, `ios`, `linux`, `macos`, `windows`, `web`).
+2. Implement Python AST prefix resolution for `APIRouter(prefix=...)` with exact node line ranges (`lineno`, `end_lineno`), docstring extraction, and HTTP method parsing.
+3. In `backend/app/services/repo_ingest/generic_derivation.py`, filter out documentation meta-headers (`BANNED_DOC_HEADERS`) and parse structured feature comparison tables and bullet points. Segregate requirements into `documented` (0.95 confidence, approved), `inferred_from_code` (0.85 confidence, needs_confirmation), `inferred_technical` (0.80 confidence, needs_confirmation), and `operational` (0.90 confidence, approved).
+4. In `backend/app/api/routers/projects.py`, restrict `Reference HCM` environments exclusively to Dayforce projects (`DF-*`), assign `{project.name} Sandbox` and `{project.name} Simulation` to generic imported repositories, and update `EnvIn.kind` default to `"simulation"`.
+5. Require newly imported projects to begin with zero test cases, zero executions, and zero defects.
+6. Verify and preserve existing EchoBox verification data (project 5) and Dayforce data.
+7. Author comprehensive acceptance tests in `backend/tests/test_cureonix_real_ingest.py` and document findings in `docs/PHASE_1_REPOSITORY_INGESTION.md`.
+
+### Consequences
+- Generic repositories import with true architectural modules and grounded requirements.
+- Zero cross-project leakage or spurious environment injection.
+- Complete data integrity preserved across all existing and imported projects.
+
+
+---
+
+## ADR-034: Removal of Legacy Demo Workspaces and Project Selector Deduplication
+
+### Status
+Accepted
+
+### Context
+TraceTest AI retained unwanted demo/sample projects (`DF-PAY`, `DF-WFM`, `DF-LVE`, `DF-BEN`, `OCTO`, `SMPL`) in the application database and project switcher. `DF-*` projects were automatically recreated on startup whenever `ensure_identity()` ran in `backend/app/seed/seed.py`. In addition, the workspace selector dropdown in `frontend/src/layouts/AppShell.tsx` rendered duplicate "All Project Workspaces" entries due to overlapping `placeholder` and `options` elements.
+
+### Decision
+1. In `backend/app/seed/seed.py`, permanently remove `DAYFORCE_PROJECTS`, `_ensure_dayforce_projects()`, and its invocation inside `ensure_identity()`. Prevent automatic re-creation of demo projects on startup, migrations, or initialization.
+2. In `var/tracetest.db`, remove all 6 legacy demo projects (`DF-PAY`, `DF-WFM`, `DF-LVE`, `DF-BEN`, `OCTO`, `SMPL`) and clean up their associated modules (15), environments (12), integrations (6), memberships (18), and orphaned requirements/clauses (7/10).
+3. Strictly preserve the two real target projects: `ECHO` (EchoBox: 21 reqs, 21 tests, 9 executions, 7 defects) and `CUREON` (Cureonix: 23 reqs, 0 tests, 0 executions, 0 defects).
+4. In `frontend/src/components/ui/CustomSelect.tsx`, prevent duplicate placeholder option rendering when an option matching the placeholder already exists in `options`.
+5. In `frontend/src/layouts/AppShell.tsx`, omit `placeholder="All Project Workspaces"` on the workspace selector since `"ALL"` is already in `projectOptions`.
+6. In `frontend/src/pages/DashboardPage.tsx`, remove hardcoded Dayforce architecture cards.
+7. In `frontend/index.html`, update document title to "TraceTest AI — Enterprise Quality Engineering Platform".
+8. Author automated tests in `backend/tests/test_multi_project_isolation.py` and `frontend/tests/components.test.tsx` verifying zero demo project creation, exact 2-project database state, and project dropdown deduplication.
+
+### Consequences
+- Normal application contains solely `ECHO` and `CUREON` project workspaces.
+- Starting, refreshing, or reinitialising the backend leaves the database strictly populated with real projects.
+- Project workspace selector dropdown presents exactly one "All Project Workspaces" option followed by real projects.
+
+
+---
+
+## ADR-035: Production Project Dashboard & Telemetry Backend
+
+### Status
+Accepted
+
+### Context
+TraceTest AI required an enterprise SaaS project dashboard matching the visual references and telemetry specifications in Phase 2. The dashboard needed to support any ingested repository, presenting live metrics for requirements, atomic clauses, test cases, pass/fail rates, open defect severity, execution duration, and historical runs without synthetic mock values or fake animations. Newly imported projects (such as Cureonix) required clean zero-state display (0 tests, 0 runs, 0 defects, unavailable duration `—`, pass rate `—`).
+
+### Decision
+1. In `backend/app/services/project_dashboard.py`, implement `get_project_dashboard_data()` to query project-scoped repository integration details, requirements count, atomic clause counts, test case ratios, execution durations, pass rates, defect breakdowns, recent runs, requirements status, and recent activity from `AuditLog`.
+2. Implement `generate_junit_xml_for_execution()` and `generate_html_report_for_execution()` in `backend/app/services/project_dashboard.py` and register routes `GET /api/v1/executions/{ex_id}/report.junit` and `GET /api/v1/executions/{ex_id}/report.html` in `backend/app/api/routers/execution.py`.
+3. Register endpoint `GET /api/v1/projects/{project_id}/dashboard` in `backend/app/api/routers/projects.py`.
+4. In `frontend/src/components/dashboard/ProductionProjectDashboard.tsx`, implement the production project dashboard matching Screenshot 1 & 2: 5-column metadata card, 6 test summary cards, 4 functional tabs (`Recent Runs`, `Requirements`, `Defects`, `Configuration`), Execution Details card, Quality & Coverage progress bars, Open Defects table with severity pills, Requirements Status breakdown, and Recent Activity feed.
+5. In `frontend/src/pages/ProjectsPage.tsx`, update `ProjectDetailPage` to render `<ProductionProjectDashboard projectId={projectId} isDetailView={true} />`.
+6. In `frontend/src/layouts/AppShell.tsx`, update sidebar navigation sections to include `Projects`, `Monitoring`, and `Reports`, matching Screenshot 1's sidebar hierarchy.
+7. Author comprehensive backend tests in `backend/tests/test_project_dashboard.py` and frontend tests in `frontend/tests/dashboard.test.tsx`.
+8. Document the complete Phase 2 implementation in `docs/PHASE_2_PROJECT_DASHBOARD.md`.
+
+### Consequences
+- Production dashboard accurately reflects genuine database state for both EchoBox (healthy, 21 reqs, 62 clauses, 21 tests, 6 defects, 9 runs) and Cureonix (not tested, 23 reqs, 32 clauses, 0 tests, 0 defects, 0 runs).
+- Single-click JUnit XML and standalone HTML report downloads for all test executions.
+- Zero fake metrics or hardcoded counters. Fully covered by automated tests.
+
+---
+
+## ADR-036: Requirements-Based AI Quality Engineering Platform & Dual-Architecture Support
+
+### Status
+Accepted
+
+### Context
+Enterprise software quality engineering faces its greatest defect injection and friction at the requirements phase, prior to code authoring. Ambiguities, conflicting expectations, missing edge-case boundaries, and untracked requirement modifications are responsible for substantial downstream rework. TraceTest AI required a strategic pivot to position Requirements-Based AI Quality Engineering (Product Requirements-to-Test Assistant) as the primary product direction, while preserving existing Code-Based projects (`ECHO` and `CUREON`) and workflows without disruption.
+
+### Decision
+1. **Primary Direction & Project Classification**:
+   - Establish `requirements_based` as the default project type (`project_type="requirements_based"`), supporting metadata including business domain, product type, compliance standards, and user expectations.
+   - Retain `code_based` projects with existing code repository ingestion and execution workflows intact.
+2. **Multi-Format Document Parsing Engine**:
+   - Implement `backend/app/services/document_processor.py` supporting `.pdf` (`pypdf`), `.docx` (`python-docx`), `.xlsx` (`openpyxl`), `.csv`, `.txt`, and `.md` with section and page/sheet provenance and SHA-256 integrity hashing.
+3. **Requirement Intelligence & Clarification Lifecycle**:
+   - Implement `backend/app/services/requirement_intelligence.py` for grounded requirement extraction, categorization (`functional`, `non_functional`, `security`, `performance`, `compliance`, `integration`), and heuristic detection of ambiguities and contradictions.
+   - Manage ambiguities through a dedicated `RequirementClarification` lifecycle (`open` -> `in_review` -> `resolved`).
+4. **Test Design & 10-Category Scenarios**:
+   - Implement `backend/app/services/test_design.py` generating structured Given/When/Then acceptance criteria and authoring 10 scenario categories: positive, negative, boundary, edge case, input validation, business rule, permission/role, security, error handling, and integration.
+5. **Deterministic Specification Validation & Simulation**:
+   - Segregate execution semantics: specification validation produces `VAL-XXXXXX` runs, behavioral state machine simulation produces `SIM-XXXXXX` runs, and code-based runs retain `EX-XXXXXX`. Never misrepresent static validations or simulations as live application testing.
+6. **Telemetry, Traceability Matrix & 19-Section Quality Reports**:
+   - Implement `backend/app/services/requirements_dashboard.py` calculating requirement maturity, clarification counts, test scenario ratios, and validation outcomes.
+   - Compile bidirectional traceability matrices (`Document <-> Requirement <-> Acceptance Criteria <-> Test Case <-> Outcome`) and generate authoritative 19-section enterprise quality reports in JSON and standalone HTML.
+7. **Frontend Dual-Dashboard Routing**:
+   - In `frontend/src/pages/DashboardPage.tsx` and `ProjectsPage.tsx`, route dynamically to `RequirementsProjectDashboard` for requirements-based projects and `ProductionProjectDashboard` for code-based projects.
+8. **Testing & Verification**:
+   - Author comprehensive test coverage in `backend/tests/test_requirements_based_platform.py` (7 tests, 100% passing) and frontend vitest suite.
+
+### Consequences
+- TraceTest AI operates as a premier Requirements-Based Quality Engineering platform while seamlessly preserving code-based projects.
+- Clear semantic segregation ensures static validations (`VAL-*`) and simulations (`SIM-*`) are never conflated with live code tests.
+- Full provenance and audit readiness across all ingested documents, requirements, tests, and generated quality reports.
+

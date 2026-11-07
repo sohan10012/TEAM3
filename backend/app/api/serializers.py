@@ -27,8 +27,75 @@ def user(u: m.User) -> dict:
 
 
 def project(p: m.Project) -> dict:
-    return {"id": p.id, "key": p.key, "name": p.name, "description": p.description, "status": p.status,
-            "owner_id": p.owner_id, "created_at": iso(p.created_at), "updated_at": iso(p.updated_at)}
+    return {
+        "id": p.id,
+        "key": p.key,
+        "name": p.name,
+        "description": p.description,
+        "status": p.status,
+        "project_type": getattr(p, "project_type", "requirements_based") or "requirements_based",
+        "business_domain": getattr(p, "business_domain", "") or "",
+        "product_type": getattr(p, "product_type", "") or "",
+        "target_users_and_roles": getattr(p, "target_users_and_roles", []) or [],
+        "objectives": getattr(p, "objectives", []) or [],
+        "business_scenarios": getattr(p, "business_scenarios", []) or [],
+        "functional_expectations": getattr(p, "functional_expectations", []) or [],
+        "non_functional_expectations": getattr(p, "non_functional_expectations", []) or [],
+        "constraints_and_assumptions": getattr(p, "constraints_and_assumptions", []) or [],
+        "explicit_exclusions": getattr(p, "explicit_exclusions", []) or [],
+        "owner_id": p.owner_id,
+        "created_at": iso(p.created_at),
+        "updated_at": iso(p.updated_at),
+    }
+
+
+def document(d: m.Document) -> dict:
+    return {
+        "id": d.id,
+        "project_id": d.project_id,
+        "filename": d.filename,
+        "file_type": d.file_type,
+        "file_size_bytes": d.file_size_bytes,
+        "purpose": d.purpose,
+        "description": d.description,
+        "status": d.status,
+        "error_message": d.error_message,
+        "extracted_text_preview": (d.extracted_text or "")[:500],
+        "metadata": d.metadata_json or {},
+        "created_at": iso(d.created_at),
+        "updated_at": iso(d.updated_at),
+    }
+
+
+def requirement_clarification(c: m.RequirementClarification) -> dict:
+    return {
+        "id": c.id,
+        "project_id": c.project_id,
+        "requirement_id": c.requirement_id,
+        "type": c.type,
+        "question": c.question,
+        "context": c.context,
+        "impact": c.impact,
+        "suggested_resolution": c.suggested_resolution,
+        "user_response": c.user_response,
+        "status": c.status,
+        "created_at": iso(c.created_at),
+        "resolved_at": iso(c.resolved_at) if c.resolved_at else None,
+    }
+
+
+def simulation_model(sm: m.SimulationModel) -> dict:
+    return {
+        "id": sm.id,
+        "project_id": sm.project_id,
+        "name": sm.name,
+        "version": sm.version,
+        "domain": sm.domain,
+        "definition": sm.definition_json or {},
+        "status": sm.status,
+        "created_at": iso(sm.created_at),
+        "updated_at": iso(sm.updated_at),
+    }
 
 
 def module(x: m.Module) -> dict:
@@ -70,6 +137,14 @@ def requirement(db: Session, r: m.Requirement) -> dict:
         "source_type": r.source_type,
         "origin": getattr(r, "origin", "documented") or "documented",
         "source_commit_sha": getattr(r, "source_commit_sha", None),
+        "document_id": getattr(r, "document_id", None),
+        "source_section": getattr(r, "source_section", None),
+        "source_page": getattr(r, "source_page", None),
+        "evidence_excerpt": getattr(r, "evidence_excerpt", None),
+        "related_scenario": getattr(r, "related_scenario", None),
+        "dependencies": getattr(r, "dependencies", []) or [],
+        "extraction_provenance": getattr(r, "extraction_provenance", "explicit_documented") or "explicit_documented",
+        "review_status": getattr(r, "review_status", "pending_review") or "pending_review",
         "confidence": getattr(r, "confidence", None),
         "clauses_count": clauses_count,
         "coverage_pct": coverage_pct,
@@ -95,6 +170,10 @@ def criterion(a: m.AcceptanceCriterion) -> dict:
     return {"id": a.id, "key": a.key, "requirement_id": a.requirement_id, "requirement_version": a.requirement_version,
             "clause_keys": a.clause_keys, "description": a.description, "preconditions": a.preconditions,
             "expected_behaviour": a.expected_behaviour, "validation_conditions": a.validation_conditions,
+            "actor": getattr(a, "actor", None), "action": getattr(a, "action", None),
+            "input_conditions": getattr(a, "input_conditions", []) or [],
+            "expected_output": getattr(a, "expected_output", None),
+            "business_rules": getattr(a, "business_rules", []) or [],
             "source_quote": a.source_quote, "quote_verified": a.quote_verified, "confidence": a.confidence,
             "rationale": a.rationale, "assumptions": a.assumptions, "review_status": a.review_status,
             "provider": a.provider, "model": a.model, "created_at": iso(a.created_at)}
@@ -106,6 +185,11 @@ def test_case(db: Session, t: m.TestCase, full: bool = False) -> dict:
            "requirement_key": req.key if req else None, "requirement_version": t.requirement_version,
            "clause_keys": t.clause_keys, "ac_keys": t.ac_keys, "title": t.title, "priority": t.priority,
            "test_type": t.test_type, "confidence": t.confidence, "automation": t.automation, "status": t.status,
+           "test_category": getattr(t, "test_category", "positive") or "positive",
+           "execution_capability": getattr(t, "execution_capability", "specification_validation") or "specification_validation",
+           "approval_status": getattr(t, "approval_status", "draft") or "draft",
+           "generation_provenance": getattr(t, "generation_provenance", "ai_generated") or "ai_generated",
+           "steps_json": getattr(t, "steps_json", []) or [],
            "validation_status": t.validation_status, "version": t.version, "provider": t.provider, "model": t.model,
            "duplicate_of": t.duplicate_of, "quote_verified": t.quote_verified,
            "needs_reapproval_reason": t.needs_reapproval_reason, "updated_at": iso(t.updated_at),
@@ -132,6 +216,9 @@ def execution(db: Session, e: m.Execution) -> dict:
     return {"id": e.id, "key": e.key, "project_id": e.project_id, "suite": {"id": s.id, "key": s.key, "name": s.name}
             if s else None, "environment": environment(env) if env else None, "source": e.source, "runner": e.runner,
             "status": e.status, "isolation_level": getattr(e, "isolation_level", "none") or "none",
+            "execution_type": getattr(e, "execution_type", "simulation") or "simulation",
+            "model_id": getattr(e, "model_id", None),
+            "log_excerpt": getattr(e, "log_excerpt", "") or "",
             "hcm_version": e.hcm_version, "total": e.total, "passed": e.passed,
             "failed": e.failed, "errored": e.errored, "skipped": e.skipped, "duration_ms": e.duration_ms,
             "commit_sha": e.commit_sha, "branch": e.branch, "retry_of_id": e.retry_of_id, "run_id": e.run_id,

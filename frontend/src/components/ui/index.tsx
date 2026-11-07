@@ -6,10 +6,11 @@ import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type R
 import { ApiError } from "@/services/api";
 import { cn, label } from "@/utils/format";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-white hover:bg-accent-hover disabled:bg-slate-300",
   secondary: "bg-white text-ink border border-slate-300 hover:bg-slate-50 disabled:text-slate-400",
+  outline: "bg-white text-ink border border-slate-300 hover:bg-slate-50 disabled:text-slate-400",
   ghost: "text-slate-700 hover:bg-slate-100",
   danger: "bg-white text-red-700 border border-red-300 hover:bg-red-50",
 };

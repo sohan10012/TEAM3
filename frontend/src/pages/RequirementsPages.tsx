@@ -234,7 +234,25 @@ export function RequirementDetailPage() {
   const [sp, setSp] = useSearchParams();
   const q = useQuery({ queryKey: ["requirement", id], queryFn: () => api.get<Requirement>(`/requirements/${id}`) });
   const { can } = useAuth();
+  const toast = useToast();
   const [edit, setEdit] = useState(false);
+
+  const approveM = useMutation({
+    mutationFn: () => api.post(`/requirements/${id}/approve`),
+    onSuccess: () => { toast.ok("Requirement approved"); q.refetch(); },
+    onError: toast.error,
+  });
+  const confirmM = useMutation({
+    mutationFn: () => api.post(`/requirements/${id}/confirm`),
+    onSuccess: () => { toast.ok("Inferred requirement confirmed"); q.refetch(); },
+    onError: toast.error,
+  });
+  const rejectM = useMutation({
+    mutationFn: () => api.post(`/requirements/${id}/reject`, { reason: "Rejected during human review" }),
+    onSuccess: () => { toast.ok("Requirement rejected"); q.refetch(); },
+    onError: toast.error,
+  });
+
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />;
   if (!q.data) return <LoadingBlock rows={10} />;
   const r = q.data;
@@ -244,7 +262,39 @@ export function RequirementDetailPage() {
       <PageHeader title={<span className="flex flex-wrap items-center gap-2"><Key className="text-sm">{r.key}</Key>{r.title}</span>}
         subtitle={<span className="flex flex-wrap items-center gap-2"><Badge value={r.status} /><Badge value={r.priority} />
           <span>v{r.version}</span><span>{r.module?.name}</span><span>Author {r.author?.name ?? "—"}</span></span>}
-        actions={can("requirement.write") && <Button onClick={() => setEdit(true)}>Edit requirement</Button>} />
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              loading={approveM.isPending}
+              disabled={r.status === "approved"}
+              onClick={() => approveM.mutate()}
+              className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+            >
+              Approve
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              loading={confirmM.isPending}
+              onClick={() => confirmM.mutate()}
+            >
+              Confirm Inferred
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              loading={rejectM.isPending}
+              disabled={r.status === "deprecated"}
+              onClick={() => rejectM.mutate()}
+              className="text-red-700 border-red-200 hover:bg-red-50"
+            >
+              Reject
+            </Button>
+            {can("requirement.write") && <Button onClick={() => setEdit(true)}>Edit</Button>}
+          </div>
+        } />
       <Tabs value={tab} onValueChange={(v) => setSp({ tab: v }, { replace: true })} tabs={[
         { value: "clauses", label: `Clauses (${r.clauses?.length ?? 0})`, content: <ClausesTab r={r} /> },
         { value: "analysis", label: "AI analysis", content: <AnalysisTab r={r} onChange={q.refetch} /> },

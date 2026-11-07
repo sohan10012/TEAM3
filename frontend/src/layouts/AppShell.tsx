@@ -3,10 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   ArrowLeftRight,
+  BarChart3,
   Bell,
   Bug,
   ClipboardCheck,
   FileText,
+  Layers,
   LayoutDashboard,
   Menu,
   PanelLeftClose,
@@ -33,8 +35,9 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "WORKSPACE",
     items: [
-      { to: "/", label: "Overview", icon: LayoutDashboard, end: true },
+      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
       { to: "/simulation", label: "Agent Simulation", icon: Sparkles },
+      { to: "/projects", label: "Projects", icon: Layers },
       { to: "/requirements", label: "Requirements", icon: FileText },
     ],
   },
@@ -47,8 +50,10 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "CONFIGURATION",
+    title: "INTELLIGENCE",
     items: [
+      { to: "/analytics", label: "Monitoring", icon: Activity },
+      { to: "/traceability", label: "Reports", icon: BarChart3 },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -78,21 +83,41 @@ export function Wordmark({ compact, projectName }: { compact?: boolean; projectN
 
 function Breadcrumbs() {
   const { pathname } = useLocation();
+  const { current, projects } = useProjects();
   const parts = pathname.split("/").filter(Boolean);
   const allItems = NAV_SECTIONS.flatMap((s) => s.items);
   const nav = allItems.find((n) => n.to !== "/" && pathname.startsWith(n.to.split("?")[0]));
-  if (!parts.length) return <span className="text-xs font-medium text-slate-600">Overview</span>;
+  if (!parts.length) {
+    if (current) {
+      return (
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
+          <Link to="/projects" className="font-medium text-slate-500 hover:text-slate-900">Projects</Link>
+          <span className="text-slate-400">/</span>
+          <span className="truncate text-slate-900 font-semibold">{current.name}</span>
+        </nav>
+      );
+    }
+    return <span className="text-xs font-medium text-slate-600">Dashboard</span>;
+  }
   return (
     <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
       <Link to={nav?.to ?? "/"} className="font-medium text-slate-600 hover:text-slate-900">{nav?.label ?? parts[0]}</Link>
-      {parts.slice(1).map((p, i) => (
-        <span key={i} className="flex min-w-0 items-center gap-1.5 text-slate-400">
-          /
-          <span className="truncate text-slate-900 font-medium">
-            {/^\d+$/.test(p) ? `#${p}` : p.replace(/-/g, " ")}
+      {parts.slice(1).map((p, i) => {
+        let text = p.replace(/-/g, " ");
+        if (/^\d+$/.test(p)) {
+          const found = projects.find((pr) => pr.id === Number(p));
+          if (found) text = found.name;
+          else text = `#${p}`;
+        }
+        return (
+          <span key={i} className="flex min-w-0 items-center gap-1.5 text-slate-400">
+            /
+            <span className="truncate text-slate-900 font-semibold">
+              {text}
+            </span>
           </span>
-        </span>
-      ))}
+        );
+      })}
     </nav>
   );
 }
@@ -433,7 +458,6 @@ export function AppShell() {
               value={projectId ? String(projectId) : "ALL"}
               onValueChange={(val) => setProjectId(val === "ALL" ? null : Number(val))}
               options={projectOptions}
-              placeholder="All Project Workspaces"
               ariaLabel="Project Workspace"
               triggerClassName="w-40 sm:w-56 truncate"
             />

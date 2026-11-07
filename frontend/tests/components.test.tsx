@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { DataTable } from "@/components/DataTable";
 import { CountUp } from "@/components/common/CountUp";
 import { Badge, ErrorState } from "@/components/ui";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { useListState } from "@/hooks/useListState";
 import { ApiError } from "@/services/api";
 
@@ -44,4 +45,17 @@ test("server-side table: sorting, paging and row selection drive state", async (
 test("CountUp motion respects prefers-reduced-motion", () => {
   render(<CountUp end={42} decimals={0} />);
   expect(screen.getByText("42")).toBeInTheDocument();
+});
+
+test("CustomSelect does not duplicate All Project Workspaces placeholder when present in options", () => {
+  const options = [
+    { value: "ALL", label: "All Project Workspaces" },
+    { value: "5", label: "ECHO — EchoBox" },
+    { value: "8", label: "CUREON — Cureonix" },
+  ];
+  render(<CustomSelect options={options} placeholder="All Project Workspaces" value="ALL" />);
+  const allWorkspaceOptions = screen.getAllByRole("option", { name: "All Project Workspaces" });
+  expect(allWorkspaceOptions).toHaveLength(1);
+  expect(screen.getByRole("option", { name: "ECHO — EchoBox" })).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "CUREON — Cureonix" })).toBeInTheDocument();
 });

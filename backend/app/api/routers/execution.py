@@ -4,7 +4,7 @@ import asyncio
 import json
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -249,6 +249,26 @@ def download_artifact(ex_id: int, artifact_id: int, p: Principal = Depends(curre
     if base not in path.parents or not path.exists():
         raise NotFound("Artifact file")
     return FileResponse(path, filename=path.name)
+
+
+@router.get("/executions/{ex_id}/report.junit")
+def download_junit_report(ex_id: int, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    from app.services.project_dashboard import generate_junit_xml_for_execution
+    xml = generate_junit_xml_for_execution(db, ex)
+    return Response(content=xml, media_type="application/xml", headers={
+        "Content-Disposition": f'attachment; filename="execution_{ex.key}_junit.xml"'
+    })
+
+
+@router.get("/executions/{ex_id}/report.html")
+def view_html_report(ex_id: int, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    from app.services.project_dashboard import generate_html_report_for_execution
+    html_content = generate_html_report_for_execution(db, ex)
+    return Response(content=html_content, media_type="text/html", headers={
+        "Content-Disposition": f'inline; filename="execution_{ex.key}_report.html"'
+    })
 
 
 class RetryIn(BaseModel):

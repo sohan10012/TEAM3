@@ -39,7 +39,21 @@ from app.services.requirements import (
 )
 
 router = APIRouter(tags=["requirements"])
-CATEGORIES = ("functional", "compliance", "security", "integration", "data", "reporting")
+CATEGORIES = (
+    "functional",
+    "non_functional",
+    "business_rule",
+    "security",
+    "validation_rule",
+    "data_requirement",
+    "integration_requirement",
+    "performance_constraint",
+    "operational_requirement",
+    "permission_role",
+    "compliance",
+    "data",
+    "reporting",
+)
 MAX_UPLOAD = 2 * 1024 * 1024
 
 
@@ -315,3 +329,168 @@ def review_criterion(ac_id: int, body: CriterionReview, p: Principal = Depends(r
 def export_requirement(req_id: int, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
     r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
     return json.loads(json.dumps(_detail(db, r), default=str))
+
+
+@router.post("/projects/{project_id}/analyze-requirements", status_code=200)
+def trigger_requirements_analysis(
+    project_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    get_project_checked(db, p, project_id)
+    from app.services.requirement_intelligence import analyze_and_extract_project_requirements
+    result = analyze_and_extract_project_requirements(db, project_id, author_id=p.id)
+    return result
+
+
+@router.get("/projects/{project_id}/clarifications")
+def list_project_clarifications(
+    project_id: int,
+    status: str | None = None,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    get_project_checked(db, p, project_id)
+    from app.db.models import RequirementClarification
+    stmt = select(RequirementClarification).where(RequirementClarification.project_id == project_id)
+    if status:
+        stmt = stmt.where(RequirementClarification.status == status)
+    rows = db.execute(stmt.order_by(RequirementClarification.created_at.desc())).scalars().all()
+    return [S.requirement_clarification(c) for c in rows]
+
+
+class ClarificationResolveIn(BaseModel):
+    user_response: str = Field(min_length=2)
+
+
+@router.post("/clarifications/{clarification_id}/resolve")
+def resolve_clarification(
+    clarification_id: int,
+    body: ClarificationResolveIn,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    from app.db.models import RequirementClarification
+    clar = db.get(RequirementClarification, clarification_id)
+    if not clar:
+        raise NotFound("Clarification not found")
+    get_project_checked(db, p, clar.project_id)
+
+    clar.status = "resolved"
+    clar.user_response = body.user_response.strip()
+    clar.resolved_at = utcnow()
+    audit.record(db, p.id, "clarification.resolved", "clarification", clar.id, clar.type, clar.project_id)
+    db.commit()
+    return S.requirement_clarification(clar)
+
+
+@router.post("/clarifications/{clarification_id}/dismiss")
+def dismiss_clarification(
+    clarification_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    from app.db.models import RequirementClarification
+    clar = db.get(RequirementClarification, clarification_id)
+    if not clar:
+        raise NotFound("Clarification not found")
+    get_project_checked(db, p, clar.project_id)
+
+    clar.status = "dismissed"
+    audit.record(db, p.id, "clarification.dismissed", "clarification", clar.id, clar.type, clar.project_id)
+    db.commit()
+    return S.requirement_clarification(clar)
+
+
+@router.post("/requirements/{req_id}/approve")
+def approve_requirement(
+    req_id: int,
+    p: Principal = Depends(require("test.review")),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    r.review_status = "approved"
+    r.status = "approved"
+    r.updated_at = utcnow()
+    db.add(Review(entity_type="requirement", entity_id=r.id, decision="approve", comment="Requirement approved", reviewer_id=p.id))
+    audit.record(db, p.id, "requirement.approved", "requirement", r.id, r.key, r.project_id)
+    db.commit()
+    return S.requirement(db, r)
+
+
+@router.post("/requirements/{req_id}/confirm")
+def confirm_inferred_requirement(
+    req_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    r.review_status = "confirmed"
+    r.status = "draft"
+    r.updated_at = utcnow()
+    audit.record(db, p.id, "requirement.confirmed", "requirement", r.id, r.key, r.project_id)
+    db.commit()
+    return S.requirement(db, r)
+
+
+@router.post("/requirements/{req_id}/reject")
+def reject_requirement(
+    req_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    r.review_status = "rejected"
+    r.status = "deprecated"
+    r.updated_at = utcnow()
+    db.add(Review(entity_type="requirement", entity_id=r.id, decision="reject", comment="Requirement rejected", reviewer_id=p.id))
+    audit.record(db, p.id, "requirement.rejected", "requirement", r.id, r.key, r.project_id)
+    db.commit()
+    return S.requirement(db, r)
+
+
+@router.post("/requirements/{req_id}/request-clarification")
+def mark_requirement_needs_clarification(
+    req_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    r.review_status = "needs_clarification"
+    r.updated_at = utcnow()
+    audit.record(db, p.id, "requirement.needs_clarification", "requirement", r.id, r.key, r.project_id)
+    db.commit()
+    return S.requirement(db, r)
+
+
+@router.get("/requirements/{req_id}/history")
+def get_requirement_history(
+    req_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    versions = db.execute(
+        select(RequirementVersion).where(RequirementVersion.requirement_id == r.id).order_by(RequirementVersion.version.asc())
+    ).scalars().all()
+    from app.db.models import AuditLog
+    audits = db.execute(
+        select(AuditLog).where(AuditLog.entity_type == "requirement", AuditLog.entity_id == r.id).order_by(AuditLog.created_at.desc())
+    ).scalars().all()
+
+    return {
+        "requirement_id": r.id,
+        "key": r.key,
+        "current_version": r.current_version,
+        "versions": [S.version(db, v) for v in versions],
+        "audit_logs": [
+            {
+                "id": a.id,
+                "action": a.action,
+                "user_id": a.user_id,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "details": a.details,
+            }
+            for a in audits
+        ],
+    }

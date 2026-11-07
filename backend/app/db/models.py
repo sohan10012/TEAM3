@@ -93,6 +93,16 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="active")  # active | archived
+    project_type: Mapped[str] = mapped_column(String(30), default="requirements_based")  # requirements_based | code_based
+    business_domain: Mapped[str] = mapped_column(String(100), default="")
+    product_type: Mapped[str] = mapped_column(String(100), default="")
+    target_users_and_roles: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    objectives: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    business_scenarios: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    functional_expectations: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    non_functional_expectations: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    constraints_and_assumptions: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    explicit_exclusions: Mapped[list[Any]] = mapped_column(JSON, default=list)
     organisation_id: Mapped[int] = mapped_column(ForeignKey("organisations.id"))
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = _ts()
@@ -133,12 +143,31 @@ class Environment(Base):
     created_at: Mapped[datetime] = _ts()
 
 
+class Document(Base):
+    __tablename__ = "documents"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    file_path: Mapped[str] = mapped_column(String(500))
+    file_type: Mapped[str] = mapped_column(String(20))  # pdf | docx | xlsx | txt | md | csv
+    file_size_bytes: Mapped[int] = mapped_column(Integer)
+    purpose: Mapped[str] = mapped_column(String(40))  # prd | srs | brd | functional_spec | technical_spec | api_doc | business_rules | user_stories | acceptance_criteria | other
+    description: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="uploaded", index=True)  # uploaded | processing | completed | failed
+    error_message: Mapped[str | None] = mapped_column(Text)
+    extracted_text: Mapped[str] = mapped_column(Text, default="")
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = _ts()
+    updated_at: Mapped[datetime] = _ts()
+
+
 class Requirement(Base):
     __tablename__ = "requirements"
     id: Mapped[int] = mapped_column(primary_key=True)
     key: Mapped[str] = mapped_column(String(40), unique=True, index=True)  # PAY-REQ-001
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     module_id: Mapped[int | None] = mapped_column(ForeignKey("modules.id", ondelete="SET NULL"))
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id", ondelete="SET NULL"), index=True)
     title: Mapped[str] = mapped_column(String(300))
     category: Mapped[str] = mapped_column(String(40), default="functional")
     priority: Mapped[str] = mapped_column(String(10), default="medium")
@@ -148,6 +177,13 @@ class Requirement(Base):
     source_type: Mapped[str] = mapped_column(String(20), default="manual")  # manual|pdf|txt|md|import
     origin: Mapped[str] = mapped_column(String(30), default="manual")  # documented|inferred_from_code|manual
     source_commit_sha: Mapped[str | None] = mapped_column(String(64))
+    source_section: Mapped[str | None] = mapped_column(String(200))
+    source_page: Mapped[str | None] = mapped_column(String(50))
+    evidence_excerpt: Mapped[str | None] = mapped_column(Text)
+    related_scenario: Mapped[str | None] = mapped_column(String(200))
+    dependencies: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    extraction_provenance: Mapped[str] = mapped_column(String(30), default="explicit_documented")  # explicit_documented | user_provided | ai_inferred
+    review_status: Mapped[str] = mapped_column(String(30), default="pending_review", index=True)  # pending_review | confirmed | rejected | needs_clarification | approved
     confidence: Mapped[float | None] = mapped_column(Float)
     analysed_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = _ts()
@@ -192,6 +228,22 @@ class Clause(Base):
     version: Mapped[RequirementVersion] = relationship(back_populates="clauses")
 
 
+class RequirementClarification(Base):
+    __tablename__ = "requirement_clarifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    requirement_id: Mapped[int | None] = mapped_column(ForeignKey("requirements.id", ondelete="CASCADE"), index=True)
+    type: Mapped[str] = mapped_column(String(40))  # ambiguity | conflict | missing_acceptance | incomplete_rule | unspecified_boundary | missing_error_handling | unclear_permission | missing_dependency
+    question: Mapped[str] = mapped_column(Text)
+    context: Mapped[str] = mapped_column(Text, default="")
+    impact: Mapped[str] = mapped_column(Text, default="")
+    suggested_resolution: Mapped[str | None] = mapped_column(Text)
+    user_response: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="open", index=True)  # open | resolved | dismissed
+    created_at: Mapped[datetime] = _ts()
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class AcceptanceCriterion(Base):
     __tablename__ = "acceptance_criteria"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -211,6 +263,11 @@ class AcceptanceCriterion(Base):
     review_status: Mapped[str] = mapped_column(String(20), default="pending")
     provider: Mapped[str] = mapped_column(String(40), default="manual")
     model: Mapped[str | None] = mapped_column(String(100))
+    actor: Mapped[str | None] = mapped_column(String(100))
+    action: Mapped[str | None] = mapped_column(Text)
+    input_conditions: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    expected_output: Mapped[str | None] = mapped_column(Text)
+    business_rules: Mapped[list[Any]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = _ts()
 
 
@@ -255,6 +312,11 @@ class TestCase(Base):
     expected_result: Mapped[str] = mapped_column(Text, default="")
     priority: Mapped[str] = mapped_column(String(10), default="medium")
     test_type: Mapped[str] = mapped_column(String(20), default="functional", index=True)
+    test_category: Mapped[str] = mapped_column(String(40), default="positive")  # positive | negative | boundary_value | edge_case | input_validation | business_rule | permission_role | security | error_handling | integration
+    execution_capability: Mapped[str] = mapped_column(String(40), default="specification_validation")  # specification_validation | simulation | external
+    approval_status: Mapped[str] = mapped_column(String(30), default="draft", index=True)  # draft | pending_approval | approved | rejected
+    steps_json: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    generation_provenance: Mapped[str] = mapped_column(String(50), default="ai_generated")
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     source_quote: Mapped[str] = mapped_column(Text, default="")
     quote_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -345,6 +407,19 @@ class RunStep(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
+class SimulationModel(Base):
+    __tablename__ = "simulation_models"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    version: Mapped[str] = mapped_column(String(20), default="1.0")
+    domain: Mapped[str] = mapped_column(String(100), default="")
+    definition_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="active", index=True)  # draft | active | deprecated
+    created_at: Mapped[datetime] = _ts()
+    updated_at: Mapped[datetime] = _ts()
+
+
 class Execution(Base):
     __tablename__ = "executions"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -352,6 +427,8 @@ class Execution(Base):
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     suite_id: Mapped[int | None] = mapped_column(ForeignKey("test_suites.id", ondelete="SET NULL"), index=True)
     environment_id: Mapped[int] = mapped_column(ForeignKey("environments.id"))
+    model_id: Mapped[int | None] = mapped_column(ForeignKey("simulation_models.id", ondelete="SET NULL"))
+    execution_type: Mapped[str] = mapped_column(String(30), default="simulation")  # specification_validation | simulation | external | real_code
     run_id: Mapped[int | None] = mapped_column(ForeignKey("runs.id", ondelete="SET NULL"))
     retry_of_id: Mapped[int | None] = mapped_column(ForeignKey("executions.id", ondelete="SET NULL"))
     source: Mapped[str] = mapped_column(String(30), index=True)  # historical_import | platform_run | ci

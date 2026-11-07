@@ -123,7 +123,7 @@ test("navigation shell exposes every product area", async () => {
   mockFetch([[/auth\/me/, ME], [/projects/, PROJECTS], [/config/, { environment: "test", llm: { any_configured: false, providers: [] } }], [/notifications/, []]]);
   renderApp(<Routes><Route element={<AppShell />}><Route index element={<p>home</p>} /></Route></Routes>);
   const nav = await screen.findByRole("complementary", { name: "Primary" });
-  for (const l of ["Overview", "Requirements", "Test Cases", "Test Runs", "Defects", "Settings"]) {
+  for (const l of ["Dashboard", "Projects", "Requirements", "Test Cases", "Test Runs", "Defects", "Settings"]) {
     expect(within(nav).getByRole("link", { name: l })).toBeInTheDocument();
   }
   expect(await screen.findByText(/AI not configured/)).toBeInTheDocument();
