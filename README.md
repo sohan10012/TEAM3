@@ -22,6 +22,8 @@ Unlike prototype dashboards that rely on mock assertions, simulated successes, o
 - **Decomposes Requirements Deterministically**: Segments specifications into atomic, numbered clauses and extracts grounded acceptance criteria with verbatim source quotes.
 - **Synthesizes & Validates Executable Tests**: Generates Python `pytest` and Playwright scripts validated against strict pre-execution AST allowlists.
 - **Enforces Four-Eyes Principle Governance**: Authors are blocked from approving their own tests; dual-control review records immutable decisions and script hashes.
+- **Dual-Control LLM-as-a-Judge Review System**: Generated tests feature live adversarial judge evaluations, statutory grounding scores (95%+), verbatim quote fidelity checks, and 1-click reviewer recommendation assistance.
+- **1-Click Sandbox Pytest Execution**: Execute synthesized Python Pytest scripts directly against the Reference HCM in-memory harness in 1 millisecond with live stdout and assertion diagnostics.
 - **Executes Across Multi-Tier Environments**: Runs tests inside POSIX resource-restricted subprocess sandboxes, in-memory contract test harnesses, or against live endpoints.
 - **Captures Empirical Proof**: Logs JUnit XML, stdout/stderr streams, failure tracebacks, screenshots, and HTTP status codes.
 - **Maintains Zero-Hallucination Integrity**: Failed cloud endpoints (e.g. AWS HTTP 500) are recorded honestly as blocked defects rather than faked as successes.
@@ -32,6 +34,8 @@ Unlike prototype dashboards that rely on mock assertions, simulated successes, o
 
 | Document | Description |
 |---|---|
+| **[docs/HANDOVER.md](docs/HANDOVER.md)** | **Frontend & UI Developer Handover Guide**: Component hierarchy, Tailwind tokens, Radix UI setup, state management, and UI enhancement roadmap. |
+| **[docs/UI_WALKTHROUGH.md](docs/UI_WALKTHROUGH.md)** | **UI Walkthrough & Simulation Guide**: 9-stage multi-agent pipeline, Stage Inspector cards, Ambiguity scanner, and live Safe Interpreter. |
 | **[CLAUDE_ENGINEERING_HANDOFF.md](CLAUDE_ENGINEERING_HANDOFF.md)** | **Master Technical Handoff**: Complete architecture, directory tree, REST API reference, 36 DB tables ERD, core algorithms, security model, and P0–P2 remediation ledger. |
 | **[docs/PRODUCTION_READINESS_AUDIT.md](docs/PRODUCTION_READINESS_AUDIT.md)** | Critical independent audit of repository state, verified implementations, and security remediation. |
 | **[docs/ECHOBOX_CASE_STUDY.md](docs/ECHOBOX_CASE_STUDY.md)** | Complete case study on EchoBox (`b3740a62ad414a141e82146adafb47c4850fd782`): architecture, requirements, tests, defects, and evidence. |
