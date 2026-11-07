@@ -235,3 +235,38 @@ def reject_test_specification(
     audit.record(db, p.id, "test.rejected", "test_case", t.id, t.key, t.project_id)
     db.commit()
     return S.test_case(db, t, full=True)
+
+
+@router.post("/{test_id}/run-sandbox")
+def run_sandbox_test(
+    test_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Run an automated pytest test case directly in the Reference HCM sandbox."""
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    if t.automation not in ("pytest", "playwright") or not t.script:
+        raise BadRequest("Test case does not have an automated executable script")
+
+    from app.execution.sandbox import ScriptSpec, run_pytest
+    spec = ScriptSpec(t.key, t.script)
+    res = run_pytest([spec], hcm_version="1.0")
+    outcome = res.outcomes.get(t.key)
+
+    status = outcome.status if outcome else ("passed" if getattr(res, "passed", 0) > 0 else "failed")
+    duration_ms = outcome.duration_ms if outcome else res.duration_ms
+    message = outcome.message if outcome else ""
+    stdout = outcome.stdout if outcome else res.log
+    stack_trace = outcome.stack_trace if outcome else ""
+
+    return {
+        "test_id": t.id,
+        "key": t.key,
+        "status": status,
+        "duration_ms": duration_ms,
+        "message": message,
+        "stdout": stdout,
+        "stack_trace": stack_trace,
+        "hcm_version": "1.0",
+        "sandbox_mode": "Reference HCM In-Memory Harness",
+    }
