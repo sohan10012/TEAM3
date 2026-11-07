@@ -124,7 +124,7 @@ Visit `http://localhost:5173` to access the single-operator Dayforce and EchoBox
 The complete technical documentation suite is organized across 26 modular guides:
 
 - [Product Overview](PRODUCT_OVERVIEW.md)
-- [System Architecture](ARCHITECTURE.md)
+- [System Architecture](architecture-legacy.md)
 - [Repository Ingestion](REPOSITORY_IMPORT.md)
 - [Requirements Engine](REQUIREMENTS_ENGINE.md)
 - [Test Generation](TEST_GENERATION.md)
@@ -147,6 +147,6 @@ The complete technical documentation suite is organized across 26 modular guides
 - [System Limitations](LIMITATIONS.md)
 - [Changelog](CHANGELOG.md)
 - [Test Evidence Index](TEST_EVIDENCE_INDEX.md)
-- [Milestones & Progress](PROGRESS.md)
+- [Milestones & Progress](progress-legacy.md)
 - [OpenAPI Specification](openapi.json)
 
