@@ -15,24 +15,27 @@ import {
   RefreshCw,
   Trash2,
   Upload,
-  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/Toast";
-import { Button, Dialog, Field, Input, Select, Textarea } from "@/components/ui";
+import { Badge, Button, Dialog, Field, Input, LoadingBlock, Select, Textarea } from "@/components/ui";
+import { RequirementsDashboardOverview } from "@/components/dashboard/RequirementsDashboardOverview";
 import { api } from "@/services/api";
 import type {
   Document,
+  Execution,
+  Page,
   RequirementClarification,
   RequirementsDashboardData,
   TraceabilityMatrix,
 } from "@/types/models";
-import { cn, fmtDate } from "@/utils/format";
+import { cn, fmtDate, fmtDuration, label } from "@/utils/format";
 
 interface Props {
   projectId: number;
   isDetailView?: boolean;
+  isDashboard?: boolean;
   fallback?: React.ReactNode;
 }
 
@@ -48,7 +51,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   architecture_notes: "Technical Architecture Notes",
 };
 
-export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
+export function RequirementsProjectDashboard({ projectId, fallback, isDashboard = false }: Props) {
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -65,6 +68,19 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
     queryKey: ["requirements_dashboard", projectId],
     queryFn: () => api.get<RequirementsDashboardData>(`/projects/${projectId}/requirements-dashboard`),
     refetchInterval: 15_000,
+  });
+
+  const executionsQuery = useQuery({
+    queryKey: ["executions", "requirements-dashboard", projectId],
+    queryFn: () => api.get<Page<Execution>>("/executions", {
+      project_id: projectId,
+      page: 1,
+      page_size: 5,
+      sort: "started_at",
+      order: "desc",
+    }),
+    enabled: isDashboard || activeTab === "runs",
+    refetchInterval: isDashboard ? 15_000 : false,
   });
 
   const docsQuery = useQuery({
@@ -216,10 +232,64 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
     requirements_summary,
     test_design_summary,
     execution_summary,
-    recent_runs,
   } = dashQuery.data;
+  const recentExecutions = executionsQuery.data?.items ?? [];
 
   const isBrandNew = documents_summary.total === 0 && requirements_summary.total === 0;
+  const totalRuns = execution_summary.specification_validation_runs
+    + execution_summary.simulation_runs
+    + execution_summary.external_executions;
+  const documentProgress = documents_summary.total
+    ? Math.round((documents_summary.completed / documents_summary.total) * 100)
+    : null;
+  const requirementProgress = requirements_summary.total
+    ? Math.round((requirements_summary.approved / requirements_summary.total) * 100)
+    : null;
+  const testProgress = test_design_summary.total_tests
+    ? Math.round((test_design_summary.approved_tests / test_design_summary.total_tests) * 100)
+    : null;
+  const activityItems = [
+    ...(documents_summary.latest_document ? [{
+      id: `document-${documents_summary.latest_document.id}`,
+      title: "Latest document",
+      detail: documents_summary.latest_document.filename,
+      timestamp: fmtDate(documents_summary.latest_document.created_at, false),
+    }] : []),
+    ...recentExecutions.map((run) => ({
+      id: `run-${run.id}`,
+      title: `${(run.execution_type ?? run.source).replace(/_/g, " ")} ${run.key}`,
+      detail: `${label(run.status)} · ${run.passed} / ${run.total} tests · ${fmtDuration(run.duration_ms)}`,
+      timestamp: run.started_at ? fmtDate(run.started_at, false) : "—",
+    })),
+  ].slice(0, 4);
+
+  if (isDashboard) {
+    return (
+      <>
+        <RequirementsDashboardOverview
+          data={dashQuery.data}
+          recentExecutions={recentExecutions}
+          executionsLoading={executionsQuery.isPending}
+          executionsError={executionsQuery.error ?? null}
+          onRetryExecutions={() => void executionsQuery.refetch()}
+          onUpload={() => setUploadModalOpen(true)}
+          onGenerateTests={() => genTestsMutation.mutate()}
+          onRunSimulation={() => runSimulationMutation.mutate()}
+          generatingTests={genTestsMutation.isPending}
+          runningSimulation={runSimulationMutation.isPending}
+        />
+        <UploadDocumentModal
+          open={uploadModalOpen}
+          onOpenChange={setUploadModalOpen}
+          projectId={projectId}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ["project_documents", projectId] });
+            qc.invalidateQueries({ queryKey: ["requirements_dashboard", projectId] });
+          }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -462,7 +532,7 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
-            Execution ({recent_runs.length})
+            Execution ({recentExecutions.length})
           </button>
           <button
             onClick={() => setActiveTab("traceability")}
@@ -589,21 +659,21 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
               </div>
               <div className="my-3">
                 <div className="text-3xl font-bold text-slate-900 tracking-tight">
-                  {recent_runs.length || (execution_summary.specification_validation_runs + execution_summary.simulation_runs) || 24}
+                  {totalRuns}
                 </div>
               </div>
               <div className="space-y-1 text-2xs text-slate-500 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Passed</span>
-                  <span className="font-semibold text-slate-700">19</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Latest run passed</span>
+                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.passed ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Failed</span>
-                  <span className="font-semibold text-slate-700">3</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Latest run failed</span>
+                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.failed ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> Blocked</span>
-                  <span className="font-semibold text-slate-700">2</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Latest run total</span>
+                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.total ?? "—"}</span>
                 </div>
               </div>
             </div>
@@ -622,10 +692,12 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                       <FileText className="h-3.5 w-3.5 text-[#3067DB]" />
                       Document Processing
                     </span>
-                    <span className="font-medium text-slate-900">100% &bull; {documents_summary.total}/{documents_summary.total}</span>
+                    <span className="font-medium text-slate-900">
+                      {documentProgress == null ? "—" : `${documentProgress}%`} &bull; {documents_summary.completed}/{documents_summary.total}
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: "100%" }} />
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${documentProgress ?? 0}%` }} />
                   </div>
                 </div>
 
@@ -637,13 +709,13 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                       Requirement Review
                     </span>
                     <span className="font-medium text-slate-900">
-                      {Math.round((requirements_summary.approved / Math.max(1, requirements_summary.total)) * 100)}% &bull; {requirements_summary.approved}/{requirements_summary.total}
+                      {requirementProgress == null ? "—" : `${requirementProgress}%`} &bull; {requirements_summary.approved}/{requirements_summary.total}
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-600 rounded-full"
-                      style={{ width: `${Math.round((requirements_summary.approved / Math.max(1, requirements_summary.total)) * 100)}%` }}
+                      style={{ width: `${requirementProgress ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -656,13 +728,13 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                       Test Design
                     </span>
                     <span className="font-medium text-slate-900">
-                      {Math.round((test_design_summary.approved_tests / Math.max(1, test_design_summary.total_tests)) * 100)}% &bull; {test_design_summary.approved_tests}/{test_design_summary.total_tests}
+                      {testProgress == null ? "—" : `${testProgress}%`} &bull; {test_design_summary.approved_tests}/{test_design_summary.total_tests}
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-purple-600 rounded-full"
-                      style={{ width: `${Math.round((test_design_summary.approved_tests / Math.max(1, test_design_summary.total_tests)) * 100)}%` }}
+                      style={{ width: `${testProgress ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -674,10 +746,9 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                       Specification Validation
                     </span>
-                    <span className="font-medium text-slate-900">100% &bull; 10/10</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: "100%" }} />
+                    <span className="font-medium text-slate-900">
+                      {execution_summary.specification_validation_runs} runs
+                    </span>
                   </div>
                 </div>
 
@@ -688,10 +759,9 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                       <PlayCircle className="h-3.5 w-3.5 text-indigo-600" />
                       Execution (Simulation)
                     </span>
-                    <span className="font-medium text-slate-900">100% &bull; 12/12</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: "100%" }} />
+                    <span className="font-medium text-slate-900">
+                      {execution_summary.simulation_runs} runs
+                    </span>
                   </div>
                 </div>
               </div>
@@ -706,45 +776,19 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                 </Link>
               </div>
               <div className="space-y-3.5 text-xs">
-                <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                {activityItems.length ? activityItems.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-blue-50 text-[#3067DB] flex items-center justify-center shrink-0 mt-0.5 border border-blue-200">
+                      {item.id.startsWith("document-")
+                        ? <FileText className="h-3.5 w-3.5" />
+                        : <PlayCircle className="h-3.5 w-3.5" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-900 truncate">{item.title}</div>
+                      <div className="text-2xs text-slate-500 truncate">{item.detail} · {item.timestamp}</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 truncate">Document processed successfully</div>
-                    <div className="text-2xs text-slate-500">Dayforce_PRD_v1.2.pdf &bull; 2 min ago</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 truncate">Document processed successfully</div>
-                    <div className="text-2xs text-slate-500">Dayforce_SRS_v1.0.docx &bull; 3 min ago</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 truncate">Document processed successfully</div>
-                    <div className="text-2xs text-slate-500">Business_Rules.xlsx &bull; 4 min ago</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-blue-50 text-[#3067DB] flex items-center justify-center shrink-0 mt-0.5 border border-blue-200">
-                    <Upload className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 truncate">4 documents uploaded</div>
-                    <div className="text-2xs text-slate-500">Project document intake completed &bull; 5 min ago</div>
-                  </div>
-                </div>
+                )) : <p className="text-slate-500">No recent project activity.</p>}
               </div>
             </div>
 
@@ -830,7 +874,14 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
               </div>
             </div>
 
-            {recent_runs.length === 0 ? (
+            {executionsQuery.isError ? (
+              <div role="alert" className="flex items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <span>Could not load execution history.</span>
+                <button type="button" className="font-medium underline underline-offset-2" onClick={() => void executionsQuery.refetch()}>Retry</button>
+              </div>
+            ) : executionsQuery.isPending ? (
+              <div className="p-4"><LoadingBlock rows={3} /></div>
+            ) : recentExecutions.length === 0 ? (
               <div className="py-12 text-center text-slate-500 text-xs space-y-2">
                 <PlayCircle className="h-8 w-8 text-slate-300 mx-auto" />
                 <p>No executions yet for this project.</p>
@@ -839,7 +890,8 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left text-xs border-collapse">
+              <div className="overflow-x-auto">
+              <table className="min-w-[760px] w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold uppercase text-2xs tracking-wider">
                     <th className="py-2.5 px-4">Run ID</th>
@@ -852,12 +904,13 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {recent_runs.map((r) => {
-                    const isVal = r.run_id.startsWith("VAL-") || r.execution_type === "specification_validation";
+                  {recentExecutions.map((r) => {
+                    const executionType = r.execution_type ?? r.source;
+                    const isVal = executionType === "specification_validation";
                     return (
                       <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-slate-800">
-                          {r.run_id}
+                          {r.key}
                         </td>
                         <td className="py-3 px-4">
                           <span
@@ -868,29 +921,13 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                                 : "bg-blue-50 text-blue-700 border-blue-200"
                             )}
                           >
-                            {isVal ? "Spec Validation" : "Behaviour Simulation"}
+                            {label(executionType)}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-0.5 rounded text-2xs font-medium border",
-                              r.result === "Passed"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-red-50 text-red-700 border-red-200"
-                            )}
-                          >
-                            {r.result === "Passed" ? (
-                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                            ) : (
-                              <XCircle className="h-3 w-3 text-red-600" />
-                            )}
-                            {r.result}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-600 tabular-nums font-medium">{r.tests}</td>
-                        <td className="py-3 px-4 text-slate-600 tabular-nums">{r.duration}</td>
-                        <td className="py-3 px-4 text-slate-500">{r.triggered}</td>
+                        <td className="py-3 px-4"><Badge value={r.status} /></td>
+                        <td className="py-3 px-4 text-slate-600 tabular-nums font-medium">{r.passed} / {r.total}</td>
+                        <td className="py-3 px-4 text-slate-600 tabular-nums">{fmtDuration(r.duration_ms)}</td>
+                        <td className="py-3 px-4 text-slate-500">{r.started_at ? fmtDate(r.started_at, false) : "—"}</td>
                         <td className="py-3 px-4 text-right">
                           <Button
                             size="sm"
@@ -918,6 +955,7 @@ export function RequirementsProjectDashboard({ projectId, fallback }: Props) {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>

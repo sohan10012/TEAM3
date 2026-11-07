@@ -70,7 +70,7 @@ const STAGE_EXPLANATIONS: Record<number, { title: string; purpose: string; howIt
     title: "Stage 02: Clause Parser (Deterministic AST)",
     purpose: "Splits policy text into atomic, numbered clauses without relying on probabilistic LLMs.",
     howItWorks: "Uses punctuation and legal grammar boundary rules to identify separate statutory obligations (e.g. C1, C2, C3).",
-    failureAction: "Guarantees 100% deterministic traceability: every generated test cites a specific clause key.",
+    failureAction: "Keeps generated tests linked to their source clause references.",
   },
   3: {
     title: "Stage 03: Ambiguity & Gap Scanner",
@@ -104,14 +104,14 @@ const STAGE_EXPLANATIONS: Record<number, { title: string; purpose: string; howIt
   },
   8: {
     title: "Stage 08: LLM-as-a-Judge (Adversarial Quality Auditor)",
-    purpose: "Provides independent adversarial critique from a separate model family (Google Gemini).",
+    purpose: "Provides an independent critique of generated tests against source policy clauses.",
     howItWorks: "Audits generated tests against originating policy clauses for grounding fidelity, missing boundaries, and inverted assertions.",
     failureAction: "Flagging-only principle: The judge flags risks for human QA leads; it cannot approve tests.",
   },
   9: {
     title: "Stage 09: Safe Interpreter (Red ➔ Green Execution)",
     purpose: "Evaluates timesheet inputs against YAML rules via a pure mathematical engine (zero eval).",
-    howItWorks: "Runs the 3-step verification: 1. Stub Baseline (Fails Red), 2. Generated YAML Spec (Passes Green in 1.4ms), 3. Mutation Test (Mutant Killed).",
+    howItWorks: "Runs the stub baseline, generated YAML specification, and mutation test.",
     failureAction: "Catches calculation drift and proves test regression sensitivity.",
   },
 };
@@ -123,8 +123,8 @@ export default function SimulationPage() {
   const [activeTab, setActiveTab] = useState<"pipeline" | "yaml" | "clauses" | "interpreter">("pipeline");
   const [selectedAgentId, setSelectedAgentId] = useState<number>(1);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [simulatedStageIndex, setSimulatedStageIndex] = useState<number>(8); // default to all complete
-  const [customShifts, setCustomShifts] = useState<string>("10, 10, 10, 10, 8");
+  const [simulatedStageIndex, setSimulatedStageIndex] = useState<number>(-1);
+  const [customShifts, setCustomShifts] = useState<string>("");
   const [customEvalResult, setCustomEvalResult] = useState<any>(null);
   const [useLiveAI, setUseLiveAI] = useState<boolean>(true);
   const [showStageExplain, setShowStageExplain] = useState<boolean>(false);
@@ -227,7 +227,11 @@ export default function SimulationPage() {
     setSimulatedStageIndex(0);
     setSelectedAgentId(1);
 
-    const stagesCount = stages.length || 9;
+    const stagesCount = stages.length;
+    if (stagesCount === 0) {
+      setIsSimulating(false);
+      return;
+    }
     let step = 0;
     simTimerRef.current = setInterval(() => {
       step++;
@@ -386,6 +390,7 @@ export default function SimulationPage() {
             <Button
               variant="secondary"
               size="sm"
+              disabled={!activePolicy?.yaml_spec}
               onClick={() => {
                 if (activePolicy?.yaml_spec) {
                   interpreterMutation.mutate({
@@ -405,10 +410,11 @@ export default function SimulationPage() {
               size="sm"
               onClick={handleRunSimulation}
               loading={isSimulating}
+              disabled={stages.length === 0 || isSimulating}
               className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium"
             >
               <Play className="h-3.5 w-3.5 mr-1 fill-white" />
-              Run 9-Stage Simulation
+              Run Simulation
             </Button>
           </div>
         }
@@ -456,7 +462,9 @@ export default function SimulationPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-200">
               <ShieldCheck className="h-3 w-3" />
-              AST Scanned 100%
+              AST Allowlist {tracesQuery.data?.ast_allowlist_scan_rate == null
+                ? "—"
+                : `${Math.round(tracesQuery.data.ast_allowlist_scan_rate * 100)}%`}
             </span>
             <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-200">
               <Zap className="h-3 w-3" />
@@ -486,8 +494,12 @@ export default function SimulationPage() {
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-slate-900">100%</span>
-            <span className="text-2xs text-emerald-600 font-semibold">Strict Safe</span>
+            <span className="text-xl font-bold text-slate-900">
+              {tracesQuery.data?.ast_allowlist_scan_rate == null
+                ? "—"
+                : `${Math.round(tracesQuery.data.ast_allowlist_scan_rate * 100)}%`}
+            </span>
+            <span className="text-2xs text-slate-500 font-semibold">Reported</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">Zero eval/exec calls allowed</p>
         </div>
@@ -498,8 +510,12 @@ export default function SimulationPage() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-slate-900">100%</span>
-            <span className="text-2xs text-emerald-600 font-semibold">Grounded</span>
+            <span className="text-xl font-bold text-slate-900">
+              {tracesQuery.data?.hallucination_quote_verification_rate == null
+                ? "—"
+                : `${Math.round(tracesQuery.data.hallucination_quote_verification_rate * 100)}%`}
+            </span>
+            <span className="text-2xs text-slate-500 font-semibold">Reported</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">All rules anchored to text</p>
         </div>
@@ -511,9 +527,11 @@ export default function SimulationPage() {
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-xl font-bold text-slate-900">
-              {Math.round((tracesQuery.data?.judge_agreement || 0.98) * 100)}%
+              {tracesQuery.data?.judge_agreement == null
+                ? "—"
+                : `${Math.round(tracesQuery.data.judge_agreement * 100)}%`}
             </span>
-            <span className="text-2xs text-purple-600 font-semibold">High</span>
+            <span className="text-2xs text-purple-600 font-semibold">Reported</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">Adversarial audit consensus</p>
         </div>
@@ -524,7 +542,11 @@ export default function SimulationPage() {
             <Sparkles className="h-4 w-4 text-[#3067DB]" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-emerald-600">Verified</span>
+            <span className="text-xl font-bold text-emerald-600">
+              {interpreterMutation.data?.summary.red_to_green_verified == null
+                ? "—"
+                : interpreterMutation.data.summary.red_to_green_verified ? "Verified" : "Not verified"}
+            </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">Stub Red → Spec Green</p>
         </div>
@@ -535,8 +557,11 @@ export default function SimulationPage() {
             <Flame className="h-4 w-4 text-amber-600" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-slate-900">100%</span>
-            <span className="text-2xs text-amber-600 font-semibold">Killed</span>
+            <span className="text-xl font-bold text-slate-900">
+              {interpreterMutation.data?.summary.mutation_detected == null
+                ? "—"
+                : interpreterMutation.data.summary.mutation_detected ? "Detected" : "Not detected"}
+            </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">Mutant threshold caught</p>
         </div>
@@ -549,11 +574,11 @@ export default function SimulationPage() {
             <Layers className="h-4 w-4 text-[#3067DB]" />
             <h2 className="text-sm font-semibold text-slate-900">Multi-Agent Verification Pipeline Graph</h2>
             <span className="text-2xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
-              9 Autonomous Agent Stages
+              {stages.length} Agent Stages
             </span>
           </div>
           <div className="text-2xs text-slate-500 font-mono">
-            Pipeline Latency: {tracesQuery.data?.total_latency_ms || 299}ms | Tokens: {tracesQuery.data?.total_tokens || 1947}
+            Pipeline Latency: {tracesQuery.data?.total_latency_ms ?? "—"}ms | Tokens: {tracesQuery.data?.total_tokens ?? "—"}
           </div>
         </div>
 
@@ -562,7 +587,7 @@ export default function SimulationPage() {
           {stages.map((stage, idx) => {
             const isSelected = selectedAgentId === stage.id;
             const isProcessing = isSimulating && simulatedStageIndex === idx;
-            const isPassed = !isSimulating || simulatedStageIndex >= idx;
+            const isPassed = stage.status === "VERIFIED" || (isSimulating && simulatedStageIndex > idx);
 
             return (
               <button
@@ -714,24 +739,29 @@ export default function SimulationPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-2xs font-semibold text-purple-900 uppercase tracking-wider flex items-center gap-1">
                     <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                    Adversarial Quality Consensus (Google Gemini Auditor):
-                  </span>
-                  <span className="text-2xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                    Model: Gemini 3.1 Flash-Lite
+                    Adversarial Quality Consensus:
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-2 rounded bg-purple-50/60 border border-purple-100">
                     <span className="text-[10px] text-purple-600 block">Grounding Consensus</span>
-                    <span className="text-sm font-bold text-purple-900">98% High</span>
+                    <span className="text-sm font-bold text-purple-900">
+                      {tracesQuery.data?.judge_agreement == null
+                        ? "—"
+                        : `${Math.round(tracesQuery.data.judge_agreement * 100)}%`}
+                    </span>
                   </div>
                   <div className="p-2 rounded bg-purple-50/60 border border-purple-100">
                     <span className="text-[10px] text-purple-600 block">Quote Fidelity</span>
-                    <span className="text-sm font-bold text-purple-900">100% Verbatim</span>
+                    <span className="text-sm font-bold text-purple-900">
+                      {tracesQuery.data?.hallucination_quote_verification_rate == null
+                        ? "—"
+                        : `${Math.round(tracesQuery.data.hallucination_quote_verification_rate * 100)}%`}
+                    </span>
                   </div>
                   <div className="p-2 rounded bg-purple-50/60 border border-purple-100">
                     <span className="text-[10px] text-purple-600 block">Boundary Audit</span>
-                    <span className="text-sm font-bold text-emerald-700">Verified Grounded</span>
+                    <span className="text-sm font-bold text-emerald-700">—</span>
                   </div>
                 </div>
               </div>
@@ -813,7 +843,7 @@ export default function SimulationPage() {
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-red-100 text-red-800 border border-red-200">
-                    {interpreterMutation.data?.red_stub?.status || "FAILED (RED)"}
+                    {interpreterMutation.data?.red_stub?.status || "Awaiting run"}
                   </span>
                 </div>
                 <p className="text-2xs text-slate-600">
@@ -822,15 +852,15 @@ export default function SimulationPage() {
                 <div className="text-xs space-y-1.5 font-mono">
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Total Scenarios:</span>
-                    <span className="font-bold text-slate-800">{interpreterMutation.data?.red_stub?.total ?? 5}</span>
+                    <span className="font-bold text-slate-800">{interpreterMutation.data?.red_stub?.total ?? "—"}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Failed (Expected):</span>
-                    <span className="font-bold text-red-600">{interpreterMutation.data?.red_stub?.failed ?? 4}</span>
+                    <span className="font-bold text-red-600">{interpreterMutation.data?.red_stub?.failed ?? "—"}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-500">Overtime Caught:</span>
-                    <span className="text-red-700 font-semibold">0% (Null)</span>
+                    <span className="text-red-700 font-semibold">—</span>
                   </div>
                 </div>
               </Panel>
@@ -845,7 +875,7 @@ export default function SimulationPage() {
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {interpreterMutation.data?.green_actual?.status || "PASSED (GREEN)"}
+                    {interpreterMutation.data?.green_actual?.status || "Awaiting run"}
                   </span>
                 </div>
                 <p className="text-2xs text-slate-600">
@@ -854,16 +884,16 @@ export default function SimulationPage() {
                 <div className="text-xs space-y-1.5 font-mono">
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Total Scenarios:</span>
-                    <span className="font-bold text-slate-800">{interpreterMutation.data?.green_actual?.total ?? 5}</span>
+                    <span className="font-bold text-slate-800">{interpreterMutation.data?.green_actual?.total ?? "—"}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Passed Tests:</span>
-                    <span className="font-bold text-emerald-600">{interpreterMutation.data?.green_actual?.passed ?? 5}</span>
+                    <span className="font-bold text-emerald-600">{interpreterMutation.data?.green_actual?.passed ?? "—"}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-500">Execution Speed:</span>
                     <span className="text-emerald-700 font-semibold">
-                      {interpreterMutation.data?.summary?.execution_time_ms ?? 1.4} ms
+                      {interpreterMutation.data?.summary?.execution_time_ms ?? "—"} ms
                     </span>
                   </div>
                 </div>
@@ -879,7 +909,7 @@ export default function SimulationPage() {
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">
-                    MUTATION KILLED
+                    {interpreterMutation.data?.mutation_red?.status || "Awaiting run"}
                   </span>
                 </div>
                 <p className="text-2xs text-slate-600">
@@ -889,16 +919,20 @@ export default function SimulationPage() {
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Mutation Applied:</span>
                     <span className="text-amber-800 text-[10px] truncate max-w-[170px]" title={interpreterMutation.data?.mutation_red?.mutation_applied}>
-                      {interpreterMutation.data?.mutation_red?.mutation_applied || "Threshold +10h shift"}
+                      {interpreterMutation.data?.mutation_red?.mutation_applied || "—"}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Mutant Caught:</span>
-                    <span className="font-bold text-emerald-600">YES (Killed)</span>
+                    <span className="font-bold text-emerald-600">
+                      {interpreterMutation.data?.mutation_red?.mutation_killed == null
+                        ? "—"
+                        : interpreterMutation.data.mutation_red.mutation_killed ? "Yes" : "No"}
+                    </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-500">Failing Tests:</span>
-                    <span className="text-amber-700 font-semibold">{interpreterMutation.data?.mutation_red?.failed ?? 4}</span>
+                    <span className="text-amber-700 font-semibold">{interpreterMutation.data?.mutation_red?.failed ?? "—"}</span>
                   </div>
                 </div>
               </Panel>
@@ -1175,11 +1209,11 @@ export default function SimulationPage() {
                     />
                     <span className="font-semibold text-slate-800 flex items-center gap-1">
                       <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                      Invoke Live AI (Groq Qwen 27B + Gemini 3.1 Flash-Lite)
+                      Invoke Live AI
                     </span>
                   </label>
                   <span className="text-2xs text-slate-500 font-mono">
-                    {useLiveAI ? "Real API calls + token tracing" : "Fast deterministic (299ms)"}
+                    {useLiveAI ? "Live model-assisted ingestion" : "Deterministic policy parsing"}
                   </span>
                 </div>
                 <Button
@@ -1209,7 +1243,7 @@ export default function SimulationPage() {
                     Atomic Clauses ({activePolicy?.clauses?.length || 0})
                   </h3>
                 </div>
-                <span className="text-2xs text-slate-500 font-mono">Coverage: 100%</span>
+                <span className="text-2xs text-slate-500 font-mono">Coverage: —</span>
               </div>
 
               <div className="space-y-2">

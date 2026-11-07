@@ -33,7 +33,7 @@ export function DataTable<T extends { id: number }>({ query, columns, state, onR
   const colMeta = Object.fromEntries(columns.map((c) => [c.id, c]));
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
       {(toolbar || (selectable && ids.length > 0)) && (
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2">
           {selectable && ids.length > 0 ? (
@@ -46,9 +46,9 @@ export function DataTable<T extends { id: number }>({ query, columns, state, onR
       {query.error ? <div className="p-3"><ErrorState error={query.error} onRetry={query.refetch} /></div> :
         query.isLoading ? <div className="p-3"><LoadingBlock rows={8} /></div> :
           total === 0 ? (empty ?? <EmptyState title="No records match these filters" body="Clear a filter or broaden the search." />) : (
-            <div className="max-h-[calc(100dvh-17rem)] overflow-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead className="sticky top-0 z-10 bg-slate-50">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain">
+              <table className="w-full min-w-[640px] border-collapse text-sm">
+                <thead className="bg-slate-50">
                   {table.getHeaderGroups().map((hg) => (
                     <tr key={hg.id}>
                       {hg.headers.map((h) => {

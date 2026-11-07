@@ -16,12 +16,12 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
-import { Badge, Button, Dialog, Field, Input, Select, Textarea } from "@/components/ui";
+import { Badge, Button, Dialog, Field, Input, ResponsiveDetailDrawer, Select, Textarea } from "@/components/ui";
 import { api } from "@/services/api";
-import type { Page, Project, TestCase } from "@/types/models";
+import type { Execution, Page, Project, TestCase } from "@/types/models";
 import { cn, label } from "@/utils/format";
 
 interface TestCasesManagementViewProps {
@@ -39,8 +39,27 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
     queryKey: ["tests", { project_id: projectId, page_size: 200 }],
     queryFn: () => api.get<Page<TestCase>>("/tests", { project_id: projectId, page_size: 200 }),
   });
+  const latestExecutionQ = useQuery({
+    queryKey: ["executions", "latest", projectId],
+    queryFn: () => api.get<Page<Execution>>("/executions", {
+      project_id: projectId,
+      page: 1,
+      page_size: 1,
+      sort: "started_at",
+      order: "desc",
+    }),
+  });
 
-  const tests = q.data?.items || [];
+  const tests = useMemo(() => q.data?.items ?? [], [q.data?.items]);
+  const generateTestsM = useMutation({
+    mutationFn: () => api.post<{ created_count: number }>(`/projects/${projectId}/generate-tests`),
+    onSuccess: (result) => {
+      toast.ok(`Generated ${result.created_count} test cases`);
+      qc.invalidateQueries({ queryKey: ["tests"] });
+      qc.invalidateQueries({ queryKey: ["requirements_dashboard", projectId] });
+    },
+    onError: toast.error,
+  });
 
   // Tab state
   const [activeTab, setActiveTab] = useState<"cases" | "by_req" | "by_category" | "coverage" | "validation" | "history">("cases");
@@ -50,6 +69,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
   const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
   const [checkedIds, setCheckedIds] = useState<number[]>([]);
   const [isDetailOpen, setIsDetailOpen] = useState(true);
+  const tableLayoutRef = useRef<HTMLDivElement>(null);
 
   // Filters & search
   const [search, setSearch] = useState("");
@@ -64,24 +84,24 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
   // Dialog state
   const [isAddTestOpen, setIsAddTestOpen] = useState(false);
 
-  // Default selected test (TC-001 or first)
+  // Default to the first result returned by the API.
   const selectedTest = useMemo(() => {
     if (!tests.length) return null;
     if (selectedTestId) {
       const found = tests.find((t) => t.id === selectedTestId);
       if (found) return found;
     }
-    const tc1 = tests.find((t) => t.key === "TC-001");
-    return tc1 || tests[0];
+    return tests[0];
   }, [tests, selectedTestId]);
 
   // Derived counts
-  const totalCount = tests.length || 126;
-  const approvedCount = tests.filter((t) => t.status === "approved").length || 98;
-  const pendingCount = tests.filter((t) => t.status === "pending_review").length || 18;
-  const failedCount = tests.filter((t) => t.status === "failed").length || 2;
-  const acCount = 56;
-  const coveragePct = "92.1%";
+  const totalCount = q.data?.total ?? tests.length;
+  const hasCompleteTestSet = totalCount === tests.length;
+  const approvedCount = hasCompleteTestSet ? tests.filter((t) => t.status === "approved").length : null;
+  const pendingCount = hasCompleteTestSet ? tests.filter((t) => t.status === "pending_review").length : null;
+  const failedCount = latestExecutionQ.data?.items[0]?.failed ?? null;
+  const acCount = hasCompleteTestSet ? new Set(tests.flatMap((t) => t.ac_keys)).size : null;
+  const coveragePct = current?.stats?.coverage_pct;
 
   // Filtered tests
   const filteredTests = useMemo(() => {
@@ -186,7 +206,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
           <Link to="/projects" className="hover:text-slate-800 transition-colors">Projects</Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <Link to={`/projects/${projectId}`} className="hover:text-slate-800 transition-colors">
-            {current?.name || "Dayforce"}
+            {current?.name || "Project"}
           </Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <span className="text-slate-900 font-semibold">Test Cases</span>
@@ -200,7 +220,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">Test Cases</h1>
               <p className="text-xs text-slate-600 mt-0.5">
-                Generated from approved requirements with complete traceability.
+                Test cases linked to project requirements and acceptance criteria.
               </p>
             </div>
           </div>
@@ -209,10 +229,8 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                toast.ok("Test generation triggered from 56 approved requirements");
-                qc.invalidateQueries({ queryKey: ["tests"] });
-              }}
+              onClick={() => generateTestsM.mutate()}
+              loading={generateTestsM.isPending}
               className="border-slate-200 text-slate-700 hover:bg-slate-50"
             >
               <Sparkles className="h-3.5 w-3.5 text-purple-600 mr-1" />
@@ -264,7 +282,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Approved</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{approvedCount}</span>
+            <span className="text-2xl font-bold text-slate-900">{approvedCount ?? "—"}</span>
           </div>
         </div>
 
@@ -277,20 +295,20 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Acceptance Criteria</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{acCount}</span>
+            <span className="text-2xl font-bold text-slate-900">{acCount ?? "—"}</span>
           </div>
         </div>
 
-        {/* Card 4: Coverage */}
+        {/* Card 4: Clause coverage */}
         <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-cyan-50 text-cyan-600">
               <Crosshair className="h-3.5 w-3.5" />
             </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Coverage</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Clause coverage</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{coveragePct}</span>
+            <span className="text-2xl font-bold text-slate-900">{coveragePct == null ? "—" : `${coveragePct}%`}</span>
           </div>
         </div>
 
@@ -303,7 +321,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pending Review</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-amber-600">{pendingCount}</span>
+            <span className="text-2xl font-bold text-amber-600">{pendingCount ?? "—"}</span>
           </div>
         </div>
 
@@ -316,10 +334,22 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Failed (Last Run)</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-red-600">{failedCount}</span>
+            <span className="text-2xl font-bold text-red-600">{failedCount ?? "—"}</span>
           </div>
         </div>
       </div>
+      {latestExecutionQ.error && (
+        <div role="alert" className="mt-3 flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span>Could not load the latest execution summary.</span>
+          <button
+            type="button"
+            className="font-medium underline underline-offset-2"
+            onClick={() => void latestExecutionQ.refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Tabs Row matching Screenshot 3 */}
       <div className="border-b border-slate-200">
@@ -395,20 +425,20 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
       </div>
 
       {/* Filter Toolbar matching Screenshot 3 */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-        <div className="relative w-full sm:w-80">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+        <div className="relative w-full min-w-0 sm:w-auto sm:min-w-64 sm:max-w-sm sm:flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search test cases (ID, title, keyword...)"
-            className="pl-8 text-xs h-9"
+            className="h-9 w-full pl-8 text-xs"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <Select
-            className="text-xs h-9 w-36"
+            className="h-9 w-36 max-w-full shrink-0 text-xs"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
@@ -423,7 +453,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
           </Select>
 
           <Select
-            className="text-xs h-9 w-32"
+            className="h-9 w-32 max-w-full shrink-0 text-xs"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -435,7 +465,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
           </Select>
 
           <Select
-            className="text-xs h-9 w-32"
+            className="h-9 w-32 max-w-full shrink-0 text-xs"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -447,7 +477,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
           </Select>
 
           <button
-            className="p-2 border border-slate-200 rounded-md text-slate-500 hover:bg-slate-50"
+            className="shrink-0 rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"
             title="Filter options"
             aria-label="Filter options"
           >
@@ -457,14 +487,14 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
       </div>
 
       {/* Master-Detail Layout matching Screenshot 3 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Side: Test Cases Table (7 Cols or 12 Cols if closed) */}
-        <div className={cn("space-y-3", isDetailOpen ? "lg:col-span-7" : "lg:col-span-12")}>
+      <div ref={tableLayoutRef} className="relative grid min-w-0 grid-cols-1 items-start gap-4 2xl:grid-cols-12">
+        <div className={cn("min-w-0 space-y-3", isDetailOpen ? "2xl:col-span-8" : "2xl:col-span-12")}>
           <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
-            <table className="w-full text-left text-xs">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain">
+            <table className="w-full min-w-[1040px] table-fixed text-left text-xs">
               <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
                 <tr>
-                  <th className="px-3 py-2.5 w-8">
+                  <th className="w-12 whitespace-nowrap px-3 py-2.5">
                     <input
                       type="checkbox"
                       className="rounded border-slate-300"
@@ -472,21 +502,21 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                       onChange={toggleCheckAll}
                     />
                   </th>
-                  <th className="px-3 py-2.5 w-24">Test ID ↑</th>
-                  <th className="px-3 py-2.5">Test Title</th>
-                  <th className="px-3 py-2.5 w-24">Category</th>
-                  <th className="px-3 py-2.5 w-20">Priority</th>
-                  <th className="px-3 py-2.5 w-24">Linked Req.</th>
-                  <th className="px-3 py-2.5 w-28">Status</th>
-                  <th className="px-2 py-2.5 w-8 text-center"></th>
+                  <th className="w-28 whitespace-nowrap px-3 py-2.5">Test ID ↑</th>
+                  <th className="w-[340px] whitespace-nowrap px-3 py-2.5">Test Title</th>
+                  <th className="w-36 whitespace-nowrap px-3 py-2.5">Category</th>
+                  <th className="w-28 whitespace-nowrap px-3 py-2.5">Priority</th>
+                  <th className="w-32 whitespace-nowrap px-3 py-2.5">Linked Req.</th>
+                  <th className="w-32 whitespace-nowrap px-3 py-2.5">Status</th>
+                  <th className="w-12 whitespace-nowrap px-2 py-2.5 text-center"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pagedTests.map((t) => {
                   const isSelected = selectedTest?.id === t.id;
                   const isChecked = checkedIds.includes(t.id);
-                  const cat = t.test_category || t.test_type || "positive";
-                  const reqKey = t.requirement_key?.replace("DAY-", "") || "REQ-001";
+                  const cat = t.test_category || t.test_type;
+                  const reqKey = t.requirement_key;
                   return (
                     <tr
                       key={t.id}
@@ -507,22 +537,22 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                           onChange={() => toggleCheck(t.id)}
                         />
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-[#3067DB] font-medium">
+                      <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium text-[#3067DB]">
                         {t.key}
                       </td>
-                      <td className="px-3 py-2.5 text-slate-900 font-medium max-w-xs truncate">
+                      <td className="truncate px-3 py-2.5 font-medium text-slate-900" title={t.title}>
                         {t.title}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         {getCategoryBadge(cat)}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         <Badge value={t.priority} />
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-[#3067DB] hover:underline">
+                      <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-[#3067DB] hover:underline">
                         {reqKey}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         {getStatusBadge(t.status)}
                       </td>
                       <td className="px-2 py-2.5 text-center text-slate-400 hover:text-slate-600">
@@ -533,6 +563,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 })}
               </tbody>
             </table>
+            </div>
 
             {/* Pagination footer matching Screenshot 3 */}
             <div className="p-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 bg-white">
@@ -594,9 +625,14 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
           </div>
         </div>
 
-        {/* Right Side: Test Case Details Drawer matching Screenshot 3 */}
         {isDetailOpen && selectedTest && (
-          <div className="lg:col-span-5 rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
+          <ResponsiveDetailDrawer
+            open={isDetailOpen}
+            onOpenChange={setIsDetailOpen}
+            title={`Test details: ${selectedTest.key}`}
+            anchorRef={tableLayoutRef}
+          >
+          <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs">
             {/* Header */}
             <div className="p-4 border-b border-slate-200 bg-slate-50/50">
               <div className="flex items-center justify-between">
@@ -616,7 +652,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
 
               <h3 className="text-sm font-semibold text-slate-900 mt-2">{selectedTest.title}</h3>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                {selectedTest.description || "Validate that a registered employee can clock in to record attendance."}
+                {selectedTest.description || "No description provided."}
               </p>
 
               {/* Badges Grid */}
@@ -638,14 +674,14 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Linked Requirement(s)</span>
                   <span className="text-[#3067DB] font-mono text-xs font-semibold hover:underline block mt-0.5">
-                    {selectedTest.requirement_key?.replace("DAY-", "") || "REQ-001"}
+                    {selectedTest.requirement_key || "—"}
                   </span>
                 </div>
 
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Acceptance Criteria</span>
                   <span className="text-[#3067DB] font-mono text-xs font-semibold hover:underline block mt-0.5">
-                    {selectedTest.ac_keys?.length ? selectedTest.ac_keys.join(", ") : "AC-001, AC-002"}
+                    {selectedTest.ac_keys?.length ? selectedTest.ac_keys.join(", ") : "—"}
                   </span>
                 </div>
               </div>
@@ -699,9 +735,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                     ⊙ Objective
                   </span>
                   <p className="text-slate-800 mt-1">
-                    {selectedTest.title
-                      ? `Verify ${selectedTest.title.toLowerCase()}.`
-                      : "Verify successful clock-in for a valid employee."}
+                    {selectedTest.description || "No objective provided."}
                   </p>
                 </div>
 
@@ -710,10 +744,9 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   <span className="text-slate-500 font-semibold block text-[11px] uppercase tracking-wider">
                     ⊕ Preconditions
                   </span>
-                  <ul className="list-disc list-inside text-slate-700 mt-1 space-y-0.5 text-[11px]">
-                    <li>Employee is registered and active in target HCM repository.</li>
-                    <li>User is authenticated in the system with appropriate role.</li>
-                  </ul>
+                  <p className="text-slate-700 mt-1 whitespace-pre-wrap">
+                    {selectedTest.preconditions || "No preconditions provided."}
+                  </p>
                 </div>
 
                 {/* Test Steps */}
@@ -722,20 +755,20 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                     ⎘ Test Steps
                   </span>
                   <div className="space-y-2">
-                    {(selectedTest.steps_json || [
-                      { action: "Navigate to the Attendance (Clock In) page.", expected: "Page loads successfully." },
-                      { action: 'Click the "Clock In" button.', expected: "System records punch event." },
-                      { action: "Verify the confirmation message and recorded time.", expected: "Confirmation message displayed." },
-                    ]).map((step, idx) => (
+                    {(selectedTest.steps_json || selectedTest.steps || []).map((step, idx) => (
                       <div key={idx} className="flex items-start gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#3067DB] font-bold text-[10px]">
                           {idx + 1}
                         </span>
                         <div className="text-[11px] text-slate-800">
                           <p>{step.action}</p>
+                          {step.expected && <p className="mt-0.5 text-slate-500">Expected: {step.expected}</p>}
                         </div>
                       </div>
                     ))}
+                    {!selectedTest.steps_json?.length && !selectedTest.steps?.length && (
+                      <p className="text-[11px] text-slate-500">No test steps provided.</p>
+                    )}
                   </div>
                 </div>
 
@@ -744,9 +777,10 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   <span className="text-slate-500 font-semibold block text-[11px] uppercase tracking-wider mb-1">
                     ⛁ Test Data
                   </span>
-                  <div className="rounded border border-slate-200 bg-slate-50 p-2.5 text-[11px] font-mono text-slate-800 flex justify-between">
-                    <span className="text-slate-500">Employee ID</span>
-                    <span className="font-semibold">EMP1001</span>
+                  <div className="rounded border border-slate-200 bg-slate-50 p-2.5 text-[11px] font-mono text-slate-800">
+                    {selectedTest.test_data && Object.keys(selectedTest.test_data).length
+                      ? JSON.stringify(selectedTest.test_data, null, 2)
+                      : "No test data provided."}
                   </div>
                 </div>
 
@@ -758,8 +792,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   <div className="rounded border border-emerald-200 bg-emerald-50/60 p-3 text-[11px] text-emerald-900 flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      {selectedTest.expected_result ||
-                        "The system records the clock-in successfully and displays a confirmation message with the current date and time."}
+                      {selectedTest.expected_result || "No expected result provided."}
                     </span>
                   </div>
                 </div>
@@ -813,7 +846,9 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 <div className="rounded border border-slate-200 p-3 bg-slate-50/50 space-y-2">
                   <span className="font-semibold text-slate-900 block">Grounding Provenance</span>
                   <p className="text-[11px] text-slate-600">
-                    Traces to <strong>{selectedTest.requirement_key}</strong>. Verified against Dayforce specification clause with SHA-256 evidence anchoring.
+                    Traces to <strong>{selectedTest.requirement_key || "—"}</strong>
+                    {selectedTest.clause_keys.length > 0 && ` · Clauses: ${selectedTest.clause_keys.join(", ")}`}
+                    {selectedTest.quote_verified != null && ` · Source quote ${selectedTest.quote_verified ? "verified" : "not verified"}`}
                   </p>
                 </div>
               </div>
@@ -825,12 +860,16 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 <div className="rounded border border-slate-200 p-3 bg-slate-50/50 space-y-1">
                   <span className="font-semibold text-slate-900 block">Latest Execution Outcome</span>
                   <p className="text-[11px] text-slate-600">
-                    Executed in <strong>Simulation (Attendance_Workflow_v1.2)</strong>. Status: <span className="text-emerald-700 font-semibold">Passed</span> (duration: 1.84s).
+                    {selectedTest.recent_results?.[0] ? (
+                      <>Status: <span className="font-semibold">{selectedTest.recent_results[0].status}</span>
+                        {" · "}Duration: {selectedTest.recent_results[0].duration_ms} ms</>
+                    ) : "No execution result is available for this test case."}
                   </p>
                 </div>
               </div>
             )}
           </div>
+          </ResponsiveDetailDrawer>
         )}
       </div>
 
@@ -853,7 +892,7 @@ function AddTestCaseModal({ projectId, onClose }: { projectId: number; onClose: 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("positive");
   const [priority, setPriority] = useState("high");
-  const [reqKey, setReqKey] = useState("DAY-REQ-001");
+  const [reqKey, setReqKey] = useState("");
   const [expected, setExpected] = useState("");
 
   const m = useMutation({
@@ -918,7 +957,7 @@ function AddTestCaseModal({ projectId, onClose }: { projectId: number; onClose: 
           </Field>
         </div>
         <Field label="Linked Requirement Key" htmlFor="tc-req">
-          <Input id="tc-req" value={reqKey} onChange={(e) => setReqKey(e.target.value)} placeholder="e.g. DAY-REQ-001" />
+          <Input id="tc-req" value={reqKey} onChange={(e) => setReqKey(e.target.value)} placeholder="Requirement key" />
         </Field>
         <Field label="Expected Result" htmlFor="tc-exp">
           <Textarea id="tc-exp" rows={3} value={expected} onChange={(e) => setExpected(e.target.value)} placeholder="Expected outcome..." />

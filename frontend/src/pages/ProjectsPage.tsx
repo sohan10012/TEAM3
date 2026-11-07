@@ -102,7 +102,7 @@ export function ProjectsPage() {
           { id: "status", header: "Status", cell: (p) => <Badge value={p.status} /> },
           { id: "req", header: "Requirements", cell: (p) => p.stats.requirements, className: "tabular-nums font-medium" },
           { id: "tests", header: "Tests", cell: (p) => p.stats.tests, className: "tabular-nums font-medium" },
-          { id: "cov", header: "Coverage", cell: (p) => pct(p.stats.coverage_pct), className: "tabular-nums font-medium" },
+          { id: "cov", header: "Clause coverage", cell: (p) => pct(p.stats.coverage_pct), className: "tabular-nums font-medium" },
           { id: "def", header: "Open defects", cell: (p) => p.stats.open_defects, className: "tabular-nums" },
         ]}
       />
@@ -119,7 +119,7 @@ export function ConnectRepoDialog({ open, onOpenChange }: { open: boolean; onOpe
   const { setProjectId } = useProjects();
   const [mode, setMode] = useState<"input" | "preview" | "importing" | "done">("input");
   const [f, setF] = useState({
-    repo_url: "https://github.com/sohan10012/EchoBox.git",
+    repo_url: "",
     branch: "main",
     commit_sha: "",
     project_key: "",
@@ -473,7 +473,7 @@ export function ConnectRepoDialog({ open, onOpenChange }: { open: boolean; onOpe
             </div>
             <div className="rounded bg-white/80 p-2 border border-emerald-100">
               <div className="text-base font-semibold text-slate-800">{pct(createdProject.stats?.coverage_pct ?? 0)}</div>
-              <div className="text-2xs text-slate-500 uppercase">Coverage</div>
+              <div className="text-2xs text-slate-500 uppercase">Clause coverage</div>
             </div>
           </div>
         </div>

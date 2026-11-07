@@ -3,13 +3,9 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  Cpu,
-  ExternalLink,
   FileText,
   GitBranch,
-  GitCommit,
   PlayCircle,
-  Server,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -61,7 +57,6 @@ const axis = { fontSize: 11, fill: "#64748B" };
 
 function ProjectOnboardingHub({ current }: { current?: any }) {
   const nav = useNavigate();
-  const isEcho = Boolean(current?.key === "ECHO" || current?.name?.toLowerCase().includes("echobox"));
 
   return (
     <div className="space-y-6">
@@ -172,73 +167,30 @@ function ProjectOnboardingHub({ current }: { current?: any }) {
         </div>
       </div>
 
-      {/* Domain / Architecture Directory */}
+      {/* Project Modules */}
       <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-[#3067DB]" />
             <h3 className="text-xs font-semibold text-slate-900">
-              {isEcho ? "EchoBox Target Architecture Components" : (current ? `${current.name} Verification Modules` : "Target System Modules")}
+              {current?.name ? `${current.name} Verification Modules` : "Project Modules"}
             </h3>
           </div>
           <Link to="/projects" className="text-xs font-medium text-[#3067DB] hover:underline">
             View All Projects
           </Link>
         </div>
-        {isEcho ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">ECHO-ROOM: Ephemeral Rooms</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Room creation, 24-hour TTL expiration, pseudonym generation, room ownership.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">ECHO-MSG: Messages & RPC</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Anonymous message submission, DynamoDB single-table storage, rate limiting.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">ECHO-AUTH: Dual Cognito Pools</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Owner vs respondent authentication, JWT signature validation, token expiry.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">ECHO-MOD: Moderation & Export</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Content filtering, room closing, CSV/JSON export, soft-delete archival.
-              </span>
-            </div>
+        {current?.modules?.length ? (
+          <div className="grid grid-cols-1 gap-3 text-xs md:grid-cols-2 lg:grid-cols-4">
+            {current.modules.map((module: { id: number; code: string; name: string; description: string }) => (
+              <div key={module.id} className="rounded border border-slate-200 bg-slate-50/50 p-3">
+                <span className="block font-semibold text-slate-800">{module.code} · {module.name}</span>
+                {module.description && <span className="mt-1 block text-[11px] text-slate-500">{module.description}</span>}
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">Requirements Analysis</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Source document parsing, clause extraction, ambiguity scoring, and rule discovery.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">Test Synthesis</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Grounded acceptance criteria generation, automated test cases, and fixture synthesis.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">Isolated Execution</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Sandboxed runtime execution, assertion verification, and execution trace recording.
-              </span>
-            </div>
-            <div className="rounded border border-slate-200 p-3 bg-slate-50/50">
-              <span className="font-semibold text-slate-800 block">Defect & Quality Audit</span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Automated triage, immutable defect logging, regression tracking, and exportable reports.
-              </span>
-            </div>
-          </div>
+          <p className="text-xs text-slate-500">No project modules are configured.</p>
         )}
       </div>
     </div>
@@ -322,7 +274,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
             {
               num: 1,
               name: "Connect",
-              detail: current?.key ? `${current.key} Connected` : "Repository Link",
+              detail: current?.key ? `${current.key} selected` : "Select a project",
               active: true,
               done: !!current?.key,
               onClick: () => setConnectOpen(true),
@@ -330,15 +282,15 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
             {
               num: 2,
               name: "Analyze",
-              detail: current?.key ? "Source & AST Mapped" : "Inspect Source",
-              active: !!current?.key,
-              done: !!current?.key,
+              detail: k ? `${k.analysed_requirements} analyzed` : "Loading…",
+              active: (k?.analysed_requirements ?? 0) > 0,
+              done: Boolean(k && k.total_requirements > 0 && k.analysed_requirements >= k.total_requirements),
               onClick: () => nav("/projects"),
             },
             {
               num: 3,
               name: "Requirements",
-              detail: `${k?.total_requirements ?? 0} Grounded`,
+              detail: k ? `${k.total_requirements} recorded` : "Loading…",
               active: (k?.total_requirements ?? 0) > 0,
               done: (k?.total_requirements ?? 0) > 0,
               onClick: () => nav(`/requirements?${scope}`),
@@ -346,7 +298,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
             {
               num: 4,
               name: "Test Generation",
-              detail: `${k?.total_test_cases ?? 0} Traceable`,
+              detail: k ? `${k.total_test_cases} test cases` : "Loading…",
               active: (k?.total_test_cases ?? 0) > 0,
               done: (k?.total_test_cases ?? 0) > 0,
               onClick: () => nav(`/tests?${scope}`),
@@ -354,7 +306,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
             {
               num: 5,
               name: "Execute",
-              detail: `${k?.total_executions ?? 0} Sandboxed`,
+              detail: k ? `${k.total_executions} execution records` : "Loading…",
               active: (k?.total_executions ?? 0) > 0,
               done: (k?.total_executions ?? 0) > 0,
               onClick: () => nav(`/executions?${scope}`),
@@ -390,129 +342,6 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
         </div>
       </div>
 
-      {/* Connected Repository & Multi-Environment Verification Status */}
-      {((current as any)?.github || current?.key === "ECHO") && (
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#3067DB] border border-blue-100">
-                {current?.key || "ECHO"}
-              </span>
-              <span className="text-xs font-semibold text-slate-900 tracking-tight">
-                Repository & Execution Environment Status
-              </span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => setConnectOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs transition-colors cursor-pointer"
-              >
-                <GitBranch className="h-3.5 w-3.5 text-slate-500" />
-                <span>Connect another repository</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Source Revision Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs mb-4">
-            <div className="rounded border border-slate-100 bg-slate-50/60 p-2.5">
-              <span className="text-[11px] font-medium text-slate-500 block">Repository</span>
-              <a
-                href={(current as any)?.github?.url || "https://github.com/sohan10012/EchoBox"}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
-              >
-                <span>{((current as any)?.github?.url || "https://github.com/sohan10012/EchoBox").replace(/^https?:\/\/github\.com\//, "")}</span>
-                <ExternalLink className="h-3 w-3 inline" />
-              </a>
-            </div>
-            <div className="rounded border border-slate-100 bg-slate-50/60 p-2.5">
-              <span className="text-[11px] font-medium text-slate-500 block">Branch & Ref</span>
-              <span className="font-mono text-xs text-slate-800 flex items-center gap-1 mt-0.5">
-                <GitBranch className="h-3 w-3 text-slate-500" />
-                <span>{(current as any)?.github?.branch || "main"}</span>
-              </span>
-            </div>
-            <div className="rounded border border-slate-100 bg-slate-50/60 p-2.5">
-              <span className="text-[11px] font-medium text-slate-500 block">Ingested Revision</span>
-              <span className="font-mono text-xs text-slate-800 flex items-center gap-1 mt-0.5" title={(current as any)?.github?.commit_sha || "b3740a62ad414a141e82146adafb47c4850fd782"}>
-                <GitCommit className="h-3 w-3 text-slate-500" />
-                <span>{((current as any)?.github?.commit_sha || "b3740a62ad41").slice(0, 10)}</span>
-              </span>
-            </div>
-            <div className="rounded border border-slate-100 bg-slate-50/60 p-2.5">
-              <span className="text-[11px] font-medium text-slate-500 block">Source Architecture</span>
-              <span className="text-xs font-medium text-slate-800 block mt-0.5">
-                8 Modules • 13 RPC Actions • Single Table
-              </span>
-            </div>
-          </div>
-
-          {/* Multi-Environment Execution Ledger */}
-          <div className="rounded border border-slate-200 bg-white p-3 space-y-2">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                <Cpu className="h-3.5 w-3.5 text-slate-600" />
-                <span>Verified Execution Environments</span>
-              </div>
-              <span className="text-[11px] text-slate-500">
-                Never combine sandbox mock results with live remote endpoints.
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
-              {/* Real SUT Primary Engine */}
-              <div className="rounded border border-emerald-200 bg-emerald-50/40 p-2.5 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-emerald-900 flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>Real Code SUT (Primary)</span>
-                  </span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
-                    moto DynamoDB
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 leading-tight">
-                  Real SUT entrypoint (`kind="real_code"`, `is_default=true`). Executes actual Lambda handlers under moto DynamoDB in Linux bwrap+rlimits sandbox.
-                </p>
-              </div>
-
-              {/* Simulation Harness Baseline */}
-              <div className="rounded border border-slate-200 bg-slate-50/60 p-2.5 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-800 flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-500" />
-                    <span>Simulation (Baseline)</span>
-                  </span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
-                    In-Memory
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 leading-tight">
-                  Fast in-memory simulation (`kind="simulation"`). Preserved as secondary baseline for regression detection.
-                </p>
-              </div>
-
-              {/* AI Inference Providers */}
-              <div className="rounded border border-blue-200 bg-blue-50/40 p-2.5 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-800 flex items-center gap-1">
-                    <Server className="h-3.5 w-3.5 text-blue-600" />
-                    <span>AI Provider SlotPool</span>
-                  </span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">
-                    Multi-Slot
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 leading-tight">
-                  Groq (gpt-oss-120b) + Gemini (2.5-flash). Dynamic multi-slot rotation, rate-limit cooldown, and circuit breaker protection.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {q.error ? (
         <ErrorState error={q.error} onRetry={q.refetch} />
       ) : (
@@ -530,7 +359,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
                   onClick={() => nav(`/requirements?${scope}`)}
                 />
                 <Stat
-                  label="Requirement coverage"
+                  label="Clause coverage"
                   value={<CountUp value={k.requirement_coverage} decimals={1} suffix="%" />}
                   hint="Clauses with active tests"
                   onClick={() => nav("/traceability")}
@@ -624,7 +453,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
                   )}
                 </Panel>
 
-                <Panel title="Requirement coverage by project" bodyClass="h-64">
+                <Panel title="Clause coverage by project" bodyClass="h-64">
                   {!d ? (
                     <LoadingBlock />
                   ) : (
@@ -636,7 +465,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
                         <Tooltip formatter={(v) => `${v}%`} />
                         <Bar
                           dataKey="coverage_pct"
-                          name="Coverage"
+                          name="Clause coverage"
                           fill="#3067DB"
                           radius={[3, 3, 0, 0]}
                           onClick={(e: any) => nav(`/traceability?project_id=${e.project_id}`)}
@@ -728,7 +557,7 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
                       <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
                         <tr>
                           <th className="px-4 py-2.5">Project</th>
-                          <th className="px-4 py-2.5">Coverage</th>
+                          <th className="px-4 py-2.5">Clause coverage</th>
                           <th className="px-4 py-2.5">Executions</th>
                           <th className="px-4 py-2.5">Pass rate</th>
                           <th className="px-4 py-2.5">Open defects</th>
@@ -763,7 +592,7 @@ export default function DashboardPage() {
   if (projectId && current && current.key !== "SMPL" && current.key !== "PAY") {
     const fallback = <AnalyticsDashboardView projectId={projectId} current={current} />;
     if (current?.project_type === "requirements_based") {
-      return <RequirementsProjectDashboard projectId={projectId} fallback={fallback} />;
+      return <RequirementsProjectDashboard projectId={projectId} isDashboard fallback={fallback} />;
     }
     return <ProductionProjectDashboard projectId={projectId} fallback={fallback} />;
   }

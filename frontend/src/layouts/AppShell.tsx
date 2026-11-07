@@ -64,7 +64,7 @@ export function Wordmark({ compact, projectName }: { compact?: boolean; projectN
   const badgeLabel = projectName ? (projectName.length > 14 ? projectName.slice(0, 12) + "…" : projectName) : "Platform";
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-[#3067DB] text-white shadow-xs ring-1 ring-[#3067DB]/20">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#3067DB] text-white shadow-xs ring-1 ring-[#3067DB]/20">
         <span className="font-mono text-xs font-bold tracking-tight">TT</span>
       </div>
       {!compact && (
@@ -190,8 +190,8 @@ function GlobalSearch() {
   };
 
   return (
-    <div ref={box} className="relative w-full max-w-sm">
-      <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
+    <div ref={box} className="relative w-full max-w-lg">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
       <input
         ref={inputRef}
         value={q}
@@ -200,13 +200,13 @@ function GlobalSearch() {
         onKeyDown={handleKeyDown}
         placeholder="Search tests, requirements, defects... (⌘K)"
         aria-label="Global search"
-        className="h-9 w-full rounded border border-slate-200 bg-slate-50 pl-8 pr-12 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#3067DB] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#3067DB]"
+        className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#3067DB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3067DB]/20"
       />
-      <kbd className="pointer-events-none absolute right-2.5 top-2.5 hidden h-4 select-none items-center gap-0.5 rounded border border-slate-200 bg-white px-1 font-mono text-[10px] font-medium text-slate-400 sm:flex">
+      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden h-5 -translate-y-1/2 select-none items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 font-mono text-[10px] font-medium text-slate-400 sm:flex">
         ⌘K
       </kbd>
       {open && debounced.length >= 2 && (
-        <div className="absolute z-30 mt-1 w-full overflow-hidden rounded border border-slate-200 bg-white shadow-popover" role="listbox">
+        <div className="absolute z-30 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-popover" role="listbox">
           {res.isLoading ? (
             <p className="px-3 py-2 text-xs text-slate-500">Searching...</p>
           ) : !items.length ? (
@@ -244,13 +244,13 @@ function Notifications() {
   const nav = useNavigate();
   return (
     <Dropdown.Root>
-      <Dropdown.Trigger className="relative rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]"
+      <Dropdown.Trigger className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
         <Bell className="h-4 w-4" />
         {unread > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#3067DB]" />}
       </Dropdown.Trigger>
       <Dropdown.Portal>
-        <Dropdown.Content align="end" sideOffset={6} className="z-40 w-80 rounded border border-slate-200 bg-white p-1 shadow-popover">
+        <Dropdown.Content align="end" sideOffset={6} className="z-40 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white p-1 shadow-popover">
           {!q.data?.length ? (
             <div className="px-4 py-4 text-center">
               <Bell className="mx-auto h-5 w-5 text-slate-300 mb-1" />
@@ -275,7 +275,13 @@ function Notifications() {
 
 export function AppShell() {
   const { projects, projectId, setProjectId, current } = useProjects();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("tracetest.sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const qc = useQueryClient();
@@ -303,17 +309,17 @@ export function AppShell() {
   ];
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] bg-slate-50 text-slate-900 overflow-x-clip">
+    <div className="flex h-[100dvh] min-h-[100dvh] min-w-0 overflow-x-clip bg-slate-50 text-slate-900">
       {/* Mobile Slide-Over Drawer */}
       {mobileDrawerOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true">
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-200"
             onClick={() => setMobileDrawerOpen(false)}
             aria-hidden="true"
           />
           <div className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[calc(100vw-3rem)] flex-col bg-white shadow-xl animate-in slide-in-from-left duration-200">
-            <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4">
+            <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
               <Link to="/" onClick={() => setMobileDrawerOpen(false)} aria-label="TraceTest AI overview">
                 <Wordmark projectName={current?.name} />
               </Link>
@@ -326,10 +332,10 @@ export function AppShell() {
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-4">
+            <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
               {NAV_SECTIONS.map((section) => (
                 <div key={section.title}>
-                  <div className="px-2.5 pb-1 text-[10px] font-semibold tracking-wider text-slate-400">
+                  <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-400">
                     {section.title}
                   </div>
                   <div className="space-y-1">
@@ -341,15 +347,15 @@ export function AppShell() {
                         onClick={() => setMobileDrawerOpen(false)}
                         className={({ isActive }) =>
                           cn(
-                            "flex items-center gap-3 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+                            "group flex min-h-10 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]",
                             isActive
-                              ? "bg-blue-50 text-[#3067DB] font-semibold"
+                              ? "bg-blue-50 text-[#3067DB] font-semibold ring-1 ring-inset ring-blue-100"
                               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                           )
                         }
                       >
-                        <n.icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+                        <n.icon className="h-[18px] w-[18px] shrink-0 text-slate-400 transition-colors group-hover:text-slate-600" aria-hidden />
                         <span className="truncate">{n.label}</span>
                       </NavLink>
                     ))}
@@ -373,25 +379,26 @@ export function AppShell() {
       {/* Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200",
-          collapsed ? "w-14" : "w-60"
+          "hidden min-h-0 shrink-0 flex-col border-r border-slate-200 bg-white xl:flex",
+          "transition-[width] duration-200",
+          collapsed ? "w-16" : "w-64"
         )}
         aria-label="Primary"
       >
-        <div className="flex h-14 items-center justify-between border-b border-slate-200 px-3.5">
+        <div className={cn("flex h-16 items-center border-b border-slate-200", collapsed ? "justify-center px-2" : "px-4")}>
           <Link to="/" aria-label="TraceTest AI overview">
             <Wordmark compact={collapsed} projectName={current?.name} />
           </Link>
         </div>
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        <nav className={cn("min-h-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto overscroll-y-contain py-5", collapsed ? "px-2.5" : "px-3")}>
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!collapsed && (
-                <div className="px-2.5 pb-1 text-[10px] font-semibold tracking-wider text-slate-400">
+                <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-400">
                   {section.title}
                 </div>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {section.items.map((n) => (
                   <NavLink
                     key={n.to}
@@ -400,13 +407,14 @@ export function AppShell() {
                     title={collapsed ? n.label : undefined}
                     className={({ isActive }) =>
                       cn(
-                        "flex items-center gap-2.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        "group flex min-h-10 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-colors",
+                        collapsed && "justify-center px-0",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]",
-                        isActive ? "bg-blue-50 text-[#3067DB]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        isActive ? "bg-blue-50 text-[#3067DB] font-semibold ring-1 ring-inset ring-blue-100" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       )
                     }
                   >
-                    <n.icon className={cn("h-4 w-4 shrink-0", "text-slate-500")} aria-hidden />
+                    <n.icon className="h-[18px] w-[18px] shrink-0 text-slate-400 transition-colors group-hover:text-slate-600" aria-hidden />
                     {!collapsed && <span className="truncate">{n.label}</span>}
                   </NavLink>
                 ))}
@@ -415,40 +423,46 @@ export function AppShell() {
           ))}
         </nav>
 
-        {/* Platform Verification System Notice */}
-        {!collapsed && (
-          <div className="mx-2 mb-2 p-2 bg-slate-50 rounded border border-slate-200 text-[10px] text-slate-500 leading-tight flex items-center justify-between">
-            <span className="font-semibold text-slate-700">TraceTest AI</span>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200">
-              Local beta
-            </span>
-          </div>
-        )}
-
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center gap-2 border-t border-slate-200 px-3.5 py-2.5 text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="h-4 w-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="h-4 w-4" />
-              <span className="text-xs">Collapse</span>
-            </>
+        <div className="shrink-0 border-t border-slate-200 bg-white px-2.5 pb-2 pt-3">
+          {!collapsed && (
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-tight text-slate-500">
+              <span className="font-semibold text-slate-700">TraceTest AI</span>
+              <span className="inline-flex shrink-0 items-center rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                Local beta
+              </span>
+            </div>
           )}
-        </button>
+          <button
+            onClick={() => {
+              setCollapsed((value) => {
+                const next = !value;
+                try {
+                  localStorage.setItem("tracetest.sidebar-collapsed", String(next));
+                } catch {
+                  // Sidebar state still updates if browser storage is unavailable.
+                }
+                return next;
+              });
+            }}
+            aria-label={collapsed ? "Expand sidebar" : "Minimize sidebar"}
+            title={collapsed ? "Expand sidebar" : "Minimize sidebar"}
+            className="flex h-10 w-full items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        </div>
       </aside>
 
       {/* Main Layout Area */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 sm:px-6">
-          <div className="flex items-center gap-2 min-w-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="relative z-20 flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-200 bg-white px-3 py-2.5 sm:px-5 xl:px-6">
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
             {/* Hamburger button for mobile */}
             <button
               onClick={() => setMobileDrawerOpen(true)}
-              className="md:hidden rounded p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 xl:hidden"
               aria-label="Open navigation menu"
             >
               <Menu className="h-5 w-5" />
@@ -460,39 +474,53 @@ export function AppShell() {
               onValueChange={(val) => setProjectId(val === "ALL" ? null : Number(val))}
               options={projectOptions}
               ariaLabel="Project Workspace"
-              triggerClassName="w-40 sm:w-56 truncate"
+              triggerClassName="h-10 w-40 truncate rounded-lg sm:w-56"
             />
           </div>
 
-          <div className="hidden sm:block flex-1 max-w-sm mx-2">
+          <div className="order-3 min-w-0 basis-full sm:order-none sm:flex-1 sm:basis-44 sm:max-w-lg">
             <GlobalSearch />
           </div>
 
-          <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex max-w-full shrink-0 items-center gap-1">
             {/* Dual-Control Persona Switcher */}
             {(meQuery.data?.persona || meQuery.data?.roles || meQuery.data?.user || meQuery.isSuccess) && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 pl-2.5 pr-1 py-0.5 text-2xs text-slate-700">
+              <div
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 pl-2.5 pr-1 text-xs text-slate-700"
+                title={isReviewer ? "Riley Chen (Reviewer)" : "Alex Kowalski (Operator)"}
+                aria-label={`Current persona: ${isReviewer ? "Riley Chen, Reviewer" : "Alex Kowalski, Operator"}`}
+              >
                 <span className={cn("h-2 w-2 rounded-full", isReviewer ? "bg-purple-600" : "bg-blue-600")} />
-                <span className="font-medium text-slate-500">Persona:</span>
-                <span className="font-semibold text-slate-800">
+                <span className="hidden font-medium text-slate-500 2xl:inline">Persona:</span>
+                <span className="hidden font-semibold text-slate-800 2xl:inline">
                   {isReviewer ? "Riley Chen (Reviewer)" : "Alex Kowalski (Operator)"}
                 </span>
+                <span className="font-semibold text-slate-800 2xl:hidden">{isReviewer ? "Reviewer" : "Operator"}</span>
                 <button
                   onClick={handleTogglePersona}
                   disabled={switching}
-                  className="ml-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-2xs font-medium text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-2xs disabled:opacity-50"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 2xl:ml-1 2xl:w-auto 2xl:gap-1 2xl:px-2"
                   title="Switch identity persona between Operator and Reviewer"
+                  aria-label="Switch identity persona between Operator and Reviewer"
                 >
                   <ArrowLeftRight className={cn("h-3 w-3 text-slate-500", switching && "animate-spin")} />
-                  <span>Switch</span>
+                  <span className="hidden 2xl:inline">Switch</span>
                 </button>
               </div>
             )}
 
-            <div className="hidden xl:inline-flex items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-2xs text-slate-700">
+            <div
+              className="inline-flex h-9 max-w-24 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 text-2xs text-slate-700 2xl:hidden"
+              title={`Environment: ${cfg.data?.environment || "local"}; Sandbox: ${cfg.data?.isolation_level || "netns+rlimits"}`}
+              aria-label={`Environment ${cfg.data?.environment || "local"}; sandbox ${cfg.data?.isolation_level || "netns+rlimits"}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="truncate font-semibold uppercase">{cfg.data?.environment || "local"}</span>
+            </div>
+            <div className="hidden h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-2xs text-slate-700 2xl:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-medium text-slate-500">Env:</span>
-              <span className="font-semibold text-slate-800 uppercase">{cfg.data?.environment || "local"}</span>
+              <span className="font-semibold uppercase text-slate-800">{cfg.data?.environment || "local"}</span>
               <span className="text-slate-300">|</span>
               <span className="font-medium text-slate-500">Sandbox:</span>
               <span className="font-mono text-slate-800">{cfg.data?.isolation_level || "netns+rlimits"}</span>
@@ -501,20 +529,21 @@ export function AppShell() {
             {/* 1-Click Multi-Agent Simulation Link */}
             <Link
               to="/simulation"
-              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-2xs font-semibold text-[#3067DB] border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors shadow-2xs"
+              className="inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 text-2xs font-semibold text-[#3067DB] shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-100 2xl:w-auto 2xl:px-2.5"
               title="Interactive Multi-Agent Simulation & Agent Health Monitoring"
             >
               <Sparkles className="h-3 w-3 text-[#3067DB]" />
-              <span className="hidden sm:inline">Simulation</span>
+              <span className="hidden 2xl:inline">Simulation</span>
             </Link>
 
             <Link
               to="/settings"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-2xs text-slate-700 hover:border-slate-300 hover:bg-slate-100 transition-colors"
+              className="inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-2xs text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100 2xl:w-auto 2xl:px-2.5"
               title={llmReady ? "AI Provider Active — Click to manage in Settings" : "No Provider Configured — Click to configure"}
+              aria-label={llmReady ? `AI ${cfg.data?.llm?.mode === "mock" ? "fixture" : "live"}` : "AI not configured"}
             >
               <Activity className={cn("h-3 w-3", llmReady ? "text-emerald-600" : "text-amber-500")} aria-hidden />
-              <span className="font-medium">
+              <span className="hidden font-medium 2xl:inline">
                 {llmReady ? `AI ${cfg.data?.llm?.mode === "mock" ? "fixture" : "live"}` : "AI not configured"}
               </span>
             </Link>
@@ -523,7 +552,7 @@ export function AppShell() {
 
             <Link
               to="/settings"
-              className="rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB] transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]"
               aria-label="Platform Settings"
               title="Platform Settings"
             >
@@ -532,11 +561,11 @@ export function AppShell() {
           </div>
         </header>
 
-        <div className="flex h-9 shrink-0 items-center border-b border-slate-200 bg-slate-50/80 px-4 sm:px-6">
+        <div className="flex h-10 min-w-0 shrink-0 items-center border-b border-slate-200 bg-slate-50/80 px-4 sm:px-6">
           <Breadcrumbs />
         </div>
 
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6" id="main">
+        <main className="mx-auto min-h-0 min-w-0 w-full max-w-[1800px] flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6 sm:py-7 xl:px-8" id="main">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
