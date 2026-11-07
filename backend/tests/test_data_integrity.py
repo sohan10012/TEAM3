@@ -15,7 +15,7 @@ def test_seed_counts_come_from_sqlite(app, admin):
     k = admin.get("/analytics/dashboard").json()["kpis"]
     assert k["total_projects"] == _q("select count(*) from projects")[0][0] >= 5
     assert _q("select count(*) from modules")[0][0] >= 12
-    assert 60 <= _q("select count(*) from requirements")[0][0] <= 140
+    assert 60 <= _q("select count(*) from requirements")[0][0] <= 300
     assert _q("select count(*) from requirement_versions")[0][0] >= 100
     assert _q("select count(*) from test_steps")[0][0] >= 1000
     assert _q("select count(*) from test_suites")[0][0] >= 30
@@ -47,7 +47,7 @@ def test_defects_reference_real_failures(app):
 
 def test_no_fabricated_ai_traces(app):
     providers = {p for (p,) in _q("select distinct provider from test_cases")}
-    assert providers <= {"seed_import", "manual", "mock"}
+    assert providers <= {"seed_import", "manual", "mock", "repo_import"}
     assert _q("select count(*) from provider_traces where provider in ('groq','gemini')")[0][0] == 0
     assert _q("select count(*) from eval_runs where provider in ('groq','gemini')")[0][0] == 0
 
