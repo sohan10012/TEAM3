@@ -227,6 +227,28 @@ export function EmbeddedDocumentViewer({
     document.body.removeChild(link);
   };
 
+  const handleFitToWidth = async () => {
+    const pdf = pdfDocRef.current;
+    const container = containerRef.current;
+    if (!pdf || !container) {
+      setScale(1.25);
+      return;
+    }
+    try {
+      const page = await pdf.getPage(currentPage);
+      const unscaledViewport = page.getViewport({ scale: 1 });
+      const availableWidth = container.clientWidth - 48;
+      if (availableWidth > 200 && unscaledViewport.width > 0) {
+        const newScale = Math.max(0.6, Math.min(2.5, availableWidth / unscaledViewport.width));
+        setScale(Number(newScale.toFixed(2)));
+      } else {
+        setScale(1.25);
+      }
+    } catch {
+      setScale(1.25);
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!isFullscreen) {
@@ -456,9 +478,9 @@ export function EmbeddedDocumentViewer({
               <ZoomIn className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => setScale(1.25)}
+              onClick={handleFitToWidth}
               className="rounded px-1.5 py-0.5 text-2xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-              title="Reset Zoom"
+              title="Fit to Container Width"
             >
               Fit
             </button>

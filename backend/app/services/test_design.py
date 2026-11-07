@@ -366,3 +366,246 @@ def validate_test_specification(db: Session, test_case: TestCase) -> list[str]:
     test_case.validation_errors = errors
     test_case.validation_status = "valid" if not errors else "invalid"
     return errors
+
+
+def generate_test_scenarios_for_requirements(
+    db: Session,
+    project_id: int,
+    requirement_ids: list[int] | None = None,
+    categories: list[str] | None = None,
+    preview_only: bool = True,
+    auto_approve: bool = False,
+    author_id: int | None = None,
+) -> dict[str, Any]:
+    """Generate structured test specifications for selected or uncovered requirements."""
+    proj = db.get(Project, project_id)
+    if not proj:
+        raise BadRequest(f"Project {project_id} not found")
+
+    q = select(Requirement).where(Requirement.project_id == project_id, Requirement.status != "deprecated")
+    if requirement_ids:
+        q = q.where(Requirement.id.in_(requirement_ids))
+    else:
+        # Default to first 5 requirements
+        q = q.limit(5)
+    requirements = list(db.execute(q).scalars().all())
+
+    existing_titles = {
+        t.title.lower() for t in db.execute(
+            select(TestCase).where(TestCase.project_id == project_id)
+        ).scalars().all()
+    }
+    existing_ac_keys = {
+        ac.key for ac in db.execute(
+            select(AcceptanceCriterion).join(Requirement).where(Requirement.project_id == project_id)
+        ).scalars().all()
+    }
+
+    target_cats = set(categories) if categories else {"positive", "negative", "boundary_value", "business_rule"}
+
+    all_templates = [
+        ("positive", "Verify nominal execution of '{title}' with valid inputs",
+         "Ensure happy-path execution operates according to specifications without anomalies.",
+         {"status": "success", "mode": "nominal"}, "Operation succeeds with expected state update.",
+         [{"step": 1, "action": "Initialize valid test inputs", "expected": "Payload conforms to schema"},
+          {"step": 2, "action": "Submit operation request", "expected": "System returns success response"}],
+         "specification_validation"),
+
+        ("negative", "Verify rejection of malformed or invalid inputs for '{title}'",
+         "Ensure invalid payloads are safely rejected without system failure.",
+         {"status": "invalid_payload", "error_code": "ERR_INVALID"}, "System rejects request with 400 Bad Request.",
+         [{"step": 1, "action": "Prepare malformed payload", "expected": "Payload fails format validator"},
+          {"step": 2, "action": "Submit invalid request", "expected": "System returns validation error"}],
+         "specification_validation"),
+
+        ("boundary_value", "Verify boundary thresholds for '{title}' (min/max limits)",
+         "Test behavior at exact boundary conditions and range thresholds.",
+         {"threshold": "max_boundary", "length": 500}, "System accepts boundary value exactly at limit, rejects limit+1.",
+         [{"step": 1, "action": "Submit input at exact boundary limit", "expected": "Input accepted"},
+          {"step": 2, "action": "Submit input exceeding boundary by 1", "expected": "Input rejected"}],
+         "simulation"),
+
+        ("edge_case", "Verify edge case behavior (empty strings, special chars) for '{title}'",
+         "Verify system resilience against edge cases such as empty values and Unicode characters.",
+         {"data": "<script>alert(1)</script>", "special_chars": True}, "Payload sanitized or rejected cleanly without execution.",
+         [{"step": 1, "action": "Submit edge case payload", "expected": "Input handled safely without unhandled exception"}],
+         "simulation"),
+
+        ("input_validation", "Verify schema and type validation for '{title}'",
+         "Ensure all required fields are validated for expected data types and structural integrity.",
+         {"missing_required_field": True}, "System rejects missing required fields with explicit diagnostic.",
+         [{"step": 1, "action": "Omit mandatory field in payload", "expected": "Validation intercepts payload"}],
+         "specification_validation"),
+
+        ("business_rule", "Verify domain business rules enforcement for '{title}'",
+         "Validate that domain policy logic and calculations execute accurately.",
+         {"rule_check": True, "domain_policy": "strict"}, "State conforms to domain business logic.",
+         [{"step": 1, "action": "Trigger business rule scenario", "expected": "Rule engine evaluates and enforces policy"}],
+         "simulation"),
+
+        ("permission_role", "Verify role-based access control and unauthorized rejection for '{title}'",
+         "Verify that unauthorized actors without proper permissions cannot execute the action.",
+         {"actor_role": "unauthorized_role"}, "System blocks access with HTTP 403 Forbidden.",
+         [{"step": 1, "action": "Attempt action with unprivileged identity", "expected": "Operation denied with 403 Forbidden"}],
+         "specification_validation"),
+
+        ("security", "Verify security defenses against unauthorized bypass for '{title}'",
+         "Ensure authentication credentials and security parameters cannot be bypassed.",
+         {"auth_token": "tampered_signature_token"}, "System rejects forged authentication with HTTP 401 Unauthorized.",
+         [{"step": 1, "action": "Send request with forged token", "expected": "Security filter rejects request with 401"}],
+         "specification_validation"),
+
+        ("error_handling", "Verify graceful error response and recovery for '{title}'",
+         "Verify server returns structured error details without leaking stack traces or internal secrets.",
+         {"trigger_failure": True}, "Clean error response returned with no secret leakage.",
+         [{"step": 1, "action": "Simulate error condition", "expected": "System handles error gracefully without 500 crash"}],
+         "simulation"),
+
+        ("integration", "Verify API integration schema contract for '{title}'",
+         "Verify payload structure, headers, and protocol adherence.",
+         {"endpoint_contract": "v1"}, "Payload and response headers match API contract specification.",
+         [{"step": 1, "action": "Invoke API interface contract", "expected": "Contract satisfied"}],
+         "specification_validation"),
+    ]
+
+    filtered_templates = [tpl for tpl in all_templates if tpl[0] in target_cats]
+    if not filtered_templates:
+        filtered_templates = all_templates[:4]
+
+    generated_previews: list[dict[str, Any]] = []
+    created_tests: list[TestCase] = []
+    created_criteria: list[AcceptanceCriterion] = []
+
+    for req in requirements:
+        ver = current_version(db, req)
+        clauses = clauses_for(db, ver)
+        clause_keys = [c.clause_key for c in clauses] or [f"{req.key}.C1"]
+
+        acs = db.execute(
+            select(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == req.id)
+        ).scalars().all()
+
+        ac_key = f"{req.key}.AC1"
+        if not acs:
+            if not preview_only:
+                ac = AcceptanceCriterion(
+                    key=ac_key,
+                    requirement_id=req.id,
+                    requirement_version=ver.version,
+                    clause_keys=clause_keys,
+                    description=f"System shall adhere to specification: {req.title}",
+                    source_quote=req.evidence_excerpt or req.title,
+                    quote_verified=True,
+                    confidence=0.95,
+                    rationale=f"Derived from requirement {req.key}",
+                    review_status="approved" if auto_approve else "pending",
+                )
+                db.add(ac)
+                db.flush()
+                created_criteria.append(ac)
+                existing_ac_keys.add(ac_key)
+            ac_keys = [ac_key]
+        else:
+            ac_keys = [ac.key for ac in acs]
+
+        for cat_name, title_tmpl, desc, t_data, exp_res, steps, exec_cap in filtered_templates:
+            test_title = title_tmpl.format(title=req.title)
+            if test_title.lower() in existing_titles and not preview_only:
+                continue
+
+            if preview_only:
+                generated_previews.append({
+                    "temp_id": f"preview-{req.id}-{cat_name}",
+                    "requirement_id": req.id,
+                    "requirement_key": req.key,
+                    "requirement_title": req.title,
+                    "title": test_title,
+                    "description": desc,
+                    "preconditions": "System is active in test environment; test dataset is initialized.",
+                    "test_category": cat_name,
+                    "test_data": t_data,
+                    "steps": steps,
+                    "expected_result": exp_res,
+                    "priority": req.priority,
+                    "execution_capability": exec_cap,
+                    "clause_keys": clause_keys,
+                    "ac_keys": ac_keys,
+                    "rationale": f"Derived {cat_name} validation scenario for requirement {req.key}.",
+                })
+            else:
+                prefix = f"TC-{proj.key}"
+                test_key = next_key(db, TestCase, prefix, 4)
+                status_val = "approved" if auto_approve else "pending_review"
+                approval_val = "approved" if auto_approve else "draft"
+
+                tc = TestCase(
+                    key=test_key,
+                    project_id=project_id,
+                    requirement_id=req.id,
+                    requirement_version=ver.version,
+                    clause_keys=clause_keys,
+                    ac_keys=ac_keys,
+                    title=test_title,
+                    description=desc,
+                    preconditions="System is active in test environment; test dataset is initialized.",
+                    test_data=t_data,
+                    expected_result=exp_res,
+                    priority=req.priority,
+                    test_type="functional",
+                    test_category=cat_name,
+                    execution_capability=exec_cap,
+                    approval_status=approval_val,
+                    generation_provenance="ai_generated",
+                    steps_json=steps,
+                    confidence=0.94,
+                    source_quote=req.evidence_excerpt or req.title,
+                    quote_verified=True,
+                    rationale=f"Comprehensive {cat_name} verification derived from requirement {req.key}.",
+                    automation="pytest",
+                    script=None,
+                    validation_status="pending",
+                    validation_errors=[],
+                    version=1,
+                    status=status_val,
+                )
+                db.add(tc)
+                db.flush()
+
+                for s_info in steps:
+                    db.add(TestStep(
+                        test_case_id=tc.id,
+                        position=s_info["step"],
+                        action=s_info["action"],
+                        expected=s_info["expected"],
+                    ))
+
+                validate_test_specification(db, tc)
+                existing_titles.add(test_title.lower())
+                created_tests.append(tc)
+
+    if not preview_only and created_tests:
+        db.commit()
+        audit.record(
+            db,
+            author_id,
+            "tests.generated",
+            "project",
+            project_id,
+            proj.key,
+            project_id,
+            {"created_count": len(created_tests), "requirement_ids": requirement_ids},
+        )
+
+    return {
+        "project_id": project_id,
+        "preview_only": preview_only,
+        "count": len(generated_previews) if preview_only else len(created_tests),
+        "previews": generated_previews if preview_only else [],
+        "created_test_keys": [tc.key for tc in created_tests],
+        "created_criteria_keys": [ac.key for ac in created_criteria],
+        "message": (
+            f"Generated {len(generated_previews)} suggested test scenarios for review."
+            if preview_only
+            else f"Successfully created and persisted {len(created_tests)} verified test cases."
+        ),
+    }

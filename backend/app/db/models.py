@@ -739,3 +739,51 @@ class AICache(Base):
     model: Mapped[str] = mapped_column(String(100))
     response: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_at: Mapped[datetime] = _ts()
+
+
+class ProjectIntelligenceReport(Base):
+    __tablename__ = "project_intelligence_reports"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    version_hash: Mapped[str] = mapped_column(String(64), default="")
+    executive_summary: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    readiness_score: Mapped[float] = mapped_column(Float, default=0.0)
+    metrics_by_area: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    critical_gaps: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    document_analysis: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    requirements_analysis: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    ai_insights: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    test_design: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    policy_validation: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    execution_results: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    traceability: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    recommendations: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+    created_at: Mapped[datetime] = _ts()
+    project: Mapped[Project] = relationship()
+
+
+class ReasonXConversation(Base):
+    __tablename__ = "reasonx_conversations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    title: Mapped[str] = mapped_column(String(200), default="New Conversation")
+    page_context: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = _ts()
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+    messages: Mapped[list[ReasonXMessage]] = relationship(back_populates="conversation", cascade="all, delete-orphan", order_by="ReasonXMessage.id")
+    project: Mapped[Project] = relationship()
+
+
+class ReasonXMessage(Base):
+    __tablename__ = "reasonx_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("reasonx_conversations.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(20))  # user | assistant | system
+    content: Mapped[str] = mapped_column(Text)
+    structured_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    screen_context: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = _ts()
+    conversation: Mapped[ReasonXConversation] = relationship(back_populates="messages")
+

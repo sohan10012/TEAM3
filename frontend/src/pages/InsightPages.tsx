@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DataTable, FilterChips } from "@/components/DataTable";
 import { RunProgress } from "@/components/RunProgress";
 import { useToast } from "@/components/Toast";
+import { CoverageExplorerView } from "@/components/traceability/CoverageExplorerView";
 import { Badge, Button, Code, EmptyState, ErrorState, Input, Key, KV, LoadingBlock, Notice, PageHeader, Panel, Select, Stat } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useListState } from "@/hooks/useListState";
@@ -14,293 +15,112 @@ import type { AuditEntry, Page, Requirement } from "@/types/models";
 import { cn, fmtDate, label, pct } from "@/utils/format";
 
 // ---------------- traceability ----------------
-const CELL: Record<string, { cls: string; text: string }> = {
-  passed: { cls: "bg-emerald-600", text: "Approved, last run passed" },
-  approved: { cls: "bg-emerald-300", text: "Approved, not yet run" },
-  failed_execution: { cls: "bg-red-600", text: "Approved, last run failed" },
-  pending_approval: { cls: "bg-amber-300", text: "Pending approval" },
-  needs_review: { cls: "bg-violet-400", text: "Needs review or re-approval" },
-  rejected: { cls: "bg-slate-300", text: "Rejected" },
-};
-
 export function TraceabilityPage() {
   const [sp, setSp] = useSearchParams();
   const { projectId, projects } = useProjects();
   const pid = sp.get("project_id") ?? (projectId ? String(projectId) : String(projects[0]?.id ?? ""));
   const rid = sp.get("requirement_id") ?? "";
-  const nav = useNavigate();
-  const reqs = useQuery({ queryKey: ["requirements", "trace", pid], enabled: !!pid, queryFn: () => api.get<Page<Requirement>>("/requirements", { project_id: pid, page_size: 200, sort: "key", order: "asc" }) });
-  const q = useQuery({ queryKey: ["trace", pid, rid], enabled: !!pid, queryFn: () => api.get<any>("/traceability/matrix", { project_id: pid, requirement_id: rid || undefined }) });
-  const [onlyGaps, setOnlyGaps] = useState(false);
-  const [viewMode, setViewMode] = useState<"explorer" | "matrix">("matrix");
-  const d = q.data;
-  const cellMap = useMemo(() => { const m = new Map<string, string>(); d?.cells.forEach(([c, t, s]: [number, number, string]) => m.set(`${c}:${t}`, s)); return m; }, [d]);
-  const rows = (d?.clauses ?? []).filter((c: any) => !onlyGaps || !c.covered);
-  const set = (k: string, v: string) => { const n = new URLSearchParams(sp); if (v) n.set(k, v); else n.delete(k); if (k === "project_id") n.delete("requirement_id"); setSp(n, { replace: true }); };
+  const reqs = useQuery({
+    queryKey: ["requirements", "trace", pid],
+    enabled: !!pid,
+    queryFn: () =>
+      api.get<Page<Requirement>>("/requirements", {
+        project_id: pid,
+        page_size: 200,
+        sort: "key",
+        order: "asc",
+      }),
+  });
+  const q = useQuery({
+    queryKey: ["trace", pid, rid],
+    enabled: !!pid,
+    queryFn: () =>
+      api.get<any>("/traceability/matrix", {
+        project_id: pid,
+        requirement_id: rid || undefined,
+      }),
+  });
+
+  const set = (k: string, v: string) => {
+    const n = new URLSearchParams(sp);
+    if (v) n.set(k, v);
+    else n.delete(k);
+    if (k === "project_id") n.delete("requirement_id");
+    setSp(n, { replace: true });
+  };
+
   return (
     <>
-      <PageHeader title="Traceability" subtitle="Requirement clauses against the tests that cite them. Select any cell, clause or test to open the record."
-        actions={<>
-          <Select className="w-60" value={pid} onChange={(e) => set("project_id", e.target.value)} aria-label="Project">{projects.map((p) => <option key={p.id} value={p.id}>{p.key} — {p.name}</option>)}</Select>
-          <Select className="w-72" value={rid} onChange={(e) => set("requirement_id", e.target.value)} aria-label="Requirement">
-            <option value="">All requirements</option>{reqs.data?.items.map((r) => <option key={r.id} value={r.id}>{r.key} {r.title}</option>)}</Select>
-          <a className="text-sm text-accent hover:underline" href={downloadUrl("/exports/traceability.csv", { project_id: pid })}>Export CSV</a>
-          {pid && (
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <a
-                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-[#3067DB] text-white hover:bg-[#2554B8] transition-colors"
-                href={`/api/v1/projects/${pid}/quality-report.html`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                HTML Report
-              </a>
-              <a
-                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-                href={`/api/v1/projects/${pid}/quality-report`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                JSON
-              </a>
-            </div>
-          )}
-        </>} />
+      <PageHeader
+        title="Traceability Intelligence & Coverage Explorer"
+        subtitle="End-to-end verification hierarchy: Document → Requirement → Clause → Acceptance Criteria → Test Case → Execution → Defect."
+        actions={
+          <>
+            <Select className="w-64" value={pid} onChange={(e) => set("project_id", e.target.value)} aria-label="Project">
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.key} — {p.name}
+                </option>
+              ))}
+            </Select>
+            <Select className="w-64" value={rid} onChange={(e) => set("requirement_id", e.target.value)} aria-label="Requirement Filter">
+              <option value="">All requirements ({q.data?.summary?.total_requirements ?? "..."})</option>
+              {reqs.data?.items.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.key} {r.title}
+                </option>
+              ))}
+            </Select>
+            <a className="text-xs font-semibold text-blue-600 hover:underline px-2" href={downloadUrl("/exports/traceability.csv", { project_id: pid })}>
+              Export CSV
+            </a>
+            {pid && (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <a
+                  className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  href={`/api/v1/projects/${pid}/quality-report.html`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  HTML Dossier
+                </a>
+                <a
+                  className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+                  href={`/api/v1/projects/${pid}/quality-report`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  JSON
+                </a>
+              </div>
+            )}
+          </>
+        }
+      />
+
       {reqs.error ? (
         <Notice tone="warn">
           Could not load the requirements filter.{" "}
-          <button type="button" className="font-medium underline" onClick={() => void reqs.refetch()}>Retry</button>
+          <button type="button" className="font-medium underline" onClick={() => void reqs.refetch()}>
+            Retry
+          </button>
         </Notice>
       ) : null}
-      {q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : !d ? <LoadingBlock rows={10} /> : <>
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-          <Stat label="Clauses" value={d.summary.total_clauses} />
-          <Stat label="Covered" value={d.summary.covered_clauses} />
-          <Stat label="Untested" value={d.summary.untested_clauses} intent={d.summary.untested_clauses ? "bad" : "good"} onClick={() => setOnlyGaps(true)} />
-          <Stat label="Clause coverage" value={pct(d.summary.coverage_pct)} />
-          <Stat label="Orphan tests" value={d.summary.orphan_tests.length} hint="Cite no current clause" />
-          <Stat label="Duplicate tests" value={d.summary.duplicate_tests.length} />
-          <Stat label="Impacted tests" value={d.summary.impacted_tests.length} hint="Awaiting re-approval" />
-        </div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setViewMode("explorer")}
-              className={cn(
-                "px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
-                viewMode === "explorer"
-                  ? "bg-[#3067DB] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              )}
-            >
-              Coverage Explorer (Tree View)
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("matrix")}
-              className={cn(
-                "px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
-                viewMode === "matrix"
-                  ? "bg-[#3067DB] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              )}
-            >
-              Matrix Grid
-            </button>
-          </div>
 
-          <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-            <input type="checkbox" checked={onlyGaps} onChange={(e) => setOnlyGaps(e.target.checked)} />
-            <span>Show untested clauses only</span>
-          </label>
-        </div>
-
-        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-          {Object.entries(CELL).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={cn("h-3 w-3 rounded-sm", v.cls)} aria-hidden />{v.text}</span>)}
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm border border-dashed border-red-400" aria-hidden />Not covered</span>
-        </div>
-
-        {viewMode === "explorer" ? (
-          <div className="space-y-4">
-            {(() => {
-              const reqMap = new Map<string, any>();
-              rows.forEach((c: any) => {
-                if (!reqMap.has(c.requirement_key)) {
-                  reqMap.set(c.requirement_key, {
-                    key: c.requirement_key,
-                    id: c.requirement_id,
-                    clauses: [],
-                    tests: new Map<number, any>(),
-                  });
-                }
-                const entry = reqMap.get(c.requirement_key)!;
-                entry.clauses.push(c);
-                d.tests.forEach((t: any, ti: number) => {
-                  const s = cellMap.get(`${c.index}:${ti}`);
-                  if (s) {
-                    entry.tests.set(t.id, { ...t, cellStatus: s });
-                  }
-                });
-              });
-
-              if (reqMap.size === 0) {
-                return (
-                  <Panel>
-                    <EmptyState
-                      title={onlyGaps ? "All requirements are fully covered" : "No requirement clauses recorded"}
-                      body="All clauses in this project have verified test cases."
-                    />
-                  </Panel>
-                );
-              }
-
-              return Array.from(reqMap.values()).map((reqGroup: any) => {
-                const coveredClauses = reqGroup.clauses.filter((c: any) => c.covered).length;
-                const totalClauses = reqGroup.clauses.length;
-                const coveragePct = totalClauses > 0 ? Math.round((coveredClauses / totalClauses) * 100) : 0;
-                const testsList = Array.from(reqGroup.tests.values());
-
-                return (
-                  <div key={reqGroup.key} className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <Key className="text-xs font-semibold">{reqGroup.key}</Key>
-                        <Link to={`/requirements/${reqGroup.id}`} className="text-xs font-semibold text-slate-900 hover:text-[#3067DB] hover:underline">
-                          View Requirement Detail →
-                        </Link>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xs text-slate-500 font-mono">
-                          {coveredClauses}/{totalClauses} clauses ({coveragePct}%)
-                        </span>
-                        <div className="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={cn("h-full rounded-full", coveragePct === 100 ? "bg-emerald-600" : coveragePct >= 50 ? "bg-amber-500" : "bg-red-500")}
-                            style={{ width: `${coveragePct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {/* Clauses */}
-                      <div className="space-y-1.5">
-                        <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500 block">
-                          Requirement Clauses ({totalClauses})
-                        </span>
-                        <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
-                          {reqGroup.clauses.map((cl: any) => (
-                            <div
-                              key={cl.clause_key}
-                              className={cn(
-                                "p-2 rounded border text-xs flex items-start gap-2",
-                                cl.covered ? "bg-slate-50 border-slate-200 text-slate-800" : "bg-red-50/50 border-red-200 text-red-900"
-                              )}
-                            >
-                              <span className="font-mono text-2xs font-semibold shrink-0 text-slate-500">
-                                {cl.clause_key.split(".").pop()}
-                              </span>
-                              <p className="line-clamp-2 text-[11px] leading-relaxed flex-1">{cl.text}</p>
-                              {!cl.covered && (
-                                <span className="rounded bg-red-100 text-red-800 px-1.5 py-0.5 text-[10px] font-semibold shrink-0">
-                                  untested
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Linked Test Cases */}
-                      <div className="space-y-1.5">
-                        <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500 block">
-                          Mapped Test Cases ({testsList.length})
-                        </span>
-                        {testsList.length === 0 ? (
-                          <div className="p-3 rounded border border-dashed border-red-300 bg-red-50/30 text-xs text-red-700">
-                            No test cases currently cite these requirement clauses.
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                            {testsList.map((tc: any) => (
-                              <div
-                                key={tc.id}
-                                onClick={() => nav(`/tests/${tc.id}`)}
-                                className="p-2 rounded border border-slate-200 bg-slate-50 hover:bg-blue-50/40 hover:border-blue-200 transition-colors cursor-pointer flex items-center justify-between text-xs"
-                              >
-                                <div className="flex items-center gap-2 truncate">
-                                  <Key className="text-2xs font-mono shrink-0">{tc.key}</Key>
-                                  <span className="text-[11px] font-medium text-slate-800 truncate" title={tc.title}>
-                                    {tc.title}
-                                  </span>
-                                </div>
-                                <span
-                                  className={cn(
-                                    "px-2 py-0.5 rounded text-[10px] font-semibold uppercase shrink-0 text-white",
-                                    CELL[tc.cellStatus]?.cls || "bg-slate-500"
-                                  )}
-                                >
-                                  {tc.cellStatus.replace(/_/g, " ")}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        ) : (
-          <>
-            {!rows.length ? <Panel><EmptyState title={onlyGaps ? "Every clause is covered" : "No clauses in this workspace"} body={onlyGaps ? "All requirement clauses are mapped to approved test cases." : "Upload or create requirements to extract clauses and view bidirectional traceability."} /></Panel> :
-              <div className="overflow-auto rounded-lg border border-slate-200 bg-white" style={{ maxHeight: "calc(100dvh - 22rem)" }}>
-                <table className="border-separate border-spacing-0 text-xs" aria-label="Traceability matrix">
-                  <thead className="sticky top-0 z-20 bg-white">
-                    <tr>
-                      <th scope="col" className="sticky left-0 z-30 min-w-[22rem] border-b border-r border-slate-200 bg-white px-3 py-2 text-left font-medium text-slate-600">Clause</th>
-                      {d.tests.map((t: any) => (
-                        <th key={t.id} scope="col" className="h-28 w-7 border-b border-slate-200 align-bottom">
-                          <Link to={`/tests/${t.id}`} title={`${t.key}: ${t.title}`} className="mx-auto block w-5 pb-1 font-mono text-[10px] font-normal text-slate-500 hover:text-accent [writing-mode:vertical-rl] rotate-180">{t.key.replace(/^TC-/, "")}</Link>
-                        </th>))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((c: any, i: number) => {
-                      const newReq = i === 0 || rows[i - 1].requirement_key !== c.requirement_key;
-                      return (
-                        <Fragment key={c.index}>
-                          {newReq && <tr><td colSpan={d.tests.length + 1} className="sticky left-0 border-b border-slate-200 bg-slate-50 px-3 py-1.5">
-                            <Link to={`/requirements/${c.requirement_id}`} className="font-mono text-2xs font-medium text-slate-700 hover:text-accent">{c.requirement_key}</Link></td></tr>}
-                          <tr className="group">
-                            <th scope="row" className={cn("sticky left-0 z-10 border-b border-r border-slate-100 bg-white px-3 py-1.5 text-left font-normal group-hover:bg-slate-50", !c.covered && "bg-red-50/60")}>
-                              <Link to={`/requirements/${c.requirement_id}`} className="flex gap-2"><span className="w-10 shrink-0 font-mono text-slate-500">{c.clause_key.split(".").pop()}</span>
-                                <span className="line-clamp-1 text-slate-800" title={c.text}>{c.text}</span>
-                                {!c.covered && <span className="shrink-0 text-red-700">untested</span>}</Link>
-                            </th>
-                            {d.tests.map((t: any, ti: number) => {
-                              const s = cellMap.get(`${c.index}:${ti}`);
-                              return <td key={t.id} className="border-b border-slate-100 p-0.5 text-center group-hover:bg-slate-50">
-                                {s ? <button onClick={() => nav(`/tests/${t.id}`)} title={`${t.key} covers ${c.clause_key}: ${CELL[s]?.text ?? s}`}
-                                  aria-label={`${t.key} covers ${c.clause_key}, ${CELL[s]?.text ?? s}`}
-                                  className={cn("mx-auto block h-4 w-4 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring", CELL[s]?.cls ?? "bg-slate-300")} /> : null}
-                              </td>;
-                            })}
-                          </tr>
-                        </Fragment>);
-                    })}
-                  </tbody>
-                </table>
-              </div>}
-          </>
-        )}
-        {(d.summary.orphan_tests.length > 0 || d.summary.duplicate_tests.length > 0) && <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Panel title="Orphan tests">{d.summary.orphan_tests.length ? <p className="font-mono text-xs">{d.summary.orphan_tests.join(", ")}</p> : <p className="text-sm text-slate-600">None</p>}</Panel>
-          <Panel title="Duplicate tests">{d.summary.duplicate_tests.length ? <p className="font-mono text-xs">{d.summary.duplicate_tests.join(", ")}</p> : <p className="text-sm text-slate-600">None</p>}</Panel></div>}
-      </>}
+      {q.error ? (
+        <ErrorState error={q.error} onRetry={q.refetch} />
+      ) : !q.data ? (
+        <LoadingBlock rows={10} />
+      ) : (
+        <CoverageExplorerView
+          data={q.data}
+          projectId={pid}
+          onRefresh={() => {
+            q.refetch();
+            reqs.refetch();
+          }}
+        />
+      )}
     </>
   );
 }

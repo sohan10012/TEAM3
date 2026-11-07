@@ -60,9 +60,29 @@ def get_requirements_project_dashboard_data(db: Session, project_id: int) -> dic
     ).scalars().all()
 
     total_reqs = len(reqs)
-    functional_count = sum(1 for r in reqs if r.category == "functional")
-    non_functional_count = sum(1 for r in reqs if r.category in ("non_functional", "performance_constraint", "operational_requirement"))
-    business_rules_count = sum(1 for r in reqs if r.category in ("business_rule", "validation_rule"))
+    by_category: dict[str, int] = {}
+    for r in reqs:
+        cat = r.category or "unclassified"
+        by_category[cat] = by_category.get(cat, 0) + 1
+
+    functional_count = by_category.get("functional", 0)
+    business_rules_count = (
+        by_category.get("business_rule", 0)
+        + by_category.get("validation_rule", 0)
+        + by_category.get("compliance", 0)
+    )
+    non_functional_count = (
+        by_category.get("non_functional", 0)
+        + by_category.get("performance_constraint", 0)
+        + by_category.get("operational_requirement", 0)
+        + by_category.get("security", 0)
+        + by_category.get("data_requirement", 0)
+        + by_category.get("integration_requirement", 0)
+        + by_category.get("permission_role", 0)
+        + by_category.get("data", 0)
+        + by_category.get("reporting", 0)
+    )
+    unclassified_count = max(0, total_reqs - (functional_count + business_rules_count + non_functional_count))
 
     awaiting_review_count = sum(1 for r in reqs if r.review_status == "pending_review")
     approved_reqs_count = sum(1 for r in reqs if r.review_status == "approved" or r.status == "approved")
@@ -73,6 +93,8 @@ def get_requirements_project_dashboard_data(db: Session, project_id: int) -> dic
         select(RequirementClarification).where(RequirementClarification.project_id == project_id)
     ).scalars().all()
     open_clarifications_count = sum(1 for c in clarifications if c.status == "open")
+    ambiguities_count = sum(1 for c in clarifications if c.type != "contradiction")
+    contradictions_count = sum(1 for c in clarifications if c.type == "contradiction")
 
     # 3. Test Design summary
     acs = db.execute(
@@ -175,6 +197,10 @@ def get_requirements_project_dashboard_data(db: Session, project_id: int) -> dic
             "functional": functional_count,
             "non_functional": non_functional_count,
             "business_rules": business_rules_count,
+            "unclassified": unclassified_count,
+            "by_category": by_category,
+            "ambiguities": ambiguities_count,
+            "contradictions": contradictions_count,
             "awaiting_review": awaiting_review_count,
             "approved": approved_reqs_count,
             "inferred": inferred_count,

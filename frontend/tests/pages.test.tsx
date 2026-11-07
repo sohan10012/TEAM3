@@ -89,7 +89,7 @@ test("traceability matrix renders clauses, coverage gaps and links cells to test
     cells: [[0, 0, "failed_execution"]],
     summary: { total_clauses: 2, covered_clauses: 1, untested_clauses: 1, coverage_pct: 50, orphan_tests: [], duplicate_tests: [], impacted_tests: [] } };
   mockFetch([[/auth\/me/, ME], [/traceability/, matrix], [/requirements/, page([])], [/projects/, PROJECTS]]);
-  renderApp(<TraceabilityPage />, { route: "/traceability?project_id=1" });
+  renderApp(<TraceabilityPage />, { route: "/traceability?project_id=1&view=matrix" });
   const table = await screen.findByRole("table", { name: "Traceability matrix" });
   expect(within(table).getByText("Overtime above 40 hours.")).toBeInTheDocument();
   expect(within(table).getByText("untested")).toBeInTheDocument();

@@ -8,6 +8,23 @@ export default {
         mono: ['"JetBrains Mono"', '"Fira Code"', "ui-monospace", "monospace"],
       },
       colors: {
+        brand: {
+          DEFAULT: "var(--color-primary)",
+          hover: "var(--color-primary-hover)",
+          muted: "var(--color-primary-muted)",
+          fg: "var(--color-on-primary)",
+        },
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          subtle: "var(--color-surface-subtle)",
+          hover: "var(--color-surface-hover)",
+          canvas: "var(--color-canvas)",
+        },
+        border: {
+          DEFAULT: "var(--color-border)",
+          subtle: "var(--color-border-subtle)",
+          strong: "var(--color-border-strong)",
+        },
         accent: { DEFAULT: "#3067DB", hover: "#2554B8", soft: "#EFF6FF", ring: "#93C5FD" },
         dayforce: {
           primary: "#3067DB",

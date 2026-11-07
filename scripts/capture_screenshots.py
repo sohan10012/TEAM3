@@ -20,10 +20,13 @@ SCREENS = [
     ("08-traceability", "/traceability", None),
     ("09-analytics", "/analytics", None),
     ("10-settings", "/settings", None),
+    ("11-intelligence-report", "/intelligence-report", None),
+    ("12-simulation", "/simulation", None),
 ]
 
 VIEWPORTS = [
     (1440, 900, "1440"),
+    (1280, 800, "1280"),
     (1024, 768, "1024"),
     (390, 844, "390"),
 ]
@@ -31,7 +34,7 @@ VIEWPORTS = [
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="http://127.0.0.1:5173")
+    ap.add_argument("--base", default="http://127.0.0.1:8000")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "docs" / "screenshots"))
     ap.add_argument("--chrome", default="/usr/bin/chromium", help="Path to Chromium executable")
     a = ap.parse_args()

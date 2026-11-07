@@ -5,6 +5,7 @@ import { AppShell } from "@/layouts/AppShell";
 import DashboardPage from "@/pages/DashboardPage";
 import { DefectDetailPage, DefectsPage, ExecutionDetailPage, ExecutionsPage } from "@/pages/ExecutionDefectPages";
 import { AnalyticsPage, AuditPage, EvaluationsPage, IntegrationsPage, SettingsPage, TraceabilityPage } from "@/pages/InsightPages";
+import ProjectIntelligenceReportPage from "@/pages/ProjectIntelligenceReportPage";
 import { ProjectDetailPage, ProjectsPage } from "@/pages/ProjectsPage";
 import { RequirementDetailPage, RequirementsPage } from "@/pages/RequirementsPages";
 import SimulationPage from "@/pages/SimulationPage";
@@ -12,7 +13,8 @@ import { ConsumerMonitoringPage, ReviewWorkspacePage, SuiteDetailPage, SuitesPag
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, "Overview"],
-  [/^\/simulation/, "Simulation & Agent Health"],
+  [/^\/intelligence-report/, "Project Intelligence Report"],
+  [/^\/(simulation|validation)/, "Policy & Scenario Validation"],
   [/^\/projects/, "Projects"],
   [/^\/requirements/, "Requirements"],
   [/^\/tests\/monitoring/, "Consumer Policy Monitoring"],
@@ -45,7 +47,9 @@ export default function App() {
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
+          <Route path="intelligence-report" element={<ProjectIntelligenceReportPage />} />
           <Route path="simulation" element={<SimulationPage />} />
+          <Route path="validation" element={<SimulationPage />} />
           <Route path="requirements" element={<RequirementsPage />} />
           <Route path="requirements/:id" element={<RequirementDetailPage />} />
           <Route path="tests" element={<TestsPage />} />

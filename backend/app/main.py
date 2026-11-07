@@ -15,7 +15,20 @@ from fastapi.responses import JSONResponse
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
-from app.api.routers import auth, defects, documents, execution, misc, projects, requirements, simulation, tests, users
+from app.api.routers import (
+    auth,
+    defects,
+    documents,
+    execution,
+    intelligence_report,
+    misc,
+    projects,
+    reasonx,
+    requirements,
+    simulation,
+    tests,
+    users,
+)
 from app.core.config import get_settings
 from app.core.errors import install_handlers
 from app.services.audit import current_trace_id
@@ -142,7 +155,7 @@ async def platform_middleware(request: Request, call_next):
 
 api = APIRouter(prefix="/api/v1")
 for r in (auth.router, users.router, projects.router, documents.router, requirements.router, tests.router,
-          execution.router, defects.router, misc.router, simulation.router):
+          execution.router, defects.router, misc.router, simulation.router, intelligence_report.router, reasonx.router):
     api.include_router(r)
 app.include_router(api)
 

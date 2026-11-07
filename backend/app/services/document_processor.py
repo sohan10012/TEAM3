@@ -25,14 +25,16 @@ log = logging.getLogger("tracetest.documents")
 ALLOWED_EXTENSIONS = {
     ".pdf": "pdf",
     ".docx": "docx",
+    ".doc": "docx",
     ".xlsx": "xlsx",
+    ".xls": "xlsx",
     ".txt": "txt",
     ".md": "md",
     ".markdown": "md",
     ".csv": "csv",
 }
 
-MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB
+MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 def get_documents_storage_dir(project_id: int | None = None) -> Path:

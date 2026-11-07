@@ -25,6 +25,10 @@ from app.services.document_processor import (
     save_document_file,
     validate_file_upload,
 )
+from app.services.requirement_intelligence import (
+    process_all_project_documents_and_requirements,
+    reprocess_document_and_requirements,
+)
 
 router = APIRouter(tags=["documents"])
 
@@ -151,6 +155,7 @@ async def _do_upload_document(
 
 
 @router.post("/projects/{project_id}/documents", status_code=201)
+@router.post("/projects/{project_id}/documents/upload", status_code=201)
 async def upload_document(
     project_id: int,
     file: UploadFile = File(...),
@@ -309,8 +314,9 @@ def retry_document_process(
     doc.extraction_status = "queued"
     db.commit()
 
-    updated_doc = process_document(db, doc.id)
-    audit.record(db, p.id, "document.retried", "document", doc.id, doc.filename, doc.project_id)
+    reprocess_res = reprocess_document_and_requirements(db, doc.id, author_id=p.id)
+    updated_doc = db.get(Document, doc.id) or doc
+    audit.record(db, p.id, "document.retried", "document", doc.id, doc.filename, doc.project_id, reprocess_res)
 
     req_count = db.execute(
         select(func.count(Requirement.id)).where(Requirement.document_id == doc.id)
@@ -400,13 +406,25 @@ def trigger_document_process(
         raise NotFound(f"Document {document_id} not found")
     get_project_checked(db, p, doc.project_id)
 
-    updated_doc = process_document(db, doc.id)
-    audit.record(db, p.id, "document.processed", "document", doc.id, doc.filename, doc.project_id)
+    reprocess_res = reprocess_document_and_requirements(db, doc.id, author_id=p.id)
+    updated_doc = db.get(Document, doc.id) or doc
+    audit.record(db, p.id, "document.processed", "document", doc.id, doc.filename, doc.project_id, reprocess_res)
 
     req_count = db.execute(
         select(func.count(Requirement.id)).where(Requirement.document_id == doc.id)
     ).scalar() or 0
     return S.document(updated_doc, requirements_count=req_count)
+
+
+@router.post("/projects/{project_id}/process-all", status_code=200)
+@router.post("/projects/{project_id}/documents/process-all", status_code=200)
+def process_all_documents(
+    project_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    get_project_checked(db, p, project_id)
+    return process_all_project_documents_and_requirements(db, project_id, author_id=p.id)
 
 
 @router.delete("/documents/{document_id}", status_code=204)

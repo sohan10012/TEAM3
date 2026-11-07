@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ReasonXAssistant } from "@/components/reasonx/ReasonXAssistant";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
@@ -34,24 +35,25 @@ const NAV_SECTIONS: NavSection[] = [
     title: "WORKSPACE",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-      { to: "/simulation", label: "Agent Simulation", icon: Sparkles },
       { to: "/projects", label: "Projects", icon: Layers },
       { to: "/requirements", label: "Requirements", icon: FileText },
+      { to: "/intelligence-report", label: "Project Intelligence", icon: BarChart3 },
     ],
   },
   {
-    title: "TESTING",
+    title: "QUALITY ENGINEERING",
     items: [
       { to: "/tests", label: "Test Cases", icon: ClipboardCheck },
       { to: "/executions", label: "Test Runs", icon: PlayCircle },
       { to: "/defects", label: "Defects", icon: Bug },
+      { to: "/traceability", label: "Traceability Matrix", icon: Layers },
     ],
   },
   {
-    title: "INTELLIGENCE",
+    title: "AI & SYSTEM",
     items: [
+      { to: "/simulation", label: "Policy & Scenario Validation", icon: Sparkles },
       { to: "/analytics", label: "Monitoring", icon: Activity },
-      { to: "/traceability", label: "Reports", icon: BarChart3 },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -468,6 +470,9 @@ export function AppShell() {
           </ErrorBoundary>
         </main>
       </div>
+
+      {/* Persistent Context-Aware ReasonX AI Assistant */}
+      <ReasonXAssistant />
     </div>
   );
 }

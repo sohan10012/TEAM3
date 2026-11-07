@@ -624,3 +624,187 @@ def analyze_and_extract_project_requirements(
         "clarifications_opened": len(new_clarifications),
         "requirements": [r.key for r in created_requirements],
     }
+
+
+def reprocess_document_and_requirements(
+    db: Session,
+    document_id: int,
+    author_id: int | None = None,
+) -> dict[str, Any]:
+    """Reprocess an individual document, refresh text extraction, and safely reconcile extracted requirements."""
+    from app.db.base import utcnow
+    from app.services.document_processor import process_document
+
+    doc = db.get(Document, document_id)
+    if not doc:
+        raise BadRequest(f"Document {document_id} not found")
+
+    # 1. Re-parse stored file and recreate ExtractedContent
+    doc = process_document(db, doc.id)
+    if not doc.extracted_text or not doc.project_id:
+        return {"document_id": doc.id, "extracted_requirements": 0, "clarifications": 0}
+
+    proj = db.get(Project, doc.project_id)
+    if not proj:
+        return {"document_id": doc.id, "extracted_requirements": 0, "clarifications": 0}
+
+    # 2. Extract grounded requirement statements
+    extracted_stmts = extract_requirements_from_text(doc.extracted_text, doc)
+
+    # Fetch existing requirements for this project
+    existing_reqs = db.execute(
+        select(Requirement).where(Requirement.project_id == proj.id)
+    ).scalars().all()
+    existing_by_title = {r.title.lower().strip(): r for r in existing_reqs}
+
+    new_reqs: list[Requirement] = []
+    updated_reqs: list[Requirement] = []
+    new_clarifications: list[RequirementClarification] = []
+
+    for stmt in extracted_stmts:
+        raw = stmt["raw_text"]
+        first_sentence = raw.split(".")[0].strip()
+        title = first_sentence[:120] if len(first_sentence) > 10 else f"{doc.purpose.upper()} Requirement: {raw[:80]}"
+        norm_title = title.lower().strip()
+
+        category = stmt.get("category") or classify_category(raw)
+        priority = classify_priority(raw)
+        confidence = stmt.get("confidence", 0.90)
+
+        if norm_title in existing_by_title:
+            existing_r = existing_by_title[norm_title]
+            if not existing_r.document_id:
+                existing_r.document_id = doc.id
+            if not existing_r.source_page:
+                existing_r.source_page = stmt["page"]
+            if not existing_r.source_section:
+                existing_r.source_section = stmt["section"]
+            if not existing_r.evidence_excerpt:
+                existing_r.evidence_excerpt = raw[:500]
+            existing_r.updated_at = utcnow()
+            updated_reqs.append(existing_r)
+        else:
+            req = create_requirement(
+                db,
+                proj,
+                title=title,
+                description=raw,
+                business_objective=f"Extracted from {doc.filename} ({stmt['section']})",
+                category=category,
+                priority=priority,
+                document_id=doc.id,
+                source_section=stmt["section"],
+                source_page=stmt["page"],
+                evidence_excerpt=raw[:500],
+                extraction_provenance="explicit_documented",
+                review_status="pending_review",
+                confidence=confidence,
+                author_id=author_id,
+            )
+            existing_by_title[norm_title] = req
+            new_reqs.append(req)
+
+            clars = detect_ambiguities_and_clarifications(proj.id, req.id, raw, stmt["section"])
+            for c in clars:
+                clar_obj = RequirementClarification(**c)
+                db.add(clar_obj)
+                new_clarifications.append(clar_obj)
+
+    contradictions = detect_contradictions_across_requirements(db, proj.id)
+    new_clarifications.extend(contradictions)
+
+    db.commit()
+
+    audit.record(
+        db,
+        author_id,
+        "document.reprocessed",
+        "document",
+        doc.id,
+        doc.filename,
+        doc.project_id,
+        {"new_requirements": len(new_reqs), "updated_requirements": len(updated_reqs), "clarifications": len(new_clarifications)},
+    )
+
+    return {
+        "document_id": doc.id,
+        "new_requirements": len(new_reqs),
+        "updated_requirements": len(updated_reqs),
+        "total_for_document": len(new_reqs) + len(updated_reqs),
+        "clarifications_opened": len(new_clarifications),
+    }
+
+
+def process_all_project_documents_and_requirements(
+    db: Session,
+    project_id: int,
+    author_id: int | None = None,
+) -> dict[str, Any]:
+    """Execute complete end-to-end processing: document validation, text extraction, requirement extraction, classification, and analysis."""
+    from app.services.document_processor import process_document
+    from app.services.requirements_dashboard import get_requirements_project_dashboard_data
+
+    proj = db.get(Project, project_id)
+    if not proj:
+        raise BadRequest(f"Project {project_id} not found")
+
+    docs = db.execute(
+        select(Document).where(Document.project_id == project_id)
+    ).scalars().all()
+
+    for doc in docs:
+        if not doc.extracted_text or doc.status != "completed":
+            process_document(db, doc.id)
+
+    result = analyze_and_extract_project_requirements(db, project_id, author_id=author_id)
+
+    dash = get_requirements_project_dashboard_data(db, project_id)
+    req_summary = dash["requirements_summary"]
+
+    total_docs = len(docs)
+    total_reqs = req_summary["total"]
+    func_cnt = req_summary["functional"]
+    nf_cnt = req_summary["non_functional"]
+    br_cnt = req_summary["business_rules"]
+    amb_cnt = req_summary["ambiguities"]
+    con_cnt = req_summary["contradictions"]
+
+    msg = (
+        f"Processing completed: {total_docs} document{'s' if total_docs != 1 else ''} processed, "
+        f"{total_reqs} requirements extracted, {amb_cnt} ambiguities identified, "
+        f"{con_cnt} contradictions detected."
+    )
+
+    audit.record(
+        db,
+        author_id,
+        "requirements.process_all",
+        "project",
+        project_id,
+        proj.key,
+        project_id,
+        {
+            "documents_processed": total_docs,
+            "total_requirements": total_reqs,
+            "newly_extracted": result.get("total_extracted", 0),
+            "functional": func_cnt,
+            "non_functional": nf_cnt,
+            "business_rules": br_cnt,
+            "ambiguities": amb_cnt,
+            "contradictions": con_cnt,
+        },
+    )
+
+    return {
+        "project_id": project_id,
+        "documents_processed": total_docs,
+        "total_requirements": total_reqs,
+        "newly_extracted": result.get("total_extracted", 0),
+        "functional": func_cnt,
+        "non_functional": nf_cnt,
+        "business_rules": br_cnt,
+        "ambiguities_count": amb_cnt,
+        "contradictions_count": con_cnt,
+        "dashboard_summary": req_summary,
+        "message": msg,
+    }

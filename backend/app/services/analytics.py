@@ -8,7 +8,18 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.db.base import utcnow
-from app.db.models import Clause, Defect, Execution, ExecutionResult, Project, Requirement, RequirementVersion, TestCase
+from app.db.models import (
+    AcceptanceCriterion,
+    Clause,
+    Defect,
+    Document,
+    Execution,
+    ExecutionResult,
+    Project,
+    Requirement,
+    RequirementVersion,
+    TestCase,
+)
 
 ACTIVE_TEST = ("pending_review", "approved", "changes_requested", "needs_reapproval")
 
@@ -135,15 +146,66 @@ def traceability(db: Session, project_ids: list[int], requirement_id: int | None
     if requirement_id:
         rows = [(c, r) for c, r in rows if r.id == requirement_id]
     req_ids = {r.id for _, r in rows}
+
+    # Fetch all requirements in scope
+    req_q = (
+        select(Requirement)
+        .where(Requirement.project_id.in_(project_ids or [-1]), Requirement.status != "deprecated")
+        .order_by(Requirement.key)
+    )
+    if requirement_id:
+        req_q = req_q.where(Requirement.id == requirement_id)
+    all_reqs = list(db.execute(req_q).scalars().all())
+
+    # Map document provenance
+    doc_ids = {r.document_id for r in all_reqs if r.document_id}
+    docs_map = {
+        d.id: d
+        for d in db.execute(select(Document).where(Document.id.in_(doc_ids or [-1]))).scalars().all()
+    }
+
+    # Map acceptance criteria
+    all_acs = list(
+        db.execute(
+            select(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id.in_(req_ids or [-1]))
+        ).scalars().all()
+    )
+    acs_by_req: dict[int, list[AcceptanceCriterion]] = defaultdict(list)
+    for ac in all_acs:
+        acs_by_req[ac.requirement_id].append(ac)
+
+    # Map test cases
     tq = select(TestCase).where(TestCase.project_id.in_(project_ids or [-1]), TestCase.status != "deprecated")
     if requirement_id:
         tq = tq.where(TestCase.requirement_id == requirement_id)
     tests = list(db.execute(tq.order_by(TestCase.key)).scalars())
+    tests_by_req: dict[int, list[TestCase]] = defaultdict(list)
+    for t in tests:
+        tests_by_req[t.requirement_id].append(t)
+
     latest = _latest_results(db, [t.id for t in tests])
+
+    # Map defects
+    test_ids = [t.id for t in tests]
+    def_q = select(Defect).where(
+        Defect.project_id.in_(project_ids or [-1]),
+        (Defect.requirement_id.in_(req_ids or [-1])) | (Defect.test_case_id.in_(test_ids or [-1])),
+    )
+    all_defects = list(db.execute(def_q).scalars().all())
+    defects_by_req: dict[int, list[Defect]] = defaultdict(list)
+    defects_by_test: dict[int, list[Defect]] = defaultdict(list)
+    for df in all_defects:
+        if df.requirement_id:
+            defects_by_req[df.requirement_id].append(df)
+        if df.test_case_id:
+            defects_by_test[df.test_case_id].append(df)
+
     clause_index = {(r.id, c.clause_key): i for i, (c, r) in enumerate(rows)}
     test_cols, cells = [], []
     covered: set[int] = set()
     orphans, duplicates, impacted = [], [], []
+    duplicate_details = []
+
     for t in tests:
         lr = latest.get(t.id)
         state = {"approved": "approved", "pending_review": "pending_approval", "changes_requested": "needs_review",
@@ -157,26 +219,259 @@ def traceability(db: Session, project_ids: list[int], requirement_id: int | None
             orphans.append(t.key)
         if t.duplicate_of:
             duplicates.append(t.key)
+            duplicate_details.append({
+                "id": t.id,
+                "key": t.key,
+                "title": t.title,
+                "duplicate_of": t.duplicate_of,
+                "test_category": t.test_category,
+                "clause_keys": t.clause_keys,
+                "reason": f"Exact duplicated parameter specification of {t.duplicate_of} citing {', '.join(t.clause_keys)}",
+            })
         if t.status == "needs_reapproval":
             impacted.append(t.key)
         if not idxs:
             continue
         col = len(test_cols)
-        test_cols.append({"id": t.id, "key": t.key, "title": t.title, "status": t.status, "state": state,
-                          "test_type": t.test_type, "last_result": lr.status if lr else None,
-                          "last_execution_id": lr.execution_id if lr else None})
+        test_cols.append({
+            "id": t.id,
+            "key": t.key,
+            "title": t.title,
+            "status": t.status,
+            "state": state,
+            "test_type": t.test_type,
+            "test_category": t.test_category,
+            "approval_status": t.approval_status,
+            "duplicate_of": t.duplicate_of,
+            "last_result": lr.status if lr else None,
+            "last_execution_id": lr.execution_id if lr else None,
+            "defects_count": len(defects_by_test.get(t.id, [])),
+        })
         for i in idxs:
             cells.append([i, col, state])
             if t.status in ACTIVE_TEST:
                 covered.add(i)
-    clauses_out = [{"index": i, "requirement_id": r.id, "requirement_key": r.key, "clause_key": c.clause_key,
-                    "text": c.text, "covered": i in covered, "ambiguous": bool(c.ambiguity_flags)}
-                   for i, (c, r) in enumerate(rows)]
-    total = len(rows)
-    return {"clauses": clauses_out, "tests": test_cols, "cells": cells,
-            "summary": {"total_clauses": total, "covered_clauses": len(covered), "untested_clauses": total - len(covered),
-                        "coverage_pct": round(100 * len(covered) / total, 1) if total else 0.0,
-                        "orphan_tests": orphans, "duplicate_tests": duplicates, "impacted_tests": impacted}}
+
+    clauses_out = [
+        {
+            "index": i,
+            "requirement_id": r.id,
+            "requirement_key": r.key,
+            "requirement_title": r.title,
+            "clause_key": c.clause_key,
+            "text": c.text,
+            "covered": i in covered,
+            "ambiguous": bool(c.ambiguity_flags),
+        }
+        for i, (c, r) in enumerate(rows)
+    ]
+    total_clauses = len(rows)
+    covered_clauses = len(covered)
+    untested_clauses = total_clauses - covered_clauses
+
+    # Build Requirement-Level Coverage Records
+    req_coverage_list = []
+    covered_req_count = 0
+    partial_req_count = 0
+    uncovered_req_count = 0
+
+    for r in all_reqs:
+        doc = docs_map.get(r.document_id) if r.document_id else None
+        r_clauses = [c for c, req in rows if req.id == r.id]
+        r_acs = acs_by_req.get(r.id, [])
+        r_tests = tests_by_req.get(r.id, [])
+        r_defects = defects_by_req.get(r.id, [])
+
+        covered_r_clauses = sum(
+            1 for c in r_clauses
+            if (r.id, c.clause_key) in clause_index and clause_index[(r.id, c.clause_key)] in covered
+        )
+
+        has_tests = len(r_tests) > 0
+        all_clauses_covered = len(r_clauses) > 0 and covered_r_clauses == len(r_clauses)
+        tests_approved = any(t.status == "approved" or t.approval_status == "approved" for t in r_tests)
+
+        if not has_tests:
+            cov_status = "uncovered"
+            uncovered_req_count += 1
+        elif all_clauses_covered and tests_approved:
+            cov_status = "fully_covered"
+            covered_req_count += 1
+        else:
+            cov_status = "partially_covered"
+            partial_req_count += 1
+
+        req_exec_results = []
+        for t in r_tests:
+            if t.id in latest:
+                lr = latest[t.id]
+                req_exec_results.append({
+                    "test_key": t.key,
+                    "status": lr.status,
+                    "duration_ms": lr.duration_ms,
+                    "execution_id": lr.execution_id,
+                })
+
+        gaps = []
+        if not has_tests:
+            gaps.append(f"No test cases validate requirement {r.key}.")
+        if len(r_acs) == 0:
+            gaps.append("Missing formal acceptance criteria.")
+        for c in r_clauses:
+            if not any(c.clause_key in t.clause_keys for t in r_tests):
+                gaps.append(f"Clause {c.clause_key} has no mapped test case.")
+        if r_tests and not any(t.test_category == "boundary_value" for t in r_tests):
+            gaps.append("Missing boundary value verification test cases.")
+        if r_tests and not any(t.test_category == "negative" for t in r_tests):
+            gaps.append("Missing negative validation test cases.")
+
+        actions = []
+        if not has_tests:
+            actions.append("generate_tests")
+            actions.append("generate_ac")
+        elif any(t.status == "pending_review" for t in r_tests):
+            actions.append("review_tests")
+        if r_defects:
+            actions.append("investigate_defects")
+        actions.append("view_document")
+
+        req_coverage_list.append({
+            "id": r.id,
+            "key": r.key,
+            "title": r.title,
+            "category": r.category,
+            "priority": r.priority,
+            "status": r.status,
+            "review_status": r.review_status,
+            "coverage_status": cov_status,
+            "covered_clauses_count": covered_r_clauses,
+            "total_clauses_count": len(r_clauses),
+            "document": {
+                "id": doc.id if doc else None,
+                "filename": doc.filename if doc else None,
+                "page": r.source_page or "Page 1",
+                "section": r.source_section or "General",
+                "excerpt": r.evidence_excerpt or r.title,
+            } if doc else None,
+            "clauses": [
+                {
+                    "id": c.id,
+                    "clause_key": c.clause_key,
+                    "position": c.position,
+                    "text": c.text,
+                    "covered": (r.id, c.clause_key) in clause_index and clause_index[(r.id, c.clause_key)] in covered,
+                    "ambiguity_flags": c.ambiguity_flags or [],
+                }
+                for c in r_clauses
+            ],
+            "acceptance_criteria": [
+                {
+                    "id": ac.id,
+                    "key": ac.key,
+                    "description": ac.description,
+                    "source_quote": ac.source_quote,
+                    "review_status": ac.review_status,
+                }
+                for ac in r_acs
+            ],
+            "tests": [
+                {
+                    "id": t.id,
+                    "key": t.key,
+                    "title": t.title,
+                    "category": t.test_category,
+                    "priority": t.priority,
+                    "status": t.status,
+                    "approval_status": t.approval_status,
+                    "duplicate_of": t.duplicate_of,
+                    "last_result": latest[t.id].status if t.id in latest else None,
+                }
+                for t in r_tests
+            ],
+            "executions": req_exec_results,
+            "defects": [
+                {
+                    "id": df.id,
+                    "key": df.key,
+                    "title": df.title,
+                    "severity": df.severity,
+                    "status": df.status,
+                }
+                for df in r_defects
+            ],
+            "coverage_gaps": gaps,
+            "recommended_actions": actions,
+        })
+
+    total_reqs = len(all_reqs)
+    total_tests = len(tests)
+    executed_tests = sum(1 for t in tests if t.id in latest)
+    passed_tests = sum(1 for t in tests if latest.get(t.id) and latest[t.id].status == "passed")
+    failed_tests = sum(1 for t in tests if latest.get(t.id) and latest[t.id].status in ("failed", "error", "timed_out"))
+    pending_approval_tests = sum(1 for t in tests if t.status in ("pending_review", "draft") or t.approval_status in ("pending_approval", "draft"))
+    approved_tests = sum(1 for t in tests if t.status == "approved" or t.approval_status == "approved")
+    needs_review_tests = sum(1 for t in tests if t.status in ("needs_reapproval", "changes_requested"))
+
+    # Plain language health assessment
+    if uncovered_req_count > 0:
+        headline = f"Critical Coverage Gap: {uncovered_req_count} of {total_reqs} requirements lack verified test coverage."
+        summary = (
+            f"Your project contains {total_reqs} requirements with {total_clauses} clauses across {len(doc_ids)} document(s). "
+            f"Currently, only {covered_req_count + partial_req_count} requirement(s) cite test cases, leaving {uncovered_req_count} "
+            f"requirements ({round(100 * uncovered_req_count / total_reqs, 1)}%) completely untested. In addition, {len(duplicates)} "
+            f"test cases are duplicate definitions that require consolidation or distinct parameter sets."
+        )
+        biggest_problem = f"{uncovered_req_count} requirements across regulatory compliance and overtime calculation have zero linked test cases."
+        recommended_action = "Generate baseline positive, negative, and boundary test scenarios for uncovered requirements using the Intelligent Test Generator."
+    else:
+        headline = "Full Requirement Coverage Verified."
+        summary = f"All {total_reqs} requirements have associated test cases across {total_clauses} clauses."
+        biggest_problem = "None. All requirements currently have linked test specifications."
+        recommended_action = "Execute pending test suites to verify runtime adherence."
+
+    return {
+        "clauses": clauses_out,
+        "tests": test_cols,
+        "cells": cells,
+        "requirements": req_coverage_list,
+        "duplicate_test_details": duplicate_details,
+        "health_assessment": {
+            "status_grade": "critical" if uncovered_req_count > 0 else "good" if covered_req_count == total_reqs else "warning",
+            "headline": headline,
+            "summary": summary,
+            "biggest_problem": biggest_problem,
+            "recommended_action": recommended_action,
+        },
+        "distribution": {
+            "fully_covered": {"count": covered_req_count, "pct": round(100 * covered_req_count / total_reqs, 1) if total_reqs else 0.0},
+            "partially_covered": {"count": partial_req_count, "pct": round(100 * partial_req_count / total_reqs, 1) if total_reqs else 0.0},
+            "uncovered": {"count": uncovered_req_count, "pct": round(100 * uncovered_req_count / total_reqs, 1) if total_reqs else 0.0},
+            "pending_review": {"count": pending_approval_tests, "pct": round(100 * pending_approval_tests / total_tests, 1) if total_tests else 0.0},
+            "failed_validation": {"count": failed_tests, "pct": round(100 * failed_tests / total_tests, 1) if total_tests else 0.0},
+            "approved_verified": {"count": approved_tests, "pct": round(100 * approved_tests / total_tests, 1) if total_tests else 0.0},
+        },
+        "summary": {
+            "total_requirements": total_reqs,
+            "covered_requirements": covered_req_count,
+            "partially_covered_requirements": partial_req_count,
+            "uncovered_requirements": uncovered_req_count,
+            "requirement_coverage_pct": round(100 * (covered_req_count + partial_req_count) / total_reqs, 1) if total_reqs else 0.0,
+            "total_clauses": total_clauses,
+            "covered_clauses": covered_clauses,
+            "untested_clauses": untested_clauses,
+            "coverage_pct": round(100 * covered_clauses / total_clauses, 1) if total_clauses else 0.0,
+            "total_tests": total_tests,
+            "executed_tests": executed_tests,
+            "passed_tests": passed_tests,
+            "failed_tests": failed_tests,
+            "pending_approval_tests": pending_approval_tests,
+            "needs_review_tests": needs_review_tests,
+            "approved_tests": approved_tests,
+            "orphan_tests": orphans,
+            "duplicate_tests": duplicates,
+            "impacted_tests": impacted,
+        },
+    }
 
 
 def quality_report(db: Session, project_ids: list[int]) -> dict:

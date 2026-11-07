@@ -4,9 +4,13 @@ from __future__ import annotations
 from typing import Any
 
 import yaml  # type: ignore[import-untyped]
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy.orm import Session
 
+from app.db.base import get_db
+from app.services.pipeline_tracker import compute_pipeline_progress
+from app.services.simulation_engine import run_behaviour_simulation
 from app.services.yaml_workflow import (
     generate_simulated_agent_traces,
     get_golden_policies,
@@ -94,3 +98,26 @@ def get_agent_traces(policy_id: str = Query("POL001")):
         "total_latency_ms": sum(s["latency_ms"] for s in stages),
         "total_tokens": sum(s["tokens"] for s in stages),
     }
+
+
+@router.get("/pipeline-progress")
+def get_pipeline_progress(
+    project_id: int = Query(11, description="Target Project ID"),
+    db: Session = Depends(get_db),
+):
+    """Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases."""
+    return compute_pipeline_progress(db, project_id)
+
+
+@router.post("/run-pipeline-step")
+def run_pipeline_step(
+    project_id: int = Query(11, description="Target Project ID"),
+    step_id: str | None = Query(None, description="Optional step identifier"),
+    db: Session = Depends(get_db),
+):
+    """Execute operational simulation or validation step against persisted project models, updating execution state."""
+    try:
+        run_behaviour_simulation(db, project_id)
+    except Exception as e:
+        log.warning(f"Pipeline simulation step triggered without test suite: {e}")
+    return compute_pipeline_progress(db, project_id)

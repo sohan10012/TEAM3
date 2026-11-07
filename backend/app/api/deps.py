@@ -43,7 +43,7 @@ def current_principal(request: Request, db: Session = Depends(get_db)) -> Princi
 
         from app.core.config import get_settings
         s = get_settings()
-        if s.single_operator and s.app_env != "test" and request.method in ("GET", "HEAD", "OPTIONS"):
+        if s.single_operator and s.app_env != "test":
             dev_user = db.execute(select(User).where(User.email == s.dev_email.lower())).scalar_one_or_none()
             if not dev_user:
                 dev_user = db.execute(select(User)).scalars().first()
@@ -123,7 +123,7 @@ class PageParams:
     q: str | None
 
 
-def page_params(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=200),
+def page_params(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=500),
                 sort: str | None = Query(None, max_length=40), order: str = Query("desc", pattern="^(asc|desc)$"),
                 q: str | None = Query(None, max_length=200)) -> PageParams:
     return PageParams(page, page_size, sort, order, q)

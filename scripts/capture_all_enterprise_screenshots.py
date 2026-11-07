@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8001")
+BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
 OUT_DIR = Path(__file__).resolve().parents[1] / "docs" / "screenshots"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -205,11 +205,42 @@ def capture_all():
             page.screenshot(path=str(OUT_DIR / f"21-quality-analytics-{vp_label}.png"))
 
             # 22. Project Settings
-            print("[22/22] Capturing Project Settings...")
+            print("[22/25] Capturing Project Settings...")
             page.goto(BASE_URL + "/settings")
             page.wait_for_load_state("networkidle")
             time.sleep(0.8)
             page.screenshot(path=str(OUT_DIR / f"22-project-settings-{vp_label}.png"))
+
+            # 23. Project Intelligence Report
+            print("[23/25] Capturing Project Intelligence Report...")
+            page.goto(BASE_URL + "/intelligence-report?project_id=11")
+            page.wait_for_load_state("networkidle")
+            time.sleep(1.2)
+            page.screenshot(path=str(OUT_DIR / f"23-project-intelligence-report-{vp_label}.png"))
+
+            # 24. ReasonX Assistant Open Drawer
+            print("[24/25] Capturing ReasonX Assistant Open Drawer...")
+            page.goto(BASE_URL + "/simulation?project_id=11")
+            page.wait_for_load_state("networkidle")
+            time.sleep(0.8)
+            launcher = page.locator("button[aria-label='Open ReasonX AI Assistant']").first
+            if launcher.count():
+                launcher.click()
+                time.sleep(0.8)
+            page.screenshot(path=str(OUT_DIR / f"24-reasonx-drawer-open-{vp_label}.png"))
+            page.keyboard.press("Escape")
+            time.sleep(0.5)
+
+            # 25. Policy Validation Live Progress & RCA Investigation Drawer
+            print("[25/25] Capturing Policy Validation Live Progress & RCA Drawer...")
+            page.goto(BASE_URL + "/simulation?project_id=11")
+            page.wait_for_load_state("networkidle")
+            time.sleep(0.8)
+            rca_card = page.locator("h4").filter(has_text="Payroll RCA").first
+            if rca_card.count():
+                rca_card.click()
+                time.sleep(0.8)
+            page.screenshot(path=str(OUT_DIR / f"25-policy-validation-rca-drawer-{vp_label}.png"))
 
             context.close()
 

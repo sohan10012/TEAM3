@@ -105,4 +105,30 @@ def respond(system: str, user: str) -> dict:
                 "recommended_severity": "high", "recommended_priority": "p2",
                 "defect_title": f"{data.get('test_title', 'Test')} fails on {data.get('environment', 'env')}",
                 "defect_summary": "Fixture defect summary"}
+    if task == "reasonx_query":
+        query = data.get("query", "")
+        page = data.get("page", "dashboard")
+        item_title = data.get("item_title", "Project Intelligence")
+        doc_name = data.get("document_name", "US_DOL_FLSA_Part_778_Overtime_Compensation.pdf")
+        req_id = data.get("requirement_key") or data.get("requirement_id") or "EV_PAY-REQ-001"
+        return {
+            "direct_answer": f"Analysis for: '{query}'. Based on {item_title} on the {page} screen, the system verified compliance against documented business requirements.",
+            "explanation": f"TraceTest evaluated {item_title}. The underlying specification establishes verified rules and boundary constraints. No conflicting overrides were detected for the active scope.",
+            "supporting_evidence": [
+                {
+                    "source_document": doc_name,
+                    "page": 1,
+                    "section": "Section 1.1",
+                    "requirement_id": str(req_id),
+                    "quote": "System shall enforce statutory overtime threshold at 40 standard hours.",
+                }
+            ],
+            "recommended_actions": [
+                "Review linked acceptance criteria in the Requirements section.",
+                "Verify edge-case simulation results in Policy & Scenario Validation.",
+                "Ensure Four-Eyes dual control review is approved before release execution.",
+            ],
+            "confidence_level": "HIGH",
+            "simplified_summary": f"Verified {item_title} is compliant with {doc_name} rules.",
+        }
     return {}

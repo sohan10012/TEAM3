@@ -132,3 +132,21 @@ class JudgeEvaluation(BaseModel):
     completeness_score: float = Field(ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0)
     summary_verdict: str
+
+
+class ReasonXEvidence(BaseModel):
+    source_document: str = ""
+    page: int | None = None
+    section: str = ""
+    requirement_id: str = ""
+    quote: str = ""
+
+
+class ReasonXResponse(BaseModel):
+    direct_answer: str
+    explanation: str
+    supporting_evidence: list[ReasonXEvidence] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+    confidence_level: Literal["HIGH", "MEDIUM", "QUALIFIED"] = "HIGH"
+    simplified_summary: str = ""
+

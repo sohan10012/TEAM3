@@ -67,6 +67,40 @@ def matrix(project_id: int | None = None, requirement_id: int | None = None,
     return out
 
 
+class CoverageGenerationRequest(BaseModel):
+    project_id: int
+    requirement_ids: list[int] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=lambda: ["positive", "negative", "boundary_value", "business_rule"])
+    preview: bool = True
+    auto_approve: bool = False
+
+
+@router.post("/traceability/generate-coverage", tags=["traceability"])
+def generate_coverage(
+    body: CoverageGenerationRequest,
+    p: Principal = Depends(require("test.create")),
+    db: Session = Depends(get_db),
+):
+    try:
+        ids = scoped_project_ids(db, p, body.project_id)
+    except AppError:
+        raise NotFound("Project")
+    if body.project_id not in ids:
+        raise NotFound("Project")
+
+    from app.services.test_design import generate_test_scenarios_for_requirements
+
+    return generate_test_scenarios_for_requirements(
+        db=db,
+        project_id=body.project_id,
+        requirement_ids=body.requirement_ids,
+        categories=body.categories,
+        preview_only=body.preview,
+        auto_approve=body.auto_approve,
+        author_id=p.id,
+    )
+
+
 def _dt(v: str | None) -> datetime | None:
     if not v:
         return None
