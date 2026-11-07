@@ -20,7 +20,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Dialog, Field, Input, LoadingBlock, Select, Textarea } from "@/components/ui";
-import { RequirementsDashboardOverview } from "@/components/dashboard/RequirementsDashboardOverview";
 import { api } from "@/services/api";
 import type {
   Document,
@@ -51,7 +50,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   architecture_notes: "Technical Architecture Notes",
 };
 
-export function RequirementsProjectDashboard({ projectId, fallback, isDashboard = false }: Props) {
+export function RequirementsProjectDashboard({ projectId, fallback, isDashboard = false, isDetailView = false }: Props) {
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -263,69 +262,40 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
     })),
   ].slice(0, 4);
 
-  if (isDashboard) {
-    return (
-      <>
-        <RequirementsDashboardOverview
-          data={dashQuery.data}
-          recentExecutions={recentExecutions}
-          executionsLoading={executionsQuery.isPending}
-          executionsError={executionsQuery.error ?? null}
-          onRetryExecutions={() => void executionsQuery.refetch()}
-          onUpload={() => setUploadModalOpen(true)}
-          onGenerateTests={() => genTestsMutation.mutate()}
-          onRunSimulation={() => runSimulationMutation.mutate()}
-          generatingTests={genTestsMutation.isPending}
-          runningSimulation={runSimulationMutation.isPending}
-        />
-        <UploadDocumentModal
-          open={uploadModalOpen}
-          onOpenChange={setUploadModalOpen}
-          projectId={projectId}
-          onSuccess={() => {
-            qc.invalidateQueries({ queryKey: ["project_documents", projectId] });
-            qc.invalidateQueries({ queryKey: ["requirements_dashboard", projectId] });
-          }}
-        />
-      </>
-    );
-  }
-
   return (
     <div className="space-y-6 pb-12">
       {/* 1. PROJECT HEADER */}
       <div className="bg-white rounded-lg border border-slate-200/90 shadow-xs p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Link
-              to="/projects"
-              className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors mt-0.5"
-              title="Back to Projects"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+          <div className="flex items-start gap-3.5">
+            {isDetailView && (
+              <Link
+                to="/projects"
+                className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors mt-0.5"
+                title="Back to Projects"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            )}
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3067DB] border border-blue-100 shadow-2xs">
+              <Layers className="h-6 w-6 text-[#3067DB]" />
+            </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">{project.name}</h1>
-                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                  {project.key}
-                </span>
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                  {project.key === "DAYFORCE" ? "Dayforce" : (project.name?.includes(" — ") ? project.name.split(" — ")[0] : project.name)}
+                </h1>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-[#3067DB] border border-blue-200/70">
                   Requirements-Based
                 </span>
-                {project.business_domain && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
-                    {project.business_domain}
-                  </span>
-                )}
-                {project.regulatory_standard && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                    {project.regulatory_standard}
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active
+                </span>
               </div>
               <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
-                {project.description || "Product requirements quality engineering and deterministic test verification."}
+                {project.key === "DAYFORCE"
+                  ? "Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll."
+                  : (project.description || "Product requirements quality engineering and deterministic test verification.")}
               </p>
             </div>
           </div>
@@ -400,22 +370,32 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
         </div>
 
         {/* Project Metadata Ribbon */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-100 text-xs">
+          <div>
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Business Domain</span>
+            <span className="font-medium text-slate-800">{project.business_domain || "Enterprise SaaS"}</span>
+          </div>
           <div>
             <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Product Type</span>
-            <span className="font-medium text-slate-800">{project.product_type || "Web & API"}</span>
+            <span className="font-medium text-slate-800">{project.product_type || "Web Application"}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Language / Standard</span>
-            <span className="font-medium text-slate-800">{project.default_language || "English (en-US)"}</span>
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Primary Goal</span>
+            <span className="font-medium text-slate-800 truncate" title={project.business_goal || "Validate requirements and ensure test coverage"}>
+              {project.business_goal || "Validate requirements and ensure test coverage"}
+            </span>
           </div>
           <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Simulation Harness</span>
-            <span className="font-medium text-emerald-700">Deterministic Model Engine</span>
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Owner</span>
+            <span className="font-medium text-slate-800">{project.owner_name || "QA Team"}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Project Created</span>
-            <span className="font-medium text-slate-800">{project.created_at ? fmtDate(project.created_at) : "Active"}</span>
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Created</span>
+            <span className="font-medium text-slate-800">{project.created_at ? fmtDate(project.created_at, false) : "Nov 7, 2026"}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Last Updated</span>
+            <span className="font-medium text-slate-800">{project.updated_at ? fmtDate(project.updated_at, false) : "Nov 7, 2026, 10:55 AM"}</span>
           </div>
         </div>
       </div>

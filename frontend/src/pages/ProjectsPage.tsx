@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DataTable } from "@/components/DataTable";
 import { PipelineStepper, type PipelineStep } from "@/components/common/PipelineStepper";
@@ -20,6 +20,7 @@ export function ProjectsPage() {
   const st = useListState(["status"], { sort: "key", order: "asc" });
   const nav = useNavigate();
   const { can } = useAuth();
+  const { setProjectId } = useProjects();
   const q = useQuery({ queryKey: ["projects", st.params], queryFn: () => api.get<Page<Project>>("/projects", st.params) });
   const [open, setOpen] = useState(false);
   const [repoOpen, setRepoOpen] = useState(false);
@@ -46,7 +47,10 @@ export function ProjectsPage() {
       <DataTable
         query={q}
         state={st}
-        onRowClick={(p) => nav(`/projects/${p.id}`)}
+        onRowClick={(p) => {
+          setProjectId(p.id);
+          nav(`/projects/${p.id}`);
+        }}
         toolbar={
           <>
             <Input
@@ -710,6 +714,14 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
 export function ProjectDetailPage() {
   const { id } = useParams();
   const projectId = Number(id);
+  const { setProjectId } = useProjects();
+
+  useEffect(() => {
+    if (projectId && !isNaN(projectId)) {
+      setProjectId(projectId);
+    }
+  }, [projectId, setProjectId]);
+
   const q = useQuery({
     queryKey: ["project_detail_info", projectId],
     queryFn: () => api.get<Project>(`/projects/${projectId}`),
@@ -729,7 +741,7 @@ export function ProjectDetailPage() {
     );
   }
 
-  const isReq = q.data?.project_type === "requirements_based" || !q.data?.project_type;
+  const isReq = q.data?.project_type === "requirements_based";
   if (isReq) {
     return <RequirementsProjectDashboard projectId={projectId} isDetailView={true} />;
   }

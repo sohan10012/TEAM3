@@ -24,6 +24,7 @@ export interface Project { id: number; key: string; name: string; description: s
   constraints_and_assumptions?: string[];
   simulation_environment?: string | null;
   created_at?: string;
+  updated_at?: string;
   stats: { requirements: number; tests: number; suites: number; open_defects: number; members: number; coverage_pct: number };
   modules?: Module[]; environments?: Environment[]; members?: { user: User; project_role: string }[] }
 export interface Clause { id: number; clause_key: string; position: number; text: string;

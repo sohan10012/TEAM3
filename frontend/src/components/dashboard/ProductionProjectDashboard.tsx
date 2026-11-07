@@ -115,6 +115,11 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const projectTitle = p.key === "ECHO" ? "EchoBox" : p.key === "CUREON" ? "Cureonix Service" : (p.name?.includes(" — ") ? p.name.split(" — ")[0] : p.name);
+  const projectSubtitle = p.key === "ECHO"
+    ? "Anonymous conversation platform (AWS Lambda + API Gateway + DynamoDB)"
+    : p.description;
+
   return (
     <div className="space-y-5 pb-16">
       {/* Project Header Bar */}
@@ -137,7 +142,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
 
           <div className="space-y-0.5">
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">{p.name}</h1>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">{projectTitle}</h1>
               {/* Project Health Status Badge */}
               {p.health_status === "healthy" && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#ECFDF5] px-2.5 py-0.5 text-2xs font-semibold text-[#065F46] border border-[#A7F3D0]">
@@ -160,7 +165,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 max-w-2xl">{p.description}</p>
+            <p className="text-xs text-slate-500 max-w-2xl">{projectSubtitle}</p>
           </div>
         </div>
 

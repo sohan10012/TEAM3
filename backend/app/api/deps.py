@@ -42,7 +42,7 @@ def current_principal(request: Request, db: Session = Depends(get_db)) -> Princi
         from datetime import timedelta
         from app.core.config import get_settings
         s = get_settings()
-        if s.single_operator and s.app_env != "test":
+        if s.single_operator and s.app_env != "test" and request.method in ("GET", "HEAD", "OPTIONS"):
             dev_user = db.execute(select(User).where(User.email == s.dev_email.lower())).scalar_one_or_none()
             if not dev_user:
                 dev_user = db.execute(select(User)).scalars().first()

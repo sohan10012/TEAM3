@@ -124,7 +124,7 @@ export default function SimulationPage() {
   const [selectedAgentId, setSelectedAgentId] = useState<number>(1);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [simulatedStageIndex, setSimulatedStageIndex] = useState<number>(-1);
-  const [customShifts, setCustomShifts] = useState<string>("");
+  const [customShifts, setCustomShifts] = useState<string>("10, 10, 10, 10, 8");
   const [customEvalResult, setCustomEvalResult] = useState<any>(null);
   const [useLiveAI, setUseLiveAI] = useState<boolean>(true);
   const [showStageExplain, setShowStageExplain] = useState<boolean>(false);
