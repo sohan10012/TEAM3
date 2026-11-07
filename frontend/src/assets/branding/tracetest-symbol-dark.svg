@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none" aria-label="TraceTest Symbol Dark">
+  <defs>
+    <linearGradient id="ttTraceGradDark" x1="6" y1="8" x2="26" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="ttVerifyGradDark" x1="8" y1="20" x2="29" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+  <!-- Specification / Requirement Trace Crossbar -->
+  <path d="M6 10H22C23.6569 10 25 11.3431 25 13V14" stroke="url(#ttTraceGradDark)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Central Decomposition Trace -->
+  <path d="M14.5 10V21" stroke="url(#ttTraceGradDark)" stroke-width="2.75" stroke-linecap="round"/>
+  <!-- Verification & Test Synthesis Checkmark -->
+  <path d="M8.5 19.5L14.5 25.5L28.5 10.5" stroke="url(#ttVerifyGradDark)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Precision Nodes -->
+  <circle cx="6" cy="10" r="2" fill="#93C5FD"/>
+  <circle cx="28.5" cy="10.5" r="2.2" fill="#6EE7B7"/>
+</svg>
+

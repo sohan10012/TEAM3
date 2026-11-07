@@ -4,8 +4,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Google Sans"', "Tahoma", "Arial", "system-ui", "sans-serif"],
-        mono: ['"JetBrains Mono"', '"Fira Code"', "ui-monospace", "monospace"],
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"Inter"',
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: [
+          '"SF Mono"',
+          '"JetBrains Mono"',
+          '"Fira Code"',
+          "ui-monospace",
+          "monospace",
+        ],
+      },
+      transitionTimingFunction: {
+        apple: "cubic-bezier(0.16, 1, 0.3, 1)",
+        spring: "cubic-bezier(0.175, 0.885, 0.32, 1.1)",
       },
       colors: {
         brand: {
@@ -25,14 +43,14 @@ export default {
           subtle: "var(--color-border-subtle)",
           strong: "var(--color-border-strong)",
         },
-        accent: { DEFAULT: "#3067DB", hover: "#2554B8", soft: "#EFF6FF", ring: "#93C5FD" },
+        accent: { DEFAULT: "#1D63ED", hover: "#1550C0", soft: "#EFF6FF", ring: "#93C5FD" },
         dayforce: {
-          primary: "#3067DB",
-          "primary-hover": "#2554B8",
+          primary: "#1D63ED",
+          "primary-hover": "#1550C0",
           "primary-light": "#EFF6FF",
           secondary: "#0F172A",
-          accent: "#0891B2",
-          "accent-light": "#ECFEFF",
+          accent: "#0284C7",
+          "accent-light": "#F0F9FF",
           light: "#F8FAFC",
           surface: "#FFFFFF",
           border: "#E2E8F0",
@@ -41,10 +59,11 @@ export default {
       },
       fontSize: { "2xs": ["0.6875rem", "1rem"] },
       boxShadow: {
-        xs: "0 1px 2px rgba(0, 0, 0, 0.04)",
-        card: "0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)",
-        popover: "0 4px 12px rgba(0, 0, 0, 0.08)",
-        modal: "0 12px 32px rgba(0, 0, 0, 0.12)",
+        "2xs": "0 1px 2px rgba(15, 23, 42, 0.04)",
+        xs: "0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03)",
+        card: "0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03)",
+        popover: "0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)",
+        modal: "0 20px 40px -8px rgba(15, 23, 42, 0.16)",
       },
     },
   },

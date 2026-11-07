@@ -149,10 +149,26 @@ export default function SimulationPage() {
   const [baseHourlyWage, setBaseHourlyWage] = useState<number>(35.0);
   const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { projectId } = useProjects();
+  const { projectId, current, byId } = useProjects();
   const [searchParams] = useSearchParams();
   const urlProjectId = searchParams.get("project_id");
   const effectiveProjectId = urlProjectId ? Number(urlProjectId) : (projectId || 11);
+  const activeProject = byId(effectiveProjectId) || current;
+  const isHcm = Boolean(
+    activeProject?.business_domain?.toLowerCase().includes("hr") ||
+    activeProject?.business_domain?.toLowerCase().includes("payroll") ||
+    activeProject?.name?.toLowerCase().includes("payroll") ||
+    activeProject?.key === "EV_PAY" ||
+    activeProject?.key === "DAYFORCE" ||
+    (!activeProject && effectiveProjectId === 11)
+  );
+  const isPayments = (!isHcm) && Boolean(
+    activeProject?.business_domain?.toLowerCase().includes("bank") ||
+    activeProject?.business_domain?.toLowerCase().includes("pay") ||
+    activeProject?.business_domain?.toLowerCase().includes("fintech") ||
+    activeProject?.name?.toLowerCase().includes("upi") ||
+    activeProject?.key === "UPI_DISP"
+  );
 
   const qc = useQueryClient();
   const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>("pre_payroll");
@@ -580,7 +596,9 @@ export default function SimulationPage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-slate-900">Data Processing Pipeline</h3>
-                      <p className="text-2xs text-slate-500">Track data flow through payroll processing phases</p>
+                      <p className="text-2xs text-slate-500">
+                        Track data flow through {isPayments ? "settlement & dispute" : "payroll"} processing phases
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-[#1D4ED8] border border-blue-200 shadow-2xs">
@@ -870,7 +888,9 @@ export default function SimulationPage() {
                   <div className="flex h-6 w-6 items-center justify-center rounded-md bg-rose-50 text-rose-600 border border-rose-100">
                     <FileText className="h-3.5 w-3.5" />
                   </div>
-                  <h3 className="text-xs font-bold text-slate-900">Report & Analytics</h3>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    {isPayments ? "Regulatory Reports & Telemetry" : "Report & Analytics"}
+                  </h3>
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-700">
                   <button
@@ -881,7 +901,7 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>Retroactive Payments</span>
+                    <span>{isPayments ? "TAT SLA Breach Log (T+1 Mandate)" : "Retroactive Payments"}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -891,7 +911,7 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>Off-Cycle Checks</span>
+                    <span>{isPayments ? "Automated ₹100/Day Compensation Ledger" : "Off-Cycle Checks"}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -901,18 +921,20 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>Supplemental Pay</span>
+                    <span>{isPayments ? "RBI Integrated Ombudsman Dossier (RB-IOS)" : "Supplemental Pay"}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Card 2: Payroll Assurance & Controls */}
+              {/* Card 2: Assurance & Controls */}
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
                 <div className="flex items-center gap-2 mb-2.5">
                   <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">
                     <DollarSign className="h-3.5 w-3.5" />
                   </div>
-                  <h3 className="text-xs font-bold text-slate-900">Payroll Assurance & Controls</h3>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    {isPayments ? "Dispute Assurance & Controls" : "Payroll Assurance & Controls"}
+                  </h3>
                 </div>
                 <div className="space-y-2">
                   <div
@@ -922,8 +944,14 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-slate-500 font-mono text-xs">▷</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">Parallel Run Validator</div>
-                        <div className="text-[11px] text-slate-500">Compare system outputs against baseline rules</div>
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                          {isPayments ? "Parallel Settlement Validator" : "Parallel Run Validator"}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {isPayments
+                            ? "Compare switch settlement logs against RBI turnaround rules"
+                            : "Compare system outputs against baseline rules"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -935,8 +963,14 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-amber-500 font-mono text-xs font-bold">!</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">Sandbox Simulator</div>
-                        <div className="text-[11px] text-slate-500">Test payroll changes safely before commit</div>
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                          {isPayments ? "Dispute Scenario Sandbox" : "Sandbox Simulator"}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {isPayments
+                            ? "Test liability thresholds & compensation tiers safely"
+                            : "Test payroll changes safely before commit"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -951,8 +985,14 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-emerald-600 font-mono text-xs font-bold">$</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">Costing Checker</div>
-                        <div className="text-[11px] text-slate-500">Remediate Payroll Cost Misallocations</div>
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                          {isPayments ? "Compensation Audit Checker" : "Costing Checker"}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {isPayments
+                            ? "Remediate Customer Penalty Calculation Discrepancies"
+                            : "Remediate Payroll Cost Misallocations"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -966,7 +1006,9 @@ export default function SimulationPage() {
                     <span className="text-slate-700 font-bold text-xs">→</span>
                     <h3 className="text-xs font-bold text-slate-900">Quick Actions</h3>
                   </div>
-                  <span className="text-2xs text-slate-400">Access key payroll functions</span>
+                  <span className="text-2xs text-slate-400">
+                    {isPayments ? "Access key settlement functions" : "Access key payroll functions"}
+                  </span>
                 </div>
                 <div className="space-y-1.5">
                   <div
@@ -980,7 +1022,9 @@ export default function SimulationPage() {
                     className="p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <div>
-                      <div className="text-xs font-medium text-slate-800">RCA Express Adhoc Analysis</div>
+                      <div className="text-xs font-medium text-slate-800">
+                        {isPayments ? "TAT Express Adhoc Analysis" : "RCA Express Adhoc Analysis"}
+                      </div>
                       <div className="text-[11px] text-slate-500">Quick root cause insights</div>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
@@ -995,8 +1039,12 @@ export default function SimulationPage() {
                     className="p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <div>
-                      <div className="text-xs font-medium text-slate-800">PRN Analytics</div>
-                      <div className="text-[11px] text-slate-500">Employee issue tracking</div>
+                      <div className="text-xs font-medium text-slate-800">
+                        {isPayments ? "Dispute Telemetry Stream" : "PRN Analytics"}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {isPayments ? "Failed transaction incident tracking" : "Employee issue tracking"}
+                      </div>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
                   </div>
@@ -1018,7 +1066,7 @@ export default function SimulationPage() {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  {/* Card 1: Pre-Payroll RCA */}
+                  {/* Card 1: Pre-Payroll or Pre-Settlement RCA */}
                   <div
                     onClick={() => {
                       setActiveRcaCard("pre-payroll");
@@ -1039,20 +1087,35 @@ export default function SimulationPage() {
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[#1D4ED8]">
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#1D4ED8]">Pre-Payroll RCA</h4>
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#1D4ED8]">
+                          {isPayments ? "Pre-Settlement RCA" : "Pre-Payroll RCA"}
+                        </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#1D4ED8] group-hover:translate-x-0.5 transition-transform" />
                     </div>
-                    <p className="text-2xs text-slate-500 mt-1">Validate payroll data before processing</p>
+                    <p className="text-2xs text-slate-500 mt-1">
+                      {isPayments ? "Validate transaction telemetry and reversal triggers before adjudication" : "Validate payroll data before processing"}
+                    </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
-                      <li>Detects errors early</li>
-                      <li>Prevents overpayments and missed deductions</li>
-                      <li>Matches payroll data to records</li>
-                      <li>Reduces payroll issues and complaints</li>
+                      {isPayments ? (
+                        <>
+                          <li>Detects network timeouts early</li>
+                          <li>Verifies NPCI switch response codes</li>
+                          <li>Matches bank CBS records to reversal queues</li>
+                          <li>Reduces un-reconciled customer debits</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Detects errors early</li>
+                          <li>Prevents overpayments and missed deductions</li>
+                          <li>Matches payroll data to records</li>
+                          <li>Reduces payroll issues and complaints</li>
+                        </>
+                      )}
                     </ul>
                   </div>
 
-                  {/* Card 2: Payroll RCA */}
+                  {/* Card 2: Payroll or TAT RCA */}
                   <div
                     onClick={() => {
                       setActiveRcaCard("payroll-rca");
@@ -1073,20 +1136,35 @@ export default function SimulationPage() {
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                           <Clock className="h-3.5 w-3.5" />
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-800">Payroll RCA</h4>
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-800">
+                          {isPayments ? "TAT & Compensation RCA" : "Payroll RCA"}
+                        </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
-                    <p className="text-2xs text-slate-500 mt-1">Analyze payroll discrepancies</p>
+                    <p className="text-2xs text-slate-500 mt-1">
+                      {isPayments ? "Analyze dispute turnaround time & penalty accruals" : "Analyze payroll discrepancies"}
+                    </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
-                      <li>Compares payroll periods</li>
-                      <li>Identifies the cause of discrepancies</li>
-                      <li>Categorizes variances by risk</li>
-                      <li>Reduces investigation time</li>
+                      {isPayments ? (
+                        <>
+                          <li>Calculates ₹100/day delay compensation beyond T+1</li>
+                          <li>Categorizes breaches by bank switch vs NPCI switch</li>
+                          <li>Root causes automated reversal failures</li>
+                          <li>Reduces regulatory dispute resolution time</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Compares payroll periods</li>
+                          <li>Identifies the cause of discrepancies</li>
+                          <li>Categorizes variances by risk</li>
+                          <li>Reduces investigation time</li>
+                        </>
+                      )}
                     </ul>
                   </div>
 
-                  {/* Card 3: Union Policy & Compliance RCA */}
+                  {/* Card 3: Union Policy or RBI Regulatory Policy RCA */}
                   <div
                     onClick={() => {
                       setActiveRcaCard("union-compliance");
@@ -1108,20 +1186,35 @@ export default function SimulationPage() {
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-700">
                           <FileText className="h-3.5 w-3.5" />
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-rose-800">Union Policy & Compliance RCA</h4>
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-rose-800">
+                          {isPayments ? "RBI Circular & Regulatory Policy RCA" : "Union Policy & Compliance RCA"}
+                        </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-rose-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
-                    <p className="text-2xs text-slate-500 mt-1">Ensure compliance with policies</p>
+                    <p className="text-2xs text-slate-500 mt-1">
+                      {isPayments ? "Ensure compliance with RBI customer protection directions" : "Ensure compliance with policies"}
+                    </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
-                      <li>Ensures compliance with changing regulations</li>
-                      <li>Detects errors in tax and benefit calculations</li>
-                      <li>Verifies pension contributions are accurate</li>
-                      <li>Prevents costly penalties from misapplied deductions</li>
+                      {isPayments ? (
+                        <>
+                          <li>Zero customer liability verification for ≤ 3 days notification</li>
+                          <li>Limited liability tier verification for 4-7 days</li>
+                          <li>Ensures Internal Ombudsman concurrence before claim rejection</li>
+                          <li>Prevents penalties from RBI Ombudsman escalations</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Ensures compliance with changing regulations</li>
+                          <li>Detects errors in tax and benefit calculations</li>
+                          <li>Verifies pension contributions are accurate</li>
+                          <li>Prevents costly penalties from misapplied deductions</li>
+                        </>
+                      )}
                     </ul>
                   </div>
 
-                  {/* Card 4: Payroll Costing RCA */}
+                  {/* Card 4: Payroll or Settlement Costing RCA */}
                   <div
                     onClick={() => {
                       setActiveRcaCard("costing-rca");
@@ -1142,15 +1235,31 @@ export default function SimulationPage() {
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                           <BarChart3 className="h-3.5 w-3.5" />
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-emerald-800">Payroll Costing RCA</h4>
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-emerald-800">
+                          {isPayments ? "Settlement & Dispute Costing RCA" : "Payroll Costing RCA"}
+                        </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-emerald-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
-                    <p className="text-2xs text-slate-500 mt-1">Cost analysis and budgeting</p>
+                    <p className="text-2xs text-slate-500 mt-1">
+                      {isPayments ? "Reconciliation and dispute accounting" : "Cost analysis and budgeting"}
+                    </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
-                      <li>Cost analysis and budgeting</li>
-                      <li>Breaks down payroll costs</li>
-                      <li>Identifies cost discrepancies by account</li>
+                      {isPayments ? (
+                        <>
+                          <li>Breaks down compensation payouts by remitter/beneficiary</li>
+                          <li>Reconciles inter-bank fee settlements</li>
+                          <li>Tracks financial impact of failed transaction TATs</li>
+                          <li>Allocates dispute losses to operational cost centers</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Cost analysis and budgeting</li>
+                          <li>Breaks down payroll costs</li>
+                          <li>Identifies cost discrepancies by account</li>
+                          <li>Reconciles actuals against general ledger budget</li>
+                        </>
+                      )}
                     </ul>
                   </div>
                 </div>

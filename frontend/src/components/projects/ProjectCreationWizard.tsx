@@ -16,6 +16,7 @@ import {
   Trash2,
   Upload,
   X,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
+import { AiAssistedOnboardingView } from "./AiAssistedOnboardingView";
 
 export interface ProjectCreationWizardProps {
   open: boolean;
@@ -136,6 +138,8 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
   const { me } = useAuth();
   const { setProjectId } = useProjects();
 
+  // Phase 14: Onboarding Mode (Mode A: AI-Assisted vs Mode B: Manual)
+  const [wizardMode, setWizardMode] = useState<"ai_assisted" | "manual">("ai_assisted");
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   // Form State
@@ -154,19 +158,17 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
   // Step 2 Context State
   const [productOverview, setProductOverview] = useState("");
   const [problemStatement, setProblemStatement] = useState("");
-  const [targetUsers, setTargetUsers] = useState<string[]>(["Retail Customer", "Treasury Operator"]);
+  const [targetUsers, setTargetUsers] = useState<string[]>([]);
   const [userTagInput, setUserTagInput] = useState("");
-  const [productModules, setProductModules] = useState<string[]>(["Core Ledger", "Settlement Engine"]);
+  const [productModules, setProductModules] = useState<string[]>([]);
   const [moduleTagInput, setModuleTagInput] = useState("");
   const [architectureContext, setArchitectureContext] = useState("");
   const [techStackText, setTechStackText] = useState("");
   const [integrations, setIntegrations] = useState<string[]>([]);
   const [integrationTagInput, setIntegrationTagInput] = useState("");
-  const [businessRules, setBusinessRules] = useState<string[]>([
-    "Total transaction debits must balance credits with zero floating drift.",
-  ]);
+  const [businessRules, setBusinessRules] = useState<string[]>([]);
   const [newRuleInput, setNewRuleInput] = useState("");
-  const [regulatoryStandards, setRegulatoryStandards] = useState<string[]>(["SOC 2 Type II", "PCI-DSS Level 1"]);
+  const [regulatoryStandards, setRegulatoryStandards] = useState<string[]>([]);
   const [securityExpectations, setSecurityExpectations] = useState("");
   const [privacyRequirements, setPrivacyRequirements] = useState("");
   const [performanceExpectations, setPerformanceExpectations] = useState("");
@@ -176,28 +178,8 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
   const [dependencies, setDependencies] = useState<string[]>([]);
 
   // Step 3 Roles and Scenarios State
-  const [roles, setRoles] = useState<UserRoleDraft[]>([
-    {
-      id: "role_1",
-      role_name: "Operations Analyst",
-      description: "Monitors daily payment workflows and transaction batches.",
-      permissions: ["payments.view", "reports.export"],
-      responsibilities: "Verify batch totals match settlement statements.",
-      restrictions: "Cannot override transaction approvals or modify fees.",
-    },
-  ]);
-  const [scenarios, setScenarios] = useState<BusinessScenarioDraft[]>([
-    {
-      id: "sc_1",
-      title: "Real-time High Value Transaction Approval",
-      description: "Customer submits payment exceeding single-signature limit requiring dual authorization.",
-      actor: "Operations Analyst",
-      preconditions: "User has dual-approval rights and batch is pending verification.",
-      expected_outcome: "Payment is approved, state transitions to queued for clearing, and notification is emitted.",
-      business_rules: "Single transactions >= $10,000 require secondary approval within 15 minutes.",
-      module: "Settlement Engine",
-    },
-  ]);
+  const [roles, setRoles] = useState<UserRoleDraft[]>([]);
+  const [scenarios, setScenarios] = useState<BusinessScenarioDraft[]>([]);
 
   // Step 4 Documents State
   const [documents, setDocuments] = useState<UploadedDocDraft[]>([]);
@@ -623,11 +605,62 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
           </div>
         </header>
 
-        {/* Stepper Navigation */}
-        <nav
-          aria-label="Wizard Steps"
-          className="px-6 py-3 border-b border-slate-200 bg-white grid grid-cols-2 sm:grid-cols-5 gap-2 shrink-0"
-        >
+        {/* Mode Switcher Banner */}
+        <div className="px-6 py-2.5 bg-slate-100/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 p-1 bg-white rounded-lg border border-slate-200 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setWizardMode("ai_assisted")}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
+                wizardMode === "ai_assisted"
+                  ? "bg-[#3067DB] text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Mode A: AI-Assisted Setup (Recommended)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setWizardMode("manual")}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
+                wizardMode === "manual"
+                  ? "bg-[#3067DB] text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Mode B: Manual Detailed Configuration</span>
+            </button>
+          </div>
+          <span className="text-[11px] text-slate-500 hidden sm:inline">
+            {wizardMode === "ai_assisted"
+              ? "Upload PRD / circulars for automated context & rule generation"
+              : "5-step manual configuration wizard"}
+          </span>
+        </div>
+
+        {wizardMode === "ai_assisted" ? (
+          <AiAssistedOnboardingView
+            onSuccess={(data) => {
+              sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+              qc.invalidateQueries({ queryKey: ["projects"] });
+              setProjectId(data.project_id);
+              onOpenChange(false);
+              nav(data.redirect_url);
+            }}
+            onCancel={() => onOpenChange(false)}
+            onSwitchToManual={() => setWizardMode("manual")}
+          />
+        ) : (
+          <>
+            {/* Stepper Navigation */}
+            <nav
+              aria-label="Wizard Steps"
+              className="px-6 py-3 border-b border-slate-200 bg-white grid grid-cols-2 sm:grid-cols-5 gap-2 shrink-0"
+            >
           {WIZARD_STEPS.map((s) => {
             const isCurrent = currentStep === s.step;
             const isPast = currentStep > s.step;
@@ -1807,6 +1840,8 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
             )}
           </div>
         </footer>
+          </>
+        )}
       </div>
     </div>
   );

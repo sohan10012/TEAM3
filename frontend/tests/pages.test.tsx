@@ -44,28 +44,24 @@ test("navigation shell renders TT wordmark and dynamic active project", async ()
   expect(screen.getByRole("option", { name: "ECHO — EchoBox Platform" })).toBeInTheDocument();
 });
 
-test("command palette opens via Cmd+K keyboard shortcut and queries search API", async () => {
-  const searchResults = { results: [{ type: "test", id: 42, key: "TC-0042", title: "Verify JWT Signature" }] };
-  const calls = mockFetch([
+test("top bar removes global search and renders enterprise project switcher on the right", async () => {
+  mockFetch([
     [/auth\/me/, ME],
     [/projects/, PROJECTS],
     [/config/, { environment: "test", llm: { any_configured: false, providers: [] } }],
     [/notifications/, []],
-    [/search/, searchResults],
   ]);
   renderApp(<Routes><Route element={<AppShell />}><Route index element={<p>home</p>} /></Route></Routes>);
-  const searchInput = await screen.findByLabelText("Global search");
-  expect(searchInput).toHaveAttribute("placeholder", "Search tests, requirements, defects... (⌘K)");
+  
+  // Verify global search has been completely removed from application shell
+  expect(screen.queryByLabelText("Global search")).not.toBeInTheDocument();
+  expect(screen.queryByPlaceholderText(/Search tests/)).not.toBeInTheDocument();
 
-  // Trigger Cmd+K
-  await userEvent.keyboard("{Meta>}k{/Meta}");
-  expect(searchInput).toHaveFocus();
-
-  // Type query
-  await userEvent.type(searchInput, "JWT");
-  expect(await screen.findByText("TC-0042")).toBeInTheDocument();
-  expect(screen.getByText("Verify JWT Signature")).toBeInTheDocument();
-  expect(calls.some((c) => c.url.includes("/search"))).toBe(true);
+  // Verify enterprise project switcher is mounted with accessible controls
+  const switcher = await screen.findByRole("combobox", { name: "Project Workspace" });
+  expect(switcher).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "All Project Workspaces" })).toBeInTheDocument();
+  expect(await screen.findByRole("option", { name: "PAY — Payroll Management" })).toBeInTheDocument();
 });
 
 test("dashboard renders KPIs from the analytics API, not constants", async () => {

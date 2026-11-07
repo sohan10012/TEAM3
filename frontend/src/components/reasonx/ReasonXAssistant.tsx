@@ -257,17 +257,20 @@ export function ReasonXAssistant() {
           onClick={handleOpenDrawer}
           className={cn(
             "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full",
-            "bg-[#1D4ED8] hover:bg-[#1E40AF] active:bg-[#1E3A8A] text-white",
-            "shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95",
-            "ring-2 ring-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400"
+            "bg-slate-900/92 hover:bg-slate-900 text-white backdrop-blur-md",
+            "border border-slate-700/70 hover:border-blue-500/50",
+            "shadow-popover hover:shadow-xl",
+            "transition-[transform,background-color,border-color,box-shadow] duration-150 motion-reduce:transition-none",
+            "active:scale-[0.95] select-none cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D63ED]/50 focus-visible:ring-offset-2"
           )}
           title="Open ReasonX AI"
           aria-label="Open ReasonX AI Assistant"
         >
-          <Sparkles className="h-6 w-6 text-white" aria-hidden="true" />
+          <Sparkles className="h-6 w-6 text-blue-400" aria-hidden="true" />
           {unreadCount > 0 && (
             <span
-              className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs animate-bounce"
+              className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs motion-safe:pulse-subtle"
               aria-label={`${unreadCount} unread message`}
             >
               {unreadCount}
@@ -283,7 +286,7 @@ export function ReasonXAssistant() {
         <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-label="ReasonX AI Assistant">
           {/* Modal Backdrop with subtle blur */}
           <div
-            className="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs transition-opacity animate-in fade-in duration-200 motion-reduce:animate-none"
             onClick={handleCloseDrawer}
             aria-hidden="true"
           />
@@ -294,7 +297,7 @@ export function ReasonXAssistant() {
             className={cn(
               "fixed inset-y-0 right-0 z-50 flex flex-col bg-white shadow-2xl border-l border-slate-200",
               "w-full sm:w-[440px] md:w-[460px] max-w-full h-full min-h-[100dvh]",
-              "animate-in slide-in-from-right duration-300 ease-out"
+              "animate-in slide-in-from-right duration-250 ease-out motion-reduce:animate-none will-change-transform"
             )}
           >
             {/* Drawer Header matching Design System */}

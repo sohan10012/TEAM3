@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   Download,
   Eye,
   FileCheck,
@@ -13,6 +14,7 @@ import {
   Play,
   PlayCircle,
   RefreshCw,
+  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -61,6 +63,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
   const [resolveClarModal, setResolveClarModal] = useState<RequirementClarification | null>(null);
   const [clarificationResponse, setClarificationResponse] = useState("");
   const [selectedExecutionLog, setSelectedExecutionLog] = useState<{ id: number; key: string; log: string } | null>(null);
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
 
   // Queries
   const dashQuery = useQuery({
@@ -247,6 +250,32 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
   const testProgress = test_design_summary.total_tests
     ? Math.round((test_design_summary.approved_tests / test_design_summary.total_tests) * 100)
     : null;
+
+  // Real-time quality pipeline stage scores & completion metrics
+  const stage1Score = documents_summary.total > 0 ? (documents_summary.completed === documents_summary.total && documents_summary.failed === 0 ? 1 : 0.5) : 0;
+  const stage2Score = requirements_summary.total > 0 ? (requirements_summary.approved === requirements_summary.total && requirements_summary.open_clarifications === 0 ? 1 : 0.7) : 0;
+  const stage3Score = test_design_summary.total_tests > 0 ? (test_design_summary.uncovered_requirements === 0 ? 1 : 0.75) : (test_design_summary.acceptance_criteria > 0 ? 0.3 : 0);
+  const stage4Score = execution_summary.specification_validation_runs > 0 ? 1 : 0;
+  const stage5Score = execution_summary.latest_run ? (execution_summary.latest_run.failed === 0 ? 1 : 0.8) : 0;
+
+  const activeStagesCount = [stage1Score, stage2Score, stage3Score, stage4Score, stage5Score].filter((s) => s > 0).length;
+  const overallPipelineProgress = Math.round(((stage1Score + stage2Score + stage3Score + stage4Score + stage5Score) / 5) * 100);
+
+  // Context-aware action recommendation
+  const hasDocs = documents_summary.total > 0;
+  const hasUnprocessedDocs = documents_summary.processing > 0 || (documents_summary.total > 0 && documents_summary.completed === 0);
+  const hasReqs = requirements_summary.total > 0;
+  const hasTests = test_design_summary.total_tests > 0;
+
+  const primaryAction: "upload" | "analyze" | "ac" | "tests" =
+    !hasDocs
+      ? "upload"
+      : hasUnprocessedDocs
+      ? "analyze"
+      : (hasReqs && !hasTests)
+      ? "ac"
+      : "tests";
+
   const activityItems = [
     ...(documents_summary.latest_document ? [{
       id: `document-${documents_summary.latest_document.id}`,
@@ -262,140 +291,238 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
     })),
   ].slice(0, 4);
 
+  const projectTitle = project.key === "DAYFORCE" ? "Dayforce" : (project.name?.includes(" — ") ? project.name.split(" — ")[0] : project.name);
+  const projectDesc = project.key === "DAYFORCE"
+    ? "Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll."
+    : (project.description || "Product requirements quality engineering and deterministic test verification.");
+
   return (
     <div className="space-y-6 pb-12">
-      {/* 1. PROJECT HEADER */}
-      <div className="bg-white rounded-lg border border-slate-200/90 shadow-xs p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            {isDetailView && (
-              <Link
-                to="/projects"
-                className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors mt-0.5"
-                title="Back to Projects"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            )}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3067DB] border border-blue-100 shadow-2xs">
-              <Layers className="h-6 w-6 text-[#3067DB]" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                  {project.key === "DAYFORCE" ? "Dayforce" : (project.name?.includes(" — ") ? project.name.split(" — ")[0] : project.name)}
-                </h1>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-[#3067DB] border border-blue-200/70">
-                  Requirements-Based
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-200">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
-                {project.key === "DAYFORCE"
-                  ? "Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll."
-                  : (project.description || "Product requirements quality engineering and deterministic test verification.")}
-              </p>
-            </div>
+      {/* 1. PROJECT HEADER - REDESIGNED ENTERPRISE OVERVIEW */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-6 space-y-4">
+        {/* ROW 1: Project Icon | Title | Type Badge | Status Badge */}
+        <div className="flex items-center gap-3.5 flex-wrap">
+          {isDetailView && (
+            <Link
+              to="/projects"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+              title="Back to Projects"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#1D63ED] border border-blue-100/80 shadow-2xs">
+            <Layers className="h-6 w-6 text-[#1D63ED]" />
           </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setUploadModalOpen(true)}
-              className="gap-1.5 border-slate-300"
-            >
-              <Upload className="h-4 w-4 text-slate-600" />
-              Upload Document
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              loading={analyzeMutation.isPending}
-              onClick={() => analyzeMutation.mutate()}
-              className="gap-1.5 border-slate-300"
-              title="Extract grounded requirements and detect ambiguities"
-            >
-              <RefreshCw className={cn("h-4 w-4 text-[#3067DB]", analyzeMutation.isPending && "animate-spin")} />
-              Analyze
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              loading={genAcMutation.isPending}
-              onClick={() => genAcMutation.mutate()}
-              className="gap-1.5 border-slate-300 text-slate-700"
-              title="Generate structured Given/When/Then acceptance criteria"
-            >
-              <FileCheck className="h-4 w-4 text-blue-600" />
-              Generate ACs
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              loading={genTestsMutation.isPending}
-              onClick={() => genTestsMutation.mutate()}
-              className="gap-1.5 border-slate-300 text-slate-700"
-              title="Generate 10-category test scenarios"
-            >
-              <Layers className="h-4 w-4 text-purple-600" />
-              Generate Tests
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              loading={validateSpecsMutation.isPending}
-              onClick={() => validateSpecsMutation.mutate()}
-              className="gap-1.5 border-slate-300 text-slate-700"
-              title="Validate completeness of Given/When/Then contracts"
-            >
-              <FileCheck className="h-4 w-4 text-emerald-600" />
-              Validate Specs
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              loading={runSimulationMutation.isPending}
-              onClick={() => runSimulationMutation.mutate()}
-              className="gap-1.5 bg-[#3067DB] hover:bg-[#2554B8]"
-              title="Run deterministic behaviour simulation (SIM-*)"
-            >
-              <Play className="h-4 w-4 fill-white" />
-              Run Simulation
-            </Button>
+          <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 truncate">
+              {projectTitle}
+            </h1>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80">
+              Requirements-Based
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active
+            </span>
           </div>
         </div>
 
-        {/* Project Metadata Ribbon */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-100 text-xs">
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Business Domain</span>
-            <span className="font-medium text-slate-800">{project.business_domain || "Enterprise SaaS"}</span>
+        {/* ROW 2: Clear Un-collided Project Description */}
+        <p className="text-sm text-slate-600 max-w-4xl leading-relaxed">
+          {projectDesc}
+        </p>
+
+        {/* ROW 3: Context-Aware Primary Actions & Workflow Operations */}
+        <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* 1. Upload Document */}
+            <Button
+              variant={primaryAction === "upload" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setUploadModalOpen(true)}
+              className={cn(
+                "gap-1.5 shadow-2xs text-xs font-semibold h-9 px-3.5 apple-press",
+                "transition-[border-color,background-color,box-shadow,transform] duration-150 motion-reduce:transition-none",
+                primaryAction === "upload"
+                  ? "bg-[#1D63ED] hover:bg-[#1550C0] text-white ring-2 ring-[#1D63ED]/20"
+                  : "border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+              )}
+              title="Upload PRD, SRS, specification or regulatory documents"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload Document
+            </Button>
+
+            {/* 2. Analyze Documents */}
+            <Button
+              variant={primaryAction === "analyze" ? "primary" : "outline"}
+              size="sm"
+              loading={analyzeMutation.isPending}
+              onClick={() => analyzeMutation.mutate()}
+              className={cn(
+                "gap-1.5 shadow-2xs text-xs font-semibold h-9 px-3.5 apple-press",
+                "transition-[border-color,background-color,box-shadow,transform] duration-150 motion-reduce:transition-none",
+                primaryAction === "analyze"
+                  ? "bg-[#1D63ED] hover:bg-[#1550C0] text-white ring-2 ring-[#1D63ED]/20"
+                  : "border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+              )}
+              title="Extract grounded requirements and detect ambiguities across uploaded documents"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", analyzeMutation.isPending && "animate-spin")} />
+              Analyze Documents
+            </Button>
+
+            {/* 3. Generate Acceptance Criteria */}
+            <Button
+              variant={primaryAction === "ac" ? "primary" : "outline"}
+              size="sm"
+              loading={genAcMutation.isPending}
+              onClick={() => genAcMutation.mutate()}
+              className={cn(
+                "gap-1.5 shadow-2xs text-xs font-semibold h-9 px-3.5 apple-press",
+                "transition-[border-color,background-color,box-shadow,transform] duration-150 motion-reduce:transition-none",
+                primaryAction === "ac"
+                  ? "bg-[#1D63ED] hover:bg-[#1550C0] text-white ring-2 ring-[#1D63ED]/20"
+                  : "border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+              )}
+              title="Synthesize structured Given/When/Then acceptance criteria for all requirements"
+            >
+              <FileCheck className="h-3.5 w-3.5" />
+              Generate Acceptance Criteria
+            </Button>
+
+            {/* 4. Generate Test Cases */}
+            <Button
+              variant={primaryAction === "tests" ? "primary" : "outline"}
+              size="sm"
+              loading={genTestsMutation.isPending}
+              onClick={() => genTestsMutation.mutate()}
+              className={cn(
+                "gap-1.5 shadow-2xs text-xs font-semibold h-9 px-3.5 apple-press",
+                "transition-[border-color,background-color,box-shadow,transform] duration-150 motion-reduce:transition-none",
+                primaryAction === "tests"
+                  ? "bg-[#1D63ED] hover:bg-[#1550C0] text-white ring-2 ring-[#1D63ED]/20"
+                  : "border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+              )}
+              title="Generate 10-category comprehensive verification test cases"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              Generate Test Cases
+            </Button>
           </div>
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Product Type</span>
-            <span className="font-medium text-slate-800">{project.product_type || "Web Application"}</span>
+
+          {/* Secondary Workflow Operations Menu */}
+          <div className="relative inline-flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMoreActionsOpen(!moreActionsOpen)}
+              className="gap-1.5 border-slate-300 text-slate-700 bg-white hover:bg-slate-50 h-9 px-3 text-xs font-medium shadow-2xs apple-press transition-[border-color,background-color,box-shadow,transform] duration-150"
+            >
+              <span>More Operations</span>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", moreActionsOpen && "rotate-180")} />
+            </Button>
+
+            {moreActionsOpen && (
+              <div
+                className="absolute right-0 top-full mt-1.5 z-30 w-60 rounded-xl border border-slate-200 bg-white/95 backdrop-blur-md p-1.5 shadow-popover animate-apple-popover motion-reduce:animate-none"
+                role="menu"
+              >
+                <button
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    validateSpecsMutation.mutate();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  role="menuitem"
+                >
+                  <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-slate-800">Validate Specifications</div>
+                    <div className="text-[11px] text-slate-400">Verify Given/When/Then contracts</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    runSimulationMutation.mutate();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  role="menuitem"
+                >
+                  <Play className="h-4 w-4 text-[#1D63ED] shrink-0" />
+                  <div>
+                    <div className="font-semibold text-slate-800">Run Behaviour Simulation</div>
+                    <div className="text-[11px] text-slate-400">Execute deterministic SIM-* runs</div>
+                  </div>
+                </button>
+                <div className="my-1 border-t border-slate-100" />
+                <Link
+                  to="/simulation"
+                  onClick={() => setMoreActionsOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  role="menuitem"
+                >
+                  <Sparkles className="h-4 w-4 text-purple-600 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-slate-800">Policy & Scenario Validation</div>
+                    <div className="text-[11px] text-slate-400">Multi-phase data pipeline</div>
+                  </div>
+                </Link>
+                <Link
+                  to="/intelligence-report"
+                  onClick={() => setMoreActionsOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  role="menuitem"
+                >
+                  <FileCode className="h-4 w-4 text-blue-600 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-slate-800">Quality Intelligence Report</div>
+                    <div className="text-[11px] text-slate-400">Export audit & coverage dossier</div>
+                  </div>
+                </Link>
+              </div>
+            )}
           </div>
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Primary Goal</span>
-            <span className="font-medium text-slate-800 truncate" title={project.business_goal || "Validate requirements and ensure test coverage"}>
+        </div>
+
+        {/* ROW 4: Responsive Project Metadata Grid (Zero Overlap Guaranteed) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-4 border-t border-slate-100 text-xs">
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Business Domain</span>
+            <span className="font-semibold text-slate-800 truncate block" title={project.business_domain || "Enterprise SaaS"}>
+              {project.business_domain || "Enterprise SaaS"}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Product Type</span>
+            <span className="font-semibold text-slate-800 truncate block" title={project.product_type || "Web Application"}>
+              {project.product_type || "Web Application"}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Primary Goal</span>
+            <span className="font-semibold text-slate-800 truncate block" title={project.business_goal || "Validate requirements and ensure test coverage"}>
               {project.business_goal || "Validate requirements and ensure test coverage"}
             </span>
           </div>
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Owner</span>
-            <span className="font-medium text-slate-800">{project.owner_name || "QA Team"}</span>
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Owner</span>
+            <span className="font-semibold text-slate-800 truncate block" title={project.owner_name || "QA Team"}>
+              {project.owner_name || "QA Team"}
+            </span>
           </div>
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Created</span>
-            <span className="font-medium text-slate-800">{project.created_at ? fmtDate(project.created_at, false) : "Nov 7, 2026"}</span>
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Created</span>
+            <span className="font-semibold text-slate-800 truncate block">
+              {project.created_at ? fmtDate(project.created_at, false) : "Nov 7, 2026"}
+            </span>
           </div>
-          <div>
-            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold">Last Updated</span>
-            <span className="font-medium text-slate-800">{project.updated_at ? fmtDate(project.updated_at, false) : "Nov 7, 2026, 10:55 AM"}</span>
+          <div className="min-w-0">
+            <span className="text-slate-400 block text-2xs uppercase tracking-wider font-semibold mb-0.5">Last Updated</span>
+            <span className="font-semibold text-slate-800 truncate block">
+              {project.updated_at ? fmtDate(project.updated_at, false) : "Nov 7, 2026, 10:55 AM"}
+            </span>
           </div>
         </div>
       </div>
@@ -408,60 +535,244 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
         </div>
       )}
 
-      {/* 2. OPERATIONAL WORKFLOW STEPPER */}
-      <div className="bg-white rounded-lg border border-slate-200/90 shadow-xs p-4 flex items-center justify-between gap-2 overflow-x-auto text-xs">
-        {/* Step 1 */}
-        <div className="flex items-center gap-2.5 min-w-[160px]">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 shrink-0 font-bold">
-            <CheckCircle2 className="h-4 w-4" />
+      {/* 2. OPERATIONAL WORKFLOW PIPELINE STEPPER */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 space-y-3 select-none">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800 tracking-tight">Quality Lifecycle Pipeline</span>
+            <span className="rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 border border-slate-200/60 tabular-nums">
+              {activeStagesCount} of 5 Stages Active
+            </span>
           </div>
-          <div>
-            <div className="font-semibold text-slate-900 leading-tight">Documents</div>
-            <div className="text-2xs text-slate-500">Uploaded & Processed</div>
-          </div>
-        </div>
-        <span className="text-slate-300 font-bold">&rarr;</span>
-        {/* Step 2 */}
-        <Link to="/requirements" className="flex items-center gap-2.5 min-w-[160px] hover:opacity-80">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-[#3067DB] border border-blue-200 shrink-0 font-bold">
-            2
-          </div>
-          <div>
-            <div className="font-semibold text-slate-900 leading-tight">Requirements</div>
-            <div className="text-2xs text-slate-500">Review & Approve</div>
-          </div>
-        </Link>
-        <span className="text-slate-300 font-bold">&rarr;</span>
-        {/* Step 3 */}
-        <Link to="/tests" className="flex items-center gap-2.5 min-w-[160px] hover:opacity-80">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0 font-bold">
-            3
-          </div>
-          <div>
-            <div className="font-semibold text-slate-900 leading-tight">Test Design</div>
-            <div className="text-2xs text-slate-500">Generate & Review</div>
-          </div>
-        </Link>
-        <span className="text-slate-300 font-bold">&rarr;</span>
-        {/* Step 4 */}
-        <div className="flex items-center gap-2.5 min-w-[160px] cursor-pointer hover:opacity-80" onClick={() => validateSpecsMutation.mutate()}>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0 font-bold">
-            4
-          </div>
-          <div>
-            <div className="font-semibold text-slate-900 leading-tight">Validation</div>
-            <div className="text-2xs text-slate-500">Validate Specifications</div>
+          <div className="flex items-center gap-2 text-2xs text-slate-500 font-medium">
+            <span>Verified Progress</span>
+            <span className="font-semibold text-slate-800 tabular-nums">{overallPipelineProgress}%</span>
           </div>
         </div>
-        <span className="text-slate-300 font-bold">&rarr;</span>
-        {/* Step 5 */}
-        <div className="flex items-center gap-2.5 min-w-[160px] cursor-pointer hover:opacity-80" onClick={() => runSimulationMutation.mutate()}>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0 font-bold">
-            5
-          </div>
-          <div>
-            <div className="font-semibold text-slate-900 leading-tight">Execution</div>
-            <div className="text-2xs text-slate-500">Simulate or Run</div>
+
+        {/* Dynamic Multi-Step Pipeline Track */}
+        <div className="relative">
+          <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-slate-100 -z-0" />
+          <div
+            className="hidden md:block absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-[#1D63ED] transition-[width] duration-300 -z-0"
+            style={{ width: `${overallPipelineProgress}%` }}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 relative z-10">
+            {/* Step 1: Documents */}
+            <button
+              type="button"
+              onClick={() => setActiveTab("documents")}
+              className={cn(
+                "group flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-[border-color,background-color,box-shadow,transform] duration-150 apple-press",
+                documents_summary.total > 0
+                  ? "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/70"
+                  : "bg-slate-50/50 border-slate-200/60 opacity-80 hover:opacity-100"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg shrink-0 font-bold text-xs border shadow-2xs",
+                  documents_summary.processing > 0
+                    ? "bg-blue-50 text-[#1D63ED] border-blue-200 animate-pulse"
+                    : documents_summary.failed > 0
+                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                    : documents_summary.total > 0
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {documents_summary.processing > 0 ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : documents_summary.failed > 0 ? (
+                  <AlertCircle className="h-3.5 w-3.5" />
+                ) : documents_summary.total > 0 ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  "1"
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 leading-tight">Documents</div>
+                <div className="text-[11px] text-slate-500 truncate tabular-nums">
+                  {documents_summary.processing > 0
+                    ? `${documents_summary.processing} processing...`
+                    : documents_summary.failed > 0
+                    ? `${documents_summary.failed} failed`
+                    : documents_summary.total > 0
+                    ? `${documents_summary.completed} ingested`
+                    : "0 uploaded"}
+                </div>
+              </div>
+            </button>
+
+            {/* Step 2: Requirements */}
+            <Link
+              to="/requirements"
+              className={cn(
+                "group flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-[border-color,background-color,box-shadow,transform] duration-150 apple-press",
+                requirements_summary.total > 0
+                  ? "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/70"
+                  : "bg-slate-50/50 border-slate-200/60 opacity-80 hover:opacity-100"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg shrink-0 font-bold text-xs border shadow-2xs",
+                  requirements_summary.open_clarifications > 0
+                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                    : requirements_summary.total > 0 && requirements_summary.approved === requirements_summary.total
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : requirements_summary.total > 0
+                    ? "bg-blue-50 text-[#1D63ED] border-blue-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {requirements_summary.open_clarifications > 0 ? (
+                  <AlertCircle className="h-3.5 w-3.5" />
+                ) : requirements_summary.total > 0 && requirements_summary.approved === requirements_summary.total ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  "2"
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 leading-tight">Requirements</div>
+                <div className="text-[11px] text-slate-500 truncate tabular-nums">
+                  {requirements_summary.open_clarifications > 0
+                    ? `${requirements_summary.open_clarifications} to clarify`
+                    : requirements_summary.total > 0
+                    ? `${requirements_summary.approved}/${requirements_summary.total} approved`
+                    : "Pending intake"}
+                </div>
+              </div>
+            </Link>
+
+            {/* Step 3: Test Design */}
+            <Link
+              to="/tests"
+              className={cn(
+                "group flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-[border-color,background-color,box-shadow,transform] duration-150 apple-press",
+                test_design_summary.total_tests > 0
+                  ? "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/70"
+                  : "bg-slate-50/50 border-slate-200/60 opacity-80 hover:opacity-100"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg shrink-0 font-bold text-xs border shadow-2xs",
+                  test_design_summary.total_tests > 0 && test_design_summary.uncovered_requirements === 0
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : test_design_summary.total_tests > 0 || test_design_summary.acceptance_criteria > 0
+                    ? "bg-blue-50 text-[#1D63ED] border-blue-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {test_design_summary.total_tests > 0 && test_design_summary.uncovered_requirements === 0 ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  "3"
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 leading-tight">Test Design</div>
+                <div className="text-[11px] text-slate-500 truncate tabular-nums">
+                  {test_design_summary.total_tests > 0
+                    ? `${test_design_summary.total_tests} cases ready`
+                    : test_design_summary.acceptance_criteria > 0
+                    ? `${test_design_summary.acceptance_criteria} ACs active`
+                    : "Pending synthesis"}
+                </div>
+              </div>
+            </Link>
+
+            {/* Step 4: Validation */}
+            <button
+              type="button"
+              onClick={() => validateSpecsMutation.mutate()}
+              className={cn(
+                "group flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-[border-color,background-color,box-shadow,transform] duration-150 apple-press",
+                execution_summary.specification_validation_runs > 0
+                  ? "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/70"
+                  : "bg-slate-50/50 border-slate-200/60 opacity-80 hover:opacity-100"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg shrink-0 font-bold text-xs border shadow-2xs",
+                  validateSpecsMutation.isPending
+                    ? "bg-blue-50 text-[#1D63ED] border-blue-200 animate-pulse"
+                    : execution_summary.specification_validation_runs > 0
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {validateSpecsMutation.isPending ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : execution_summary.specification_validation_runs > 0 ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  "4"
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 leading-tight">Validation</div>
+                <div className="text-[11px] text-slate-500 truncate tabular-nums">
+                  {validateSpecsMutation.isPending
+                    ? "Validating..."
+                    : execution_summary.specification_validation_runs > 0
+                    ? `${execution_summary.specification_validation_runs} runs passed`
+                    : "Validate specs"}
+                </div>
+              </div>
+            </button>
+
+            {/* Step 5: Execution */}
+            <button
+              type="button"
+              onClick={() => setActiveTab("runs")}
+              className={cn(
+                "group flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-xs transition-[border-color,background-color,box-shadow,transform] duration-150 apple-press",
+                execution_summary.latest_run
+                  ? "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/70"
+                  : "bg-slate-50/50 border-slate-200/60 opacity-80 hover:opacity-100"
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg shrink-0 font-bold text-xs border shadow-2xs",
+                  runSimulationMutation.isPending
+                    ? "bg-blue-50 text-[#1D63ED] border-blue-200 animate-pulse"
+                    : execution_summary.latest_run && execution_summary.latest_run.failed > 0
+                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                    : execution_summary.latest_run
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {runSimulationMutation.isPending ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : execution_summary.latest_run && execution_summary.latest_run.failed > 0 ? (
+                  <AlertCircle className="h-3.5 w-3.5" />
+                ) : execution_summary.latest_run ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  "5"
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 leading-tight">Execution</div>
+                <div className="text-[11px] text-slate-500 truncate tabular-nums">
+                  {runSimulationMutation.isPending
+                    ? "Simulating..."
+                    : execution_summary.latest_run && execution_summary.latest_run.failed > 0
+                    ? `${execution_summary.latest_run.failed} discrepancies`
+                    : execution_summary.latest_run
+                    ? `Passed (${execution_summary.latest_run.passed})`
+                    : "Run simulation"}
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -542,19 +853,22 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
       {/* 4. TAB: OVERVIEW */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {/* Four Metric Telemetry Cards */}
+          {/* Four Metric Telemetry Cards with Rigorous Semantics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: Documents */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[175px] hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-[#3067DB]" />
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-[#1D63ED]" />
                   Documents
                 </span>
-                <span className="text-2xs text-slate-400">Processed</span>
+                <span className="text-2xs font-medium text-slate-400">Intake & Corpus</span>
               </div>
-              <div className="my-3">
-                <div className="text-3xl font-bold text-slate-900 tracking-tight">{documents_summary.total}</div>
+              <div className="my-2.5">
+                <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
+                  <span>{documents_summary.total}</span>
+                  <span className="text-xs font-normal text-slate-500">Documents</span>
+                </div>
               </div>
               <div className="space-y-1 text-2xs text-slate-500 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
@@ -566,23 +880,26 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                   <span className="font-semibold text-slate-700">{documents_summary.processing}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Failed</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Failed / Review</span>
                   <span className="font-semibold text-slate-700">{documents_summary.failed}</span>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Requirements */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[175px] hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <Layers className="h-4 w-4 text-purple-600" />
                   Requirements
                 </span>
-                <span className="text-2xs text-slate-400">Extracted</span>
+                <span className="text-2xs font-medium text-slate-400">Decomposition</span>
               </div>
-              <div className="my-3">
-                <div className="text-3xl font-bold text-slate-900 tracking-tight">{requirements_summary.total}</div>
+              <div className="my-2.5">
+                <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
+                  <span>{requirements_summary.total}</span>
+                  <span className="text-xs font-normal text-slate-500">Clauses & Rules</span>
+                </div>
               </div>
               <div className="space-y-1 text-2xs text-slate-500 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
@@ -594,27 +911,30 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                   <span className="font-semibold text-slate-700">{requirements_summary.awaiting_review}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> Ambiguous</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> Open Clarifications</span>
                   <span className="font-semibold text-slate-700">{requirements_summary.open_clarifications}</span>
                 </div>
               </div>
             </div>
 
             {/* Card 3: Test Design */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[175px] hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <FileCheck className="h-4 w-4 text-amber-600" />
                   Test Design
                 </span>
-                <span className="text-2xs text-slate-400">Scenarios</span>
+                <span className="text-2xs font-medium text-slate-400">Coverage</span>
               </div>
-              <div className="my-3">
-                <div className="text-3xl font-bold text-slate-900 tracking-tight">{test_design_summary.total_tests}</div>
+              <div className="my-2.5">
+                <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
+                  <span>{test_design_summary.total_tests}</span>
+                  <span className="text-xs font-normal text-slate-500">Test Cases</span>
+                </div>
               </div>
               <div className="space-y-1 text-2xs text-slate-500 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Generated</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Synthesized</span>
                   <span className="font-semibold text-slate-700">{test_design_summary.total_tests}</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -622,38 +942,41 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                   <span className="font-semibold text-slate-700">{test_design_summary.approved_tests}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> No Coverage</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Uncovered Clauses</span>
                   <span className="font-semibold text-slate-700">{test_design_summary.uncovered_requirements}</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 4: Execution */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            {/* Card 4: Execution - Clearly Differentiating Historical Runs vs Latest Run Case Results */}
+            <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[175px] hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <PlayCircle className="h-4 w-4 text-emerald-600" />
                   Execution
                 </span>
-                <span className="text-2xs text-slate-400">Total Runs</span>
+                <span className="text-2xs font-medium text-slate-400">Runs & Telemetry</span>
               </div>
-              <div className="my-3">
-                <div className="text-3xl font-bold text-slate-900 tracking-tight">
-                  {totalRuns}
+              <div className="my-2.5">
+                <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
+                  <span>{totalRuns}</span>
+                  <span className="text-xs font-normal text-slate-500">Historical Runs</span>
                 </div>
               </div>
               <div className="space-y-1 text-2xs text-slate-500 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Latest run passed</span>
-                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.passed ?? "—"}</span>
+                <div className="flex items-center justify-between text-slate-600 font-medium">
+                  <span className="truncate">{execution_summary.latest_run ? `Latest Run (${execution_summary.latest_run.key}):` : "Latest Run Results:"}</span>
+                  <span className="font-semibold text-slate-800 shrink-0">
+                    {execution_summary.latest_run?.total != null ? `${execution_summary.latest_run.total} cases` : "—"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Latest run failed</span>
-                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.failed ?? "—"}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Passed Cases</span>
+                  <span className="font-semibold text-emerald-700">{execution_summary.latest_run?.passed ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Latest run total</span>
-                  <span className="font-semibold text-slate-700">{execution_summary.latest_run?.total ?? "—"}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Failed Cases</span>
+                  <span className="font-semibold text-red-600">{execution_summary.latest_run?.failed ?? "—"}</span>
                 </div>
               </div>
             </div>

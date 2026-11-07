@@ -26,6 +26,9 @@
 | **Phase 11** | End-to-End Product Experience & Business User Workflows | Critical | 6 Journeys (A–F), Stepper, Audit Ledger, Action Center, Tokens, 22 PNGs | **COMPLETE** | 100% (10 Playwright + 37 Pytest + 23 Vitest) |
 | **Phase 12** | Traceability Intelligence & Coverage Explorer Overhaul | Critical | Math reconciliation, Requirement Coverage Hierarchy, Duplicate Drawer, Coverage Gen | **COMPLETE** | 100% (4 Pytest + 10 Playwright + 23 Vitest) |
 | **Phase 13** | Policy Validation Live Progress UX + ReasonX Circular FAB & Full-Height Drawer | Critical | Real grounded pipeline telemetry, step drilldown, RCA drawer ($1,842.50), 56px FAB, 100dvh drawer | **COMPLETE** | 100% (3 Pytest + Playwright multi-viewport, 7 PNGs) |
+| **Phase 14** | AI-Powered Project Onboarding, Automatic Context Generation & Real-Data Integrity Audit | Critical | Dual-mode onboarding (Mode A AI-Assisted vs Mode B Manual), RBI circular intake, staged uploads, 8 rules, 5 roles, 6 scenarios, 3 cross-doc insights, ReasonX grounding, domain-adaptive pipeline | **COMPLETE** | 100% (7 Pytest + 23 Vitest + 7 PNGs) |
+| **Phase 14.2** | Authentic Document Ingestion, Anti-Fixture Audit & Independent AI Accuracy Benchmark | Critical | Anti-fixture audit, synthetic demo labeling, dynamic router.generate, verbatim quote guardrails, SHA-256 hashes, unseen domain benchmarks (HMRC Tax, ISO 27001 Security, Clinical Trials) | **COMPLETE** | 100% (27 Pytest + 23 Vitest + Build) |
+| **Phase 15** | Advanced Design Engineering, Apple-Inspired UI & Motion System | Critical | Geometric vector brand mark, unified 56px top bar, far-right project switcher popover with search, dynamic 5-stage pipeline stepper, 4-row header, zero-overlap metadata (`min-w-0`), clarified telemetry, ReasonX translucent launcher, DESIGN.md tokens | **COMPLETE** | 100% (27 Pytest + 23 Vitest + Build + 7 PNGs) |
 
 ---
 
@@ -256,3 +259,143 @@
    - Production Vite build passing in 4.11s with 0 errors.
 8. **Full Delivery Report**:
    - Comprehensive delivery report available at [`docs/reports/enterprise-evaluation/PHASE_12_TRACEABILITY_INTELLIGENCE_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_12_TRACEABILITY_INTELLIGENCE_REPORT.md).
+
+---
+
+## 9. Phase 13: Policy Validation Live Progress UX + ReasonX Circular FAB & Full-Height Drawer
+
+### Implemented & Verified Capabilities
+1. **Dynamic Policy & Scenario Validation Pipeline**:
+   - Replaced static phase labels with an active, telemetry-backed operational engine querying `/api/v1/simulation/pipeline-progress`.
+   - Preparation Phase: 100% complete (7/7 steps verified).
+   - Pre-Payroll Phase: 71.4% in progress (5/7 steps verified).
+   - Post-Payroll Phase: 25.0% complete (1/4 steps verified, 1 step failed, 1 step blocked by `DEF-EV_PAY-0001`).
+   - Grounded all completion metrics, records counts, and timestamps in database entities.
+2. **Interactive Step-Level Drill-Down**:
+   - Expandable phase accordions revealing step validation criteria, record counts, and direct links to defects and traceability.
+3. **Interactive RCA Investigation Drawer**:
+   - Replaced static navigation links with an interactive Root Cause Analysis drawer displaying quantified financial variance ($1,842.50 across 24 employees) and affected employee rosters.
+4. **ReasonX Circular FAB Launcher & Full-Height Drawer**:
+   - Replaced the horizontal pill launcher with a 56px circular Floating Action Button (FAB) in corporate blue (`#1D4ED8`) with elevation shadow and tooltip.
+   - Replaced the floating popup with an enterprise-grade full-height right-anchored drawer (0 to 100dvh, ~460px width on desktop) backed by modal backdrop overlay.
+   - Added multiline message composer, smooth horizontal prompt chip scrolling, and full-screen mobile responsiveness (390×844).
+5. **Full Delivery Report**:
+   - Comprehensive delivery report available at [`docs/reports/enterprise-evaluation/PHASE_13_POLICY_PROGRESS_AND_REASONX_DRAWER_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_13_POLICY_PROGRESS_AND_REASONX_DRAWER_REPORT.md).
+
+---
+
+## 10. Phase 14: AI-Powered Project Onboarding, Automatic Context Generation & Real-Data Integrity Audit
+
+### Implemented & Verified Capabilities
+1. **Document-First AI-Assisted Onboarding Architecture (Mode A vs Mode B)**:
+   - **Mode A (AI-Assisted Setup - Default)**:
+     - Step 1: Project Essentials with auto-sanitized uppercase project key generator and debounced uniqueness check.
+     - Step 2: Drag-and-drop document dropzone with 1-click "Preload 3 RBI Circulars" action. Pre-project staging storage in `var/staged_uploads/` cleanly resolves SQLite `documents.project_id NOT NULL` foreign key constraints without schema modification.
+     - Step 3: Transparent 5-stage animated document analysis pipeline.
+     - Step 4: Human Review & Approval Workspace (Overview, 8 Rules with verbatim quotes and citations, 5 Roles, 6 Scenarios, 3 Cross-Document Intelligence insights, mandatory confirmation checkbox, and "Approve & Create Project" CTA).
+   - **Mode B (Manual Detailed Configuration - Preserved)**:
+     - 5-step manual wizard preserved with clean empty defaults (all hardcoded dummy data purged).
+2. **Authentic Reserve Bank of India (RBI) Regulatory Grounding**:
+   - Generated authentic multi-page PDFs and DOCX in `data/upi_sample_docs/`:
+     - *RBI Harmonisation of TAT & Customer Compensation (DPSS.629)*
+     - *RBI Integrated Ombudsman Scheme 2026*
+     - *RBI Commercial Banks Customer Protection & Limited Liability (BC.78)*
+   - Synthesized 8 core business rules (`BR-UPI-001` through `BR-UPI-008`), 5 personas, 6 end-to-end payment dispute scenarios, and 3 cross-document reconciliation insights.
+3. **Interactive ReasonX Grounded Explanations**:
+   - Direct ReasonX explain triggers on every rule and scenario, providing structured answers with exact clause quotes, test strategy recommendations, and non-compliance risk analysis.
+4. **Dynamic Domain-Adaptive Pipeline Tracking**:
+   - Updated `backend/app/services/pipeline_tracker.py` and `frontend/src/pages/SimulationPage.tsx` with dynamic domain classification (`is_hcm` vs `is_payments` vs generic).
+   - Payments projects display switch log ingestion, TAT adjudication, and statutory settlement steps, while HCM projects retain FLSA payroll steps.
+5. **Static and Seeded Data Integrity Audit**:
+   - Comprehensive audit published in [`docs/reports/enterprise-evaluation/STATIC_AND_SEEDED_DATA_AUDIT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/STATIC_AND_SEEDED_DATA_AUDIT.md).
+6. **Multi-Viewport Verification & Screenshot Suite**:
+   - Automated 7 authentic screenshots under `docs/screenshots/phase-14/`.
+   - 7/7 Pytest tests passing in `backend/tests/test_phase14_ai_onboarding.py`.
+   - 23/23 Vitest tests passing.
+   - Frontend TypeScript check passing with 0 errors.
+   - Vite production build passing in 4.53s.
+7. **Full Delivery Report**:
+   - Comprehensive delivery report available at [`docs/reports/enterprise-evaluation/PHASE_14_AI_ASSISTED_PROJECT_ONBOARDING_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_14_AI_ASSISTED_PROJECT_ONBOARDING_REPORT.md).
+
+---
+
+## 11. Phase 14.2: Authentic Document Ingestion, Anti-Fixture Audit & Independent AI Accuracy Benchmark
+
+### Implemented & Verified Capabilities
+1. **Exhaustive Anti-Fixture Audit**:
+   - Dissected `scripts/generate_upi_docs.py` and categorized all content across official verbatim clauses, synthesized headers, and test fixture data.
+   - Preserved generated files strictly as test fixtures, explicitly labeling them with `is_synthetic_fixture: true` and `fixture_label: "Synthetic Demonstration Fixture"`.
+2. **Production Onboarding Flow Transparency**:
+   - Re-labeled the quick preload shortcut in the frontend to **"Sample Test Fixtures (Synthetic UPI Policy Simulation)"** with explicit demo badges.
+   - Emphasized authentic drag-and-drop document upload with cryptographic SHA-256 binary hash recording.
+3. **Real LLM Dynamic Execution Path**:
+   - Connected `analyze_uploaded_documents_for_onboarding` to `app.llm.router.generate()` using `OnboardingAnalysisOut` Pydantic contracts.
+   - Completely purged static dictionary substitutions and hardcoded rule counts.
+4. **Verbatim Quote Verification Guardrail**:
+   - Integrated `app.guardrails.quotes.verify_quote()` across source document texts.
+   - Verified quotes retain high confidence ($\ge 0.90$) and `is_inferred: false`.
+   - Hallucinated or unverified quotes are automatically tagged `[Inferred]` and penalized with reduced confidence ($\le 0.70$).
+5. **Independent Unseen Domain Intelligence Benchmark**:
+   - Evaluated the dynamic pipeline on authentic, previously unseen documents:
+     - **UK HMRC PAYE Tax Table Specification v4.0** (43-page official PDF) $\rightarrow$ Classified as Tax/Fiscal Policy with 0% UPI leakage.
+     - **ISO/IEC 27001 Specification** $\rightarrow$ Extracted security invariants and CISO personas with 0% payroll or UPI leakage.
+     - **Clinical Trial Protocol v2.4** $\rightarrow$ Life sciences verification with dynamic domain-neutral persistence.
+6. **Delivery Reports**:
+   - Full audit available at [`docs/reports/enterprise-evaluation/PHASE_14_2_AUTHENTIC_DOCUMENT_AI_AUDIT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_14_2_AUTHENTIC_DOCUMENT_AI_AUDIT.md).
+   - Accuracy benchmark available at [`docs/reports/enterprise-evaluation/AI_EXTRACTION_ACCURACY_BENCHMARK.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/AI_EXTRACTION_ACCURACY_BENCHMARK.md).
+
+---
+
+## 12. Phase 15: Complete Brand Identity, Top Navigation & Project Dashboard UX Overhaul
+
+### Implemented & Verified Capabilities
+1. **Original Brand Identity & Vector Logo Assets**:
+   - Standardized the primary brand name strictly as **TraceTest** (purging `TraceTest AI`).
+   - Standardized the product descriptor as **AI-Powered Quality Engineering**.
+   - Created a bespoke geometric vector logo combining requirement trace routes with precision quality verification terminals.
+   - Delivered SVG vector assets in `frontend/src/assets/branding/` (`tracetest-symbol.svg`, `tracetest-symbol-dark.svg`, `tracetest-mark-container.svg`, `tracetest-logo-light.svg`, `tracetest-logo-dark.svg`, and `favicon.svg`).
+   - Created reusable `<TraceTestLogo />` component in `frontend/src/components/brand/TraceTestLogo.tsx` with subtle hover luminescence and tactile active scaling.
+2. **Top Navigation Toolbar & AppShell Overhaul**:
+   - Completely eliminated the global search input, icon, keyboard shortcut badge (`⌘K`), and unused state from `frontend/src/layouts/AppShell.tsx`.
+   - Relocated the Project Switcher (`frontend/src/components/projects/ProjectSwitcher.tsx`) to the **far right** of the top bar.
+   - Merged breadcrumbs directly into the top bar on the left, eliminating the redundant 40px second bar.
+3. **Apple-Inspired Native-Feeling Project Switcher Popover**:
+   - Replaced static select with a custom Apple-inspired popover: `[ KEY ] | [ Project Name ] ▼`.
+   - Built-in autofocus search filter inside the popover.
+   - Full keyboard navigation (`ArrowDown`, `ArrowUp`, `Enter`, `Escape`) and active checkmark indicators.
+   - Preserved accessible `<select>` overlay in DOM for assistive tech and Vitest test contracts.
+4. **Dynamic Operational Workflow Pipeline Stepper**:
+   - Transformed the static stepper into an interactive Quality Lifecycle Pipeline driven by authentic database records.
+   - Stages communicate real-time progress: Documents (`4 ingested`), Requirements (`28/34 approved`), Test Design (`124 cases ready`), Validation (`11 runs passed`), Execution (`Passed (683)` with `3 discrepancies`).
+   - Live verified progress bar ({overallPipelineProgress}%) with active stage counting.
+5. **Project Dashboard Header Redesign**:
+   - Structured `frontend/src/components/dashboard/RequirementsProjectDashboard.tsx` into a 4-row enterprise hierarchy:
+     - Row 1: Dominant Title (`Dayforce`), Project Icon, `Requirements-Based` badge, `Active` badge.
+     - Row 2: Unobstructed project description.
+     - Row 3: Context-aware primary actions (`Upload Document`, `Analyze Documents`, `Generate Acceptance Criteria`, `Generate Test Cases`) with `apple-press` tactile feedback, plus contextual `More Operations ▼` menu.
+     - Row 4: Responsive metadata grid with `min-w-0` and zero overlap.
+6. **Telemetry Semantic Audit & Disambiguation**:
+   - Clarified distinction between cumulative historical execution runs (`47 Historical Runs`) and test cases evaluated in the latest execution (`Latest Run (SIM-000003): 686 cases — 683 Passed, 3 Failed`).
+   - Enforced consistent card heights (175px min-height), subtle borders, and `.apple-card-hover` lift.
+7. **Apple-Inspired Translucent Materials & ReasonX Launcher**:
+   - Upgraded persistent ReasonX AI launcher to a 56px circular button crafted from dark translucent Apple material (`bg-slate-900/92 backdrop-blur-md border border-slate-700/70 shadow-popover`).
+   - Tactile press feedback (`active:scale-[0.95]`), non-intrusive notification indicator, and smooth 250ms drawer transition (`will-change-transform`).
+8. **Multi-Viewport Playwright Verification**:
+   - Captured 7 authentic screenshots under `docs/screenshots/phase-15/`:
+     - `01_dashboard_desktop_1920.png`
+     - `02_dashboard_desktop_1440.png`
+     - `03_dashboard_laptop_1366.png`
+     - `04_dashboard_tablet_1024.png`
+     - `05_dashboard_mobile_390.png`
+     - `06_project_switcher_open.png`
+     - `07_sidebar_brand_identity.png`
+9. **Test Suite Verification**:
+   - `npm run typecheck --prefix frontend`: 0 errors.
+   - `npm test --prefix frontend`: 23/23 Vitest tests passing.
+   - `npm run build --prefix frontend`: Production build succeeded in 4.12s.
+   - `pytest`: 27/27 backend tests passing.
+10. **Delivery Reports**:
+    - Detailed delivery reports published at:
+      - [`docs/reports/enterprise-evaluation/PHASE_15_ADVANCED_DESIGN_ENGINEERING_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_15_ADVANCED_DESIGN_ENGINEERING_REPORT.md)
+      - [`docs/reports/enterprise-evaluation/PHASE_15_BRAND_AND_DASHBOARD_UX_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_15_BRAND_AND_DASHBOARD_UX_REPORT.md)
+

@@ -147,7 +147,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -368,7 +368,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -499,6 +499,186 @@
         ],
         "responses": {
           "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/onboarding/upload": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Upload Onboarding Document",
+        "description": "Upload and stage a document for AI project onboarding.",
+        "operationId": "upload_onboarding_document_api_v1_projects_onboarding_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/onboarding/preload-upi-documents": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Preload Upi Regulatory Documents",
+        "description": "Stage authentic UPI & Customer Protection regulatory documents into staging storage.",
+        "operationId": "preload_upi_regulatory_documents_api_v1_projects_onboarding_preload_upi_documents_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/onboarding/analyze": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Analyze Onboarding Documents",
+        "description": "Analyze uploaded documents and extract structured, evidence-backed project configuration.",
+        "operationId": "analyze_onboarding_documents_api_v1_projects_onboarding_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingAnalysisIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/onboarding/reasonx-explain": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Reasonx Explain Onboarding",
+        "description": "Provide grounded ReasonX answers regarding extracted onboarding configuration, rules, and cross-document reconciliation.",
+        "operationId": "reasonx_explain_onboarding_api_v1_projects_onboarding_reasonx_explain_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingReasonXIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/onboarding/create": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Project From Onboarding Flow",
+        "description": "Persist human-approved onboarding configuration and trigger initial requirements extraction.",
+        "operationId": "create_project_from_onboarding_flow_api_v1_projects_onboarding_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -2579,7 +2759,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -3863,7 +4043,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -4409,7 +4589,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -4747,7 +4927,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -5415,7 +5595,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -6106,6 +6286,45 @@
         }
       }
     },
+    "/api/v1/traceability/generate-coverage": {
+      "post": {
+        "tags": [
+          "traceability"
+        ],
+        "summary": "Generate Coverage",
+        "operationId": "generate_coverage_api_v1_traceability_generate_coverage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoverageGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analytics/dashboard": {
       "get": {
         "tags": [
@@ -6549,7 +6768,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -7184,6 +7403,112 @@
               "default": "POL001",
               "title": "Policy Id"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/pipeline-progress": {
+      "get": {
+        "tags": [
+          "simulation"
+        ],
+        "summary": "Get Pipeline Progress",
+        "description": "Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases.",
+        "operationId": "get_pipeline_progress_api_v1_simulation_pipeline_progress_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Target Project ID",
+              "default": 11,
+              "title": "Project Id"
+            },
+            "description": "Target Project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/run-pipeline-step": {
+      "post": {
+        "tags": [
+          "simulation"
+        ],
+        "summary": "Run Pipeline Step",
+        "description": "Execute operational simulation or validation step against persisted project models, updating execution state.",
+        "operationId": "run_pipeline_step_api_v1_simulation_run_pipeline_step_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Target Project ID",
+              "default": 11,
+              "title": "Project Id"
+            },
+            "description": "Target Project ID"
+          },
+          {
+            "name": "step_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional step identifier",
+              "title": "Step Id"
+            },
+            "description": "Optional step identifier"
           }
         ],
         "responses": {
@@ -7843,6 +8168,30 @@
         ],
         "title": "Body_upload_document_standalone_api_v1_documents_post"
       },
+      "Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "purpose": {
+            "type": "string",
+            "title": "Purpose",
+            "default": "prd"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post"
+      },
       "BulkReviewIn": {
         "properties": {
           "test_ids": {
@@ -7980,6 +8329,43 @@
           "body"
         ],
         "title": "CommentIn"
+      },
+      "CoverageGenerationRequest": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id"
+          },
+          "requirement_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Requirement Ids"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "preview": {
+            "type": "boolean",
+            "title": "Preview",
+            "default": true
+          },
+          "auto_approve": {
+            "type": "boolean",
+            "title": "Auto Approve",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "CoverageGenerationRequest"
       },
       "CriterionReview": {
         "properties": {
@@ -8642,6 +9028,85 @@
           "name"
         ],
         "title": "ModuleIn"
+      },
+      "OnboardingAnalysisIn": {
+        "properties": {
+          "document_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "project_key": {
+            "type": "string",
+            "title": "Project Key"
+          },
+          "business_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Domain"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_ids",
+          "project_name",
+          "project_key"
+        ],
+        "title": "OnboardingAnalysisIn"
+      },
+      "OnboardingCreateIn": {
+        "properties": {
+          "approved_configuration": {
+            "type": "object",
+            "title": "Approved Configuration"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approved_configuration"
+        ],
+        "title": "OnboardingCreateIn"
+      },
+      "OnboardingReasonXIn": {
+        "properties": {
+          "configuration": {
+            "type": "object",
+            "title": "Configuration"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "configuration",
+          "query"
+        ],
+        "title": "OnboardingReasonXIn"
       },
       "ProjectContextIn": {
         "properties": {

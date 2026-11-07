@@ -150,3 +150,66 @@ class ReasonXResponse(BaseModel):
     confidence_level: Literal["HIGH", "MEDIUM", "QUALIFIED"] = "HIGH"
     simplified_summary: str = ""
 
+
+class OnboardingBusinessRuleOut(BaseModel):
+    rule_id: str = Field(min_length=3)
+    title: str = Field(min_length=3)
+    description: str = Field(min_length=10)
+    rule_type: str = Field(default="business_rule")
+    source_document: str = Field(default="")
+    page_number: int = Field(default=1, ge=1)
+    clause_ref: str = Field(default="")
+    supporting_quote: str = Field(default="")
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    is_inferred: bool = Field(default=False)
+    approval_status: str = Field(default="suggested")
+
+
+class OnboardingRoleOut(BaseModel):
+    role_id: str = Field(min_length=3)
+    name: str = Field(min_length=2)
+    description: str = Field(default="")
+    responsibilities: list[str] = Field(default_factory=list)
+    restrictions: list[str] = Field(default_factory=list)
+    source_document: str = Field(default="")
+    citation: str = Field(default="")
+
+
+class OnboardingScenarioOut(BaseModel):
+    scenario_id: str = Field(min_length=3)
+    title: str = Field(min_length=3)
+    description: str = Field(default="")
+    regulatory_ref: str = Field(default="")
+    preconditions: list[str] = Field(default_factory=list)
+    steps: list[str] = Field(default_factory=list)
+    expected_outcome: str = Field(default="")
+
+
+class OnboardingCrossDocInsightOut(BaseModel):
+    insight_id: str = Field(min_length=3)
+    title: str = Field(min_length=3)
+    regime_a: str = Field(default="")
+    regime_b: str = Field(default="")
+    reconciliation: str = Field(default="")
+    source_citations: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+
+
+class OnboardingAnalysisOut(BaseModel):
+    detected_domain: str = Field(min_length=2)
+    product_overview: str = Field(min_length=10)
+    problem_statement: str = Field(min_length=10)
+    business_goals: list[str] = Field(default_factory=list)
+    target_users: list[str] = Field(default_factory=list)
+    product_modules: list[str] = Field(default_factory=list)
+    external_integrations: list[str] = Field(default_factory=list)
+    security_expectations: str = Field(default="")
+    privacy_requirements: str = Field(default="")
+    performance_expectations: str = Field(default="")
+    availability_expectations: str = Field(default="")
+    business_rules: list[OnboardingBusinessRuleOut] = Field(default_factory=list)
+    roles: list[OnboardingRoleOut] = Field(default_factory=list)
+    scenarios: list[OnboardingScenarioOut] = Field(default_factory=list)
+    cross_document_insights: list[OnboardingCrossDocInsightOut] = Field(default_factory=list)
+
+

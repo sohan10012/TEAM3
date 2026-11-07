@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -41,6 +41,13 @@ from app.db.models import (
 )
 from app.services import audit
 from app.services.analytics import coverage_by_project
+from app.services.project_onboarding import (
+    analyze_uploaded_documents_for_onboarding,
+    commit_approved_onboarding_project,
+    explain_onboarding_item_with_reasonx,
+    preload_upi_regulatory_documents_staging,
+    stage_uploaded_file,
+)
 from app.services.requirement_intelligence import analyze_and_extract_project_requirements
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -86,6 +93,127 @@ def validate_project_key(key: str, db: Session = Depends(get_db)):
     if exists:
         return {"valid": False, "key": key_clean, "message": f"Project key '{key_clean}' is already in use."}
     return {"valid": True, "key": key_clean, "message": "Project key is available."}
+
+
+# =========================================================================
+# PHASE 14: AI-ASSISTED DOCUMENT-FIRST ONBOARDING ENDPOINTS
+# =========================================================================
+
+class OnboardingAnalysisIn(BaseModel):
+    document_ids: list[int]
+    project_name: str
+    project_key: str
+    business_domain: str | None = None
+    description: str | None = None
+
+
+class OnboardingReasonXIn(BaseModel):
+    configuration: dict[str, Any]
+    query: str
+
+
+class OnboardingCreateIn(BaseModel):
+    approved_configuration: dict[str, Any]
+
+
+@router.post("/onboarding/upload", status_code=201)
+async def upload_onboarding_document(
+    file: UploadFile = File(...),
+    purpose: str = Form(default="prd"),
+    display_name: str = Form(default=""),
+    p: Principal = Depends(require("requirement.write")),
+):
+    """Upload and stage a document for AI project onboarding."""
+    raw_bytes = await file.read()
+    staged = stage_uploaded_file(
+        filename=file.filename or "uploaded_document",
+        raw_bytes=raw_bytes,
+        purpose=purpose,
+        display_name=display_name,
+    )
+    return {
+        "id": staged["id"],
+        "filename": staged["filename"],
+        "display_name": staged["display_name"],
+        "file_type": staged["file_type"],
+        "document_type": staged["document_type"],
+        "size_bytes": staged["size_bytes"],
+        "page_count": staged["page_count"],
+        "status": staged["status"],
+    }
+
+
+@router.post("/onboarding/preload-upi-documents")
+def preload_upi_regulatory_documents(
+    p: Principal = Depends(require("requirement.write")),
+):
+    """Stage authentic UPI & Customer Protection regulatory documents into staging storage."""
+    staged_results = preload_upi_regulatory_documents_staging()
+    summaries = [
+        {
+            "id": d["id"],
+            "filename": d["filename"],
+            "display_name": d["display_name"],
+            "file_type": d["file_type"],
+            "document_type": d["document_type"],
+            "size_bytes": d.get("size_bytes") or d.get("file_size_bytes", 0),
+            "page_count": d.get("page_count", 1),
+            "status": d["status"],
+        }
+        for d in staged_results
+    ]
+    return {"staged_documents": summaries, "count": len(summaries)}
+
+
+@router.post("/onboarding/analyze")
+def analyze_onboarding_documents(
+    body: OnboardingAnalysisIn,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    """Analyze uploaded documents and extract structured, evidence-backed project configuration."""
+    from app.services.project_onboarding import analyze_uploaded_documents_for_onboarding
+
+    configuration = analyze_uploaded_documents_for_onboarding(
+        db=db,
+        document_ids=body.document_ids,
+        project_name=body.project_name,
+        project_key=body.project_key,
+        business_domain=body.business_domain,
+        description=body.description,
+    )
+    return configuration
+
+
+@router.post("/onboarding/reasonx-explain")
+def reasonx_explain_onboarding(
+    body: OnboardingReasonXIn,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Provide grounded ReasonX answers regarding extracted onboarding configuration, rules, and cross-document reconciliation."""
+    from app.services.project_onboarding import explain_onboarding_item_with_reasonx
+
+    return explain_onboarding_item_with_reasonx(
+        configuration=body.configuration,
+        query=body.query,
+    )
+
+
+@router.post("/onboarding/create", status_code=201)
+def create_project_from_onboarding_flow(
+    body: OnboardingCreateIn,
+    p: Principal = Depends(require("project.admin")),
+    db: Session = Depends(get_db),
+):
+    """Persist human-approved onboarding configuration and trigger initial requirements extraction."""
+    from app.services.project_onboarding import commit_approved_onboarding_project
+
+    return commit_approved_onboarding_project(
+        db=db,
+        p=p,
+        approved_config=body.approved_configuration,
+    )
 
 
 class ProjectRoleIn(BaseModel):

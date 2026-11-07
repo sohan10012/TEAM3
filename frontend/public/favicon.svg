@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1f4fbf"/><path d="M8 10h10M13 10v13" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="22" cy="19" r="3.2" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M18 10l4 9" stroke="#9fb8ee" stroke-width="2" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
+  <defs>
+    <linearGradient id="ttFaviconBg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="ttFaviconTrace" x1="6" y1="8" x2="26" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="ttFaviconVerify" x1="8" y1="20" x2="29" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+  <rect width="36" height="36" rx="8" fill="url(#ttFaviconBg)"/>
+  <rect x="0.5" y="0.5" width="35" height="35" rx="7.5" stroke="#334155" stroke-width="1" stroke-opacity="0.8"/>
+  <path d="M7 11H21C22.6569 11 24 12.3431 24 14V15" stroke="url(#ttFaviconTrace)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.5 11V21" stroke="url(#ttFaviconTrace)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M8.5 19.5L14.5 25.5L27.5 11" stroke="url(#ttFaviconVerify)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="7" cy="11" r="1.75" fill="#93C5FD"/>
+  <circle cx="27.5" cy="11" r="1.85" fill="#34D399"/>
+</svg>
