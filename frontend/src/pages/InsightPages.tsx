@@ -278,7 +278,7 @@ export function IntegrationsPage() {
         <Notice tone={q.data.github_token_configured ? "info" : "warn"}>{q.data.github_token_configured ? "A GitHub token is configured on the server." :
           "GITHUB_TOKEN is not set. Repository settings can be saved, but nothing is sent to GitHub. Defects can still be downloaded as Markdown or JSON."}</Notice>
         <Notice tone={q.data.ci_ingest_configured ? "info" : "warn"}>{q.data.ci_ingest_configured ? "CI result ingestion is enabled (POST /api/v1/ci/results)." :
-          "TRACETEST_CI_TOKEN is not set, so CI result ingestion is disabled. See docs/EXECUTION_ENGINE.md."}</Notice>
+          "TRACETEST_CI_TOKEN is not set, so CI result ingestion is disabled. See docs/ENGINEERING_OPERATIONS.md."}</Notice>
       </div>
       <Panel title="GitHub repositories" bodyClass="p-0"><table className="w-full text-sm"><thead className="bg-slate-50 text-xs text-slate-600"><tr>
         {["Project", "Repository", "Branch", "Status", ""].map((h) => <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>)}</tr></thead>

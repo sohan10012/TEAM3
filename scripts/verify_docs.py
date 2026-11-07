@@ -20,39 +20,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Core documentation files required for release
 REQUIRED_DOCS = [
     "README.md",
-    "CLAUDE_ENGINEERING_HANDOFF.md",
-    "docs/README.md",
     "docs/PRODUCT_OVERVIEW.md",
-    "docs/PRODUCTION_READINESS_AUDIT.md",
-    "docs/ECHOBOX_CASE_STUDY.md",
-    "docs/ECHOBOX_REQUIREMENTS.md",
-    "docs/ECHOBOX_TEST_PLAN.md",
-    "docs/ECHOBOX_EXECUTION_REPORT.md",
-    "docs/REPOSITORY_IMPORT.md",
-    "docs/REQUIREMENTS_ENGINE.md",
-    "docs/REQUIREMENTS_BASED_PLATFORM.md",
-    "docs/TEST_GENERATION.md",
-    "docs/EXECUTION_ENGINE.md",
-    "docs/DEFECT_MANAGEMENT.md",
-    "docs/TRACEABILITY_AND_COVERAGE.md",
-    "docs/INTEGRATIONS.md",
-    "docs/AI_PROVIDER_CONFIGURATION.md",
-    "docs/LIMITATIONS.md",
-    "docs/TEST_EVIDENCE_INDEX.md",
-    "docs/architecture-legacy.md",
-    "docs/API_REFERENCE.md",
-    "docs/DATABASE_SCHEMA.md",
-    "docs/SECURITY.md",
-    "docs/TESTING_GUIDE.md",
-    "docs/USER_GUIDE.md",
-    "docs/DAYFORCE_DOMAIN.md",
-    "docs/DESIGN_SYSTEM.md",
-    "docs/DECISIONS.md",
-    "docs/progress-legacy.md",
-    "docs/demo-script.md",
-    "docs/slides-outline.md",
-    "docs/eval-report.md",
-    "docs/openapi.json"
+    "docs/ARCHITECTURE.md",
+    "docs/API_CONTRACT.md",
+    "docs/REQUIREMENTS_AND_WORKFLOWS.md",
+    "docs/ENGINEERING_OPERATIONS.md",
+    "docs/openapi.json",
 ]
 
 SECRET_PATTERNS = [
@@ -106,7 +79,7 @@ def verify_api_coverage() -> list[str]:
         spec = json.load(f)
 
     paths = spec.get("paths", {})
-    api_doc = (REPO_ROOT / "docs" / "API_REFERENCE.md").read_text(encoding="utf-8", errors="ignore")
+    api_doc = (REPO_ROOT / "docs" / "API_CONTRACT.md").read_text(encoding="utf-8", errors="ignore")
     # Verify core path prefixes are documented
     core_prefixes = ["/api/v1/auth", "/api/v1/projects", "/api/v1/requirements", "/api/v1/tests", "/api/v1/executions", "/api/v1/defects"]
     for prefix in core_prefixes:
@@ -114,16 +87,16 @@ def verify_api_coverage() -> list[str]:
         if not matching_paths:
             errors.append(f"OpenAPI spec missing endpoints under {prefix}")
         if prefix not in api_doc:
-            errors.append(f"docs/API_REFERENCE.md missing documentation for prefix {prefix}")
+            errors.append(f"docs/API_CONTRACT.md missing documentation for prefix {prefix}")
 
     return errors
 
 
 def verify_database_schema_coverage() -> list[str]:
     errors = []
-    db_doc_path = REPO_ROOT / "docs" / "DATABASE_SCHEMA.md"
+    db_doc_path = REPO_ROOT / "docs" / "ARCHITECTURE.md"
     if not db_doc_path.exists():
-        return ["docs/DATABASE_SCHEMA.md is missing"]
+        return ["docs/ARCHITECTURE.md is missing"]
 
     db_doc = db_doc_path.read_text(encoding="utf-8", errors="ignore").lower()
 
@@ -139,7 +112,7 @@ def verify_database_schema_coverage() -> list[str]:
 
     for table in actual_tables:
         if table.lower() not in db_doc:
-            errors.append(f"docs/DATABASE_SCHEMA.md missing documentation for table '{table}'")
+            errors.append(f"docs/ARCHITECTURE.md missing documentation for table '{table}'")
 
     return errors
 
@@ -232,10 +205,10 @@ def verify_documented_counts() -> list[str]:
     if len(fault_tags) != 8:
         errors.append(f"Expected 8 deliberate HCM faults in reference_hcm/v1_0, found {len(fault_tags)}: {fault_tags}")
 
-    # Verify SUPPORTED_TARGET_MATRIX.md cites 8 deliberate faults
-    matrix_txt = (REPO_ROOT / "docs" / "SUPPORTED_TARGET_MATRIX.md").read_text(encoding="utf-8", errors="ignore")
+    # Verify PRODUCT_OVERVIEW.md cites 8 deliberate faults
+    matrix_txt = (REPO_ROOT / "docs" / "PRODUCT_OVERVIEW.md").read_text(encoding="utf-8", errors="ignore")
     if "8 deliberate faults" not in matrix_txt:
-        errors.append("docs/SUPPORTED_TARGET_MATRIX.md must cite '8 deliberate faults' for Reference HCM v1.0")
+        errors.append("docs/PRODUCT_OVERVIEW.md must cite '8 deliberate faults' for Reference HCM v1.0")
 
     return errors
 

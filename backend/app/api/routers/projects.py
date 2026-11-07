@@ -458,7 +458,7 @@ def import_repository(body: RepoImportIn, p: Principal = Depends(require("projec
 
     is_echo = repo_name.lower() == "echobox" or (body.project_key and body.project_key.upper() == "ECHO")
 
-    # Target architecture matrix determination per docs/SUPPORTED_TARGET_MATRIX.md
+    # Target architecture matrix determination per docs/PRODUCT_OVERVIEW.md
     if is_echo:
         target_type = "real_code"
         execution_supported = True
