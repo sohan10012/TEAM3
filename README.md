@@ -1,269 +1,227 @@
-# TraceTest AI — Enterprise AI Quality Engineering Platform
+# TraceTest — AI-Powered Quality Engineering Platform
 
-[![CI](https://github.com/Adityarajj23/TEAM3/actions/workflows/ci.yml/badge.svg)](https://github.com/Adityarajj23/TEAM3/actions/workflows/ci.yml)
-[![Ruff](https://img.shields.io/badge/linting-ruff-green.svg)](https://github.com/astral-sh/ruff)
-[![Mypy](https://img.shields.io/badge/typecheck-mypy-blue.svg)](https://mypy-lang.org/)
-[![Pytest](https://img.shields.io/badge/tests-pytest-blue.svg)](backend/tests/)
-[![Vitest](https://img.shields.io/badge/frontend-vitest-purple.svg)](frontend/tests/)
-[![Build](https://img.shields.io/badge/frontend-vite%20build-brightgreen.svg)](frontend/)
-[![Docs Invariants](https://img.shields.io/badge/docs%20verification-passed-success.svg)](scripts/verify_docs.py)
-
-> **Multi-Repository GitHub QA Verification Platform with Real-World Case Studies & Dayforce HCM Verification**  
-> *Deterministic AI Requirements Analysis • AST Codebase Grounding • Sandboxed Test Execution • Zero Synthetic Metrics*
+**Team:** Team 3  
+**Event:** AI Innovation Challenge  
+**Assigned Topic:** Product Requirements-to-Test Assistant — Topic 2  
+**Project Name:** TraceTest
 
 ---
 
-**📽️ [See TraceTest AI in action: view the full project presentation](https://www.canva.com/design/DAHaNZL_G1E/SH4roLX0QfUVRFRJSAVGBg/view)**
+## 1. Project Submission Links
 
----
-
-## 1. Executive Summary
-
-**TraceTest AI** is an enterprise-grade AI software quality engineering and requirement verification platform. Designed for mission-critical software systems—spanning enterprise Human Capital Management (Dayforce HCM) and modern cloud-native serverless architectures (EchoBox)—TraceTest AI eliminates the disconnect between unstructured business requirements, code implementations, automated test suites, and defect remediation.
-
-Unlike prototype dashboards that rely on mock assertions, simulated successes, or synthetic data, TraceTest AI operates as an **evidence-based verification harness**:
-- **Ingests Real GitHub Repositories**: Dynamically clones and parses codebases (e.g. `https://github.com/sohan10012/EchoBox.git`), extracting modules, API endpoints, actions, and architectural dependencies directly from code AST.
-- **Decomposes Requirements Deterministically**: Segments specifications into atomic, numbered clauses and extracts grounded acceptance criteria with verbatim source quotes.
-- **Synthesizes & Validates Executable Tests**: Generates Python `pytest` and Playwright scripts validated against strict pre-execution AST allowlists.
-- **Enforces Four-Eyes Principle Governance**: Authors are blocked from approving their own tests; dual-control review records immutable decisions and script hashes.
-- **Dual-Control LLM-as-a-Judge Review System**: Generated tests feature live adversarial judge evaluations, statutory grounding scores (95%+), verbatim quote fidelity checks, and 1-click reviewer recommendation assistance.
-- **1-Click Sandbox Pytest Execution**: Execute synthesized Python Pytest scripts directly against the Reference HCM in-memory harness in 1 millisecond with live stdout and assertion diagnostics.
-- **Executes Across Multi-Tier Environments**: Runs tests inside POSIX resource-restricted subprocess sandboxes, in-memory contract test harnesses, or against live endpoints.
-- **Captures Empirical Proof**: Logs JUnit XML, stdout/stderr streams, failure tracebacks, screenshots, and HTTP status codes.
-- **Maintains Zero-Hallucination Integrity**: Failed cloud endpoints (e.g. AWS HTTP 500) are recorded honestly as blocked defects rather than faked as successes.
-
----
-
-## 2. Key Technical Documentation
-
-| Document | Description |
+| Resource | Link |
 |---|---|
-| **[docs/HANDOVER.md](docs/HANDOVER.md)** | **Frontend & UI Developer Handover Guide**: Component hierarchy, Tailwind tokens, Radix UI setup, state management, and UI enhancement roadmap. |
-| **[docs/UI_WALKTHROUGH.md](docs/UI_WALKTHROUGH.md)** | **UI Walkthrough & Simulation Guide**: 9-stage multi-agent pipeline, Stage Inspector cards, Ambiguity scanner, and live Safe Interpreter. |
-| **[CLAUDE_ENGINEERING_HANDOFF.md](CLAUDE_ENGINEERING_HANDOFF.md)** | **Master Technical Handoff**: Complete architecture, directory tree, REST API reference, 36 DB tables ERD, core algorithms, security model, and P0–P2 remediation ledger. |
-| **[docs/PRODUCTION_READINESS_AUDIT.md](docs/PRODUCTION_READINESS_AUDIT.md)** | Critical independent audit of repository state, verified implementations, and security remediation. |
-| **[docs/ECHOBOX_CASE_STUDY.md](docs/ECHOBOX_CASE_STUDY.md)** | Complete case study on EchoBox (`b3740a62ad414a141e82146adafb47c4850fd782`): architecture, requirements, tests, defects, and evidence. |
-| **[docs/TEST_EVIDENCE_INDEX.md](docs/TEST_EVIDENCE_INDEX.md)** | Master index of empirical test runs (`EX-000001`, `EX-ECHO-LIVE-001`), AI benchmarks, and screenshots. |
-| **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** | REST API endpoint documentation covering all 77 OpenAPI paths. |
-| **[docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)** | SQLite 3 WAL schema across 36 entities with foreign keys and tuning pragmas. |
-| **[docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** | Automated testing guide for backend pytest (121 tests + 1 xfail) and frontend Vitest (11 tests). |
-| **[docs/SUPPORTED_TARGET_MATRIX.md](docs/SUPPORTED_TARGET_MATRIX.md)** | Supported SUT targets, execution environments, isolation tiers, and failure boundaries. |
-| **[docs/demo-script.md](docs/demo-script.md)** | 10-minute minute-by-minute live presentation script with exact click paths. |
-| **[docs/slides-outline.md](docs/slides-outline.md)** | 5-slide executive and technical deck outline with speaker talking tracks. |
-| **[docs/eval-report.md](docs/eval-report.md)** | Reproducible AI benchmark evaluation report with exact execution commands. |
+| GitHub Repository | https://github.com/sohan10012/TEAM3.git |
+| Demo Video | https://drive.google.com/file/d/19Cs7MYv6YQFIlDmdpwYSBVlP6Y3RfWsl/view?usp=drive_link |
+| Final Presentation (PPT) | https://canva.link/0saisy7mgvv92zw |
+| Project Documentation & Report | https://drive.google.com/file/d/1Bj0UvIbxhym8hOBiwBAQc2dQjOOihUU8/view?usp=drive_link |
+| Team Resumes | https://drive.google.com/drive/folders/1prUl6tulXE9ZEsN6qcp5VdrY0X0Rmn2i?usp=drive_link |
 
 ---
 
-## 3. Workspaces & Case Studies
+## 2. Project Overview
 
-### A. EchoBox Real-World QA Case Study (Default Workspace)
-- **Repository**: `https://github.com/sohan10012/EchoBox.git`
-- **Revision Ingested**: `b3740a62ad414a141e82146adafb47c4850fd782` on branch `main`.
-- **Architecture**: React 18, Vite, AWS HTTP API Gateway, Python AWS Lambda, single-table DynamoDB, dual Cognito pools.
-- **QA Inventory**: 21 Requirements (`ECHO-REQ-001` to `021`), 62 numbered clauses, 21 Acceptance Criteria, 21 automated pytest scripts.
-- **Empirical Execution Results**:
-  1. **In-Memory POSIX Sandbox (`EX-000001`)**: **21 / 21 Passed (100%)** in 1.92s under `echobox_harness`.
-  2. **Live Remote AWS Probe (`EX-ECHO-LIVE-001`)**: **Blocked (HTTP 500)** in 574ms (`[REQUEST-ID]`). Documented under `DEF-ECHO-005`.
-  3. **Browser E2E Automation (`EX-E2E-BROWSER-001`)**: Playwright Chromium test verified landing page and client-side room ID validation error states.
-- **Discovered & Verified Defects**:
-  - `DEF-ECHO-001`: Room description limit mismatch (Doc: 500 chars vs Code: 1000 chars).
-  - `DEF-ECHO-002`: Silent truncation on `room_name` / `room_desc` rather than HTTP 400 Bad Request.
-  - `DEF-ECHO-003`: Invalid visibility parameter silently defaults to public.
-  - `DEF-ECHO-004`: Discovery N+1 query amplification loop in `discover_rooms`.
-  - `DEF-ECHO-005`: Live remote AWS API Gateway returns HTTP 500 Internal Server Error.
-  - `DEF-ECHO-006` *(Critical Security)*: Missing cryptographic JWT signature verification in ID token fallback path (`lambda_function.py:120-146`).
+TraceTest is an AI-powered Software Quality Engineering platform that transforms software requirements, business policies, and source code into structured requirements, acceptance criteria, and traceable test cases.
 
-### B. Dayforce Quality Engineering Workspace
-Specialized for HCM, Payroll, Workforce Management, Time & Attendance, and Benefits compliance:
-- **`DF-PAY`**: Dayforce Payroll Verification (FLSA overtime, gross-to-net calculations, shift differentials, statutory rounding).
-- **`DF-WFM`**: Dayforce Workforce Management (Punch pairing, meal break compliance, timesheet interval validation).
-- **`DF-LVE`**: Dayforce Absence & Leave (Accrual rules, annual carry-forward caps, termination payout calculations).
-- **`DF-BEN`**: Dayforce Benefits & Eligibility (Full-time employee eligibility, waiting periods, open enrollment).
-- **Golden Reference System**: Reference HCM 1.0 (baseline with faults) vs Reference HCM 1.1 (candidate fix).
+The platform provides two primary workflows:
+
+- **Requirements-Based Testing:** Upload requirement documents and business policies. TraceTest extracts requirements, identifies ambiguities and contradictions, generates Given/When/Then acceptance criteria, and creates test specifications.
+- **Code-Based Testing:** Connect GitHub repositories to analyze source code, identify modules, routes, and actions, and derive requirements and test scenarios grounded in the codebase.
+
+TraceTest combines AI-driven analysis with deterministic validation, human review, test execution, defect tracking, and quality analytics.
+
+The goal is to establish a continuous connection between requirements, implementation, test cases, execution results, and defect resolution.
 
 ---
 
-## 4. System Architecture & Workflows
+## 3. Project Structure
 
-### End-to-End Verification Flow
+```text
+TEAM3/
+│
+├── backend/
+│   ├── app/              # FastAPI application and backend logic
+│   ├── tests/            # Backend test suites
+│   └── requirements.txt  # Python dependencies
+│
+├── frontend/
+│   ├── src/              # React and TypeScript application
+│   ├── public/           # Static assets
+│   └── package.json      # Frontend dependencies and scripts
+│
+├── docs/                 # Project documentation and technical guides
+├── scripts/              # Verification and utility scripts
+├── var/                  # Local database and runtime data
+├── .env.example          # Environment configuration template
+├── README.md             # Project documentation
+└── ...
+```
+
+---
+
+## 4. Product Workflow
+
+TraceTest follows a seven-stage quality engineering workflow, from repository ingestion to defect analysis and retesting.
+
 ```mermaid
 flowchart LR
-    A[Connect GitHub Repo / Document] --> B[AST & Text Analysis]
-    B --> C[Versioned Requirements]
-    C --> D[Clause Decomposition]
-    D --> E[Acceptance Criteria]
-    E --> F[Test Generation]
-    F --> G[Deterministic AST Validation]
-    G --> H[Dual-Control Human Review]
-    H --> I[Sandboxed Subprocess Execution]
-    I --> J{Execution Result}
-    J -->|Pass| K[Coverage Matrix Updated]
-    J -->|Fail| L[AI Failure Triage & Defect]
-    L --> M[Candidate Fix Retesting]
-    M --> K
+    A["1. CONNECT<br/>GitHub Repository / Documents"]
+    --> B["2. ANALYSE<br/>Parse code, modules, routes and actions"]
+
+    B --> C["3. CLAUSES<br/>Generate atomic, numbered requirements"]
+
+    C --> D["4. GENERATE<br/>Acceptance criteria and test specifications"]
+
+    D --> E["5. REVIEW<br/>Human approval and role-based controls"]
+
+    E --> F["6. EXECUTE<br/>Sandbox or target environment"]
+
+    F --> G["7. TRIAGE<br/>Analyze results and track defects"]
+
+    style E fill:#fff0d9,stroke:#e69a32,color:#783c00
+    style G fill:#fff0d9,stroke:#e69a32,color:#783c00
 ```
 
-### Multi-Environment Execution Ledger
-```mermaid
-flowchart TD
-    RunRequest[Execution Dispatch] --> EnvSelect{Target Environment}
-    
-    EnvSelect -->|In-Memory Harness| HarnessRun[Local In-Memory DynamoDB Mock]
-    HarnessRun --> Subproc[POSIX Subprocess Sandbox]
-    Subproc --> ASTCheck{AST Allowlist Check}
-    ASTCheck -->|Allowed| ExecPass[Run pytest: CPU 30s, Mem 512MB]
-    ASTCheck -->|Violated| ExecBlock[Reject: Security Exception]
-    
-    EnvSelect -->|Remote Cloud API| ProbeRun[Live HTTP Request to API Gateway]
-    ProbeRun --> CloudResp{HTTP Status}
-    CloudResp -->|200 OK| CloudPass[Record Live Pass]
-    CloudResp -->|500 / 4xx| CloudErr[Capture Headers & Body: Record Blocked Evidence]
-    
-    EnvSelect -->|Browser E2E| PlaywrightRun[Headless Chromium Runner]
-    PlaywrightRun --> PWCapture[DOM Assertions + High-Res PNG Screenshots]
-    
-    ExecPass --> ResultLedger[Execution Result Ledger in SQLite]
-    ExecBlock --> ResultLedger
-    CloudPass --> ResultLedger
-    CloudErr --> ResultLedger
-    PWCapture --> ResultLedger
-```
+### Workflow Stages
+
+1. **Connect:** Ingest a GitHub repository or requirement documents, with repository security and secret scanning.
+2. **Analyse:** Parse source code and identify modules, routes, endpoints, and actions.
+3. **Clauses:** Decompose requirements into atomic, numbered clauses with source references.
+4. **Generate:** Create acceptance criteria using Given/When/Then and generate test specifications.
+5. **Review:** Apply human review, approval, and role-based controls before execution.
+6. **Execute:** Run approved tests in controlled sandbox environments or supported target environments.
+7. **Triage:** Analyze execution results, record defects, and support retesting with coverage tracking.
+
+### Workflow Outcomes
+
+- Structured and traceable requirements.
+- Comprehensive test coverage.
+- Validated test execution.
+- Defect identification and management.
+- End-to-end traceability:
+
+**Requirement → Clause / Acceptance Criteria → Test Case → Execution Result → Defect**
 
 ---
 
-## 5. Technology Stack & Exact Versions
+## 5. Technology Stack
 
-- **Backend**: Python `3.11.16`, FastAPI `0.115.6`, Pydantic `2.10.4`, SQLAlchemy `2.0.36`, SQLite 3 (WAL mode), LangGraph `0.2.60`, Groq SDK `0.15.0`, Google GenAI SDK `1.2.0`, Argon2-cffi, Playwright, pytest `8.3.4`.
-- **Frontend**: React `18.3.1`, TypeScript `5.6.3`, Vite `6.0.6`, Tailwind CSS `3.4.17`, Radix UI primitives, TanStack Query `5.62.11`, React Router `7.1.1`, Recharts `2.15.0`, Lucide Icons `0.469.0`, Vitest `3.0.2`.
-- **Standards & Tooling**: Ruff `0.8.4` (clean, 0 errors), mypy `1.14.0`, openapi-typescript `7.4.4`.
+| Layer | Technologies |
+|---|---|
+| Frontend | React, TypeScript, Vite, Tailwind CSS |
+| Backend | Python, FastAPI |
+| Database | SQLite, SQLAlchemy, Alembic |
+| AI Orchestration | LangGraph, LLM integrations |
+| Testing | Pytest, Vitest, Playwright |
+| Code Analysis | Python AST, TypeScript analysis |
+| Version Control | Git, GitHub |
 
 ---
 
-## 6. Quickstart & Local Setup
+## 6. Installation and Execution
+
+Follow these steps to run TraceTest locally.
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- SQLite 3.38+
+
+- Python 3.11 or later
+- Node.js 20 or later
+- npm
 - Git
+- SQLite 3.38 or later
 
-### 1. Clone & Set Up Local Environment
+### Step 1: Clone the Repository
+
 ```bash
-git clone https://github.com/sohan10012/TEAM3.git tracetest-ai
-cd tracetest-ai
+git clone https://github.com/sohan10012/TEAM3.git
+cd TEAM3
+```
 
-# Configure environment variables
+### Step 2: Configure Environment Variables
+
+```bash
 cp .env.example .env
 ```
 
-### 2. Backend Initialization & Default Project Seeding
+Configure the required API keys and environment variables in `.env` according to your setup.
+
+Do not commit your `.env` file or expose API credentials.
+
+### Step 3: Set Up the Backend
+
+Create and activate a Python virtual environment:
+
 ```bash
 python3 -m venv .venv
+```
+
+On Linux/macOS:
+
+```bash
 source .venv/bin/activate
+```
+
+On Windows:
+
+```powershell
+.venv\Scripts\activate
+```
+
+Install backend dependencies:
+
+```bash
 pip install -r backend/requirements.txt
+```
 
-# Run migrations and initialize all default projects:
-# EchoBox (Code-Based, ID 5), Cureonix (Code-Based, ID 8),
-# Dayforce (Requirements-Based, ID 9), WFMQ (Requirements-Based, ID 10)
+### Step 4: Initialize the Database
+
+From the project root, run:
+
+```bash
 PYTHONPATH=backend python3 -m app.db.init_db
+```
 
-# Initial operator credentials are generated in var/initial_credentials.txt
-cat var/initial_credentials.txt
+This initializes the database and seeds the default project workspaces:
 
-# Start FastAPI server (binds strictly to loopback 127.0.0.1)
+- EchoBox — Code-Based
+- Cureonix — Code-Based
+- Dayforce — Requirements-Based
+- WFMQ — Requirements-Based
+
+### Step 5: Start the Backend Server
+
+From the project root, with the virtual environment activated:
+
+```bash
 PYTHONPATH=backend uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### 3. Frontend Initialization
+Backend URL: http://127.0.0.1:8000
+
+### Step 6: Set Up and Start the Frontend
+
+Open a second terminal:
+
 ```bash
 cd frontend
 npm install
-npm run build
 npm run dev
-# Access the web UI at http://localhost:5173
 ```
 
-### 4. Expected Default Projects on Fresh Setup
-When starting TraceTest AI on any fresh clone, the following 4 projects are automatically initialized in SQLite (`var/tracetest.db`):
-- **EchoBox** (`ECHO`, ID: 5) — Code-Based project with real AWS Cognito/DynamoDB Lambda harness, 21 requirements, 21 test cases, 9 execution runs, and 7 defect records.
-- **Cureonix** (`CUREON`, ID: 8) — Code-Based project with GitHub integration and 23 extracted requirements.
-- **Dayforce** (`DAYFORCE`, ID: 9) — Requirements-Based project with 4 parsed specification documents (PRD, SRS, Business Rules, API docs), 56 requirements, 126 test cases, 24 test runs, and 3 defects.
-- **WFMQ** (`WFMQ`, ID: 10) — Requirements-Based project with 3 documents, 39 requirements, 391 test cases, simulation model, and execution runs.
+Frontend URL: http://localhost:5173
 
-### 5. Troubleshooting & Database Reset
-- **Projects missing in project selector on a fresh machine?**
-  Run the idempotent database initialization command:
-  ```bash
-  PYTHONPATH=backend python3 -m app.db.init_db
-  ```
-- **Complete clean reset of local development database:**
-  ```bash
-  rm -f var/tracetest.db*
-  PYTHONPATH=backend python3 -m app.db.init_db
-  ```
+### Step 7: Access TraceTest
+
+Open http://localhost:5173 in your browser.
+
+Select an existing workspace or create a project and begin with the Requirements-Based or Code-Based workflow.
 
 ---
 
-## 7. Verification & Automated Test Suites
+## 7. Conclusion
 
-```
-================================ Verification Matrix ================================
-Backend Pytest Suite:     102 passed, 1 xfailed in 14.2s (100% expected rate)
-  - Auth & Permissions:   8/8 passed
-  - API Contracts:        10/10 passed (OpenAPI 77 paths match)
-  - Data Integrity:       9/9 passed
-  - E2E Workflow:         4/4 passed
-  - EchoBox Contract:     5/5 passed (Harness contract fidelity)
-  - EchoBox JWT Security: 10/10 passed (DEF-ECHO-006 cryptographic verification)
-  - Guardrails & AST:     8/8 passed
-  - LLM Router & Pool:    8/8 passed (Multi-key rotation and cooldowns)
-  - Multi-Project:        5/5 passed (URL validation, ref security, isolation)
-  - Reviews & Defects:    5/5 passed
-  - Subprocess Sandbox:   4/4 passed (POSIX rlimits and namespace isolation)
-  - P0 Security Hardening: 9/9 passed (host/origin validation, askpass, ast allowlist)
-  - P1 SUT Fidelity:      8/8 passed, 1 xfailed (real Lambda under moto DynamoDB, provenance, redaction)
-  - P2 Reliability:       12/12 passed (WAL concurrency, interrupted recovery, project isolation)
+TraceTest brings requirements engineering, AI-assisted test generation, validation, execution, and defect management into a unified quality engineering platform.
 
-Frontend Vitest Suite:    9 passed in 1.62s (100% pass rate)
-  - Navigation shell:     Passed (exposes Overview, Requirements, Tests, Runs, Defects, Settings)
-  - Single-Operator Auth: Passed (signed session cookie, CSRF tokens, loopback bind)
-  - Dashboard API KPIs:   Passed (data-driven KPIs from /analytics/dashboard)
-  - Traceability Matrix:  Passed (renders clauses, coverage gaps, and cells)
-  - Dual-Control Review:  Passed (blocks invalid AST tests, records decisions)
-  - UI Components:        Passed (Stats, Badges, Tabs, Panels)
+By connecting business requirements and source code to test cases and execution evidence, TraceTest improves traceability, strengthens software verification, and helps teams identify quality issues earlier in the development lifecycle.
 
-Code Quality & Linters:   Ruff clean (0 errors), mypy clean (0 issues in 70 files)
-Frontend Production:      Vite build succeeded in 2.85s (dist/ compiled cleanly)
-Doc & Security Suite:     python3 scripts/verify_docs.py (All 33 docs verified, 0 leaked keys)
-Accessibility Audit:      axe-core clean (0 critical violations across 6 viewports)
-====================================================================================
-```
-
----
-
-## 8. Connecting Another GitHub Repository
-
-To ingest any arbitrary GitHub repository into TraceTest AI:
-
-1. Click **"Connect GitHub Repository"** in the top navigation or on the Dashboard.
-2. Enter the HTTPS GitHub URL (e.g. `https://github.com/owner/repository`).
-3. Select the target branch (default: `main` or `master`).
-4. Optionally provide a GitHub Personal Access Token for private repositories.
-5. Click **"Inspect & Connect Repository"**.
-6. TraceTest AI will:
-   - Perform SSRF and git injection validation.
-   - Scan the codebase for exposed credentials and secrets.
-   - Parse Python and TypeScript AST to extract endpoints and actions.
-   - Create an isolated project workspace (`id`, `key`, `environments`).
-   - Dynamically synthesize versioned requirements, clauses, acceptance criteria, and initial test cases.
-   - Isolate all QA data from existing projects without cross-contamination.
-
----
-
-## 9. Security & Secret Protection
-
-- **Zero Credential Leakage**: All 6 Groq and Gemini API keys reside exclusively in gitignored `.env`. No credentials appear in git commits, logs, or documentation.
-- **Strict Loopback Binding**: FastAPI development server binds exclusively to `127.0.0.1` (never `0.0.0.0`), rejecting external network interface listening.
-- **POSIX Sandbox**: Subprocess execution enforces `RLIMIT_CPU=30s`, `RLIMIT_AS=512MB`, `RLIMIT_NOFILE=256`, `RLIMIT_NPROC=64`, and `RLIMIT_FSIZE=10MB`.
-- **AST Allowlist**: Disallows `os`, `sys`, `subprocess`, `socket`, `eval`, and dunder attribute traversal in generated test scripts.
-- **Signed Session & Host Validation**: Local operator mode mints a cryptographically signed HMAC session cookie (`SameSite=Strict`, `HttpOnly=True`) with Host and Origin validation middleware and double-submit CSRF headers, eliminating insecure dummy admin bypasses while supporting Argon2 password authentication in multi-user deployments.
+**Team 3 | AI Innovation Challenge**
