@@ -13,6 +13,10 @@
 
 ---
 
+**📽️ [See TraceTest AI in action: view the full project presentation](https://www.canva.com/design/DAHaNZL_G1E/SH4roLX0QfUVRFRJSAVGBg/view)**
+
+---
+
 ## 1. Executive Summary
 
 **TraceTest AI** is an enterprise-grade AI software quality engineering and requirement verification platform. Designed for mission-critical software systems—spanning enterprise Human Capital Management (Dayforce HCM) and modern cloud-native serverless architectures (EchoBox)—TraceTest AI eliminates the disconnect between unstructured business requirements, code implementations, automated test suites, and defect remediation.
