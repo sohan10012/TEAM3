@@ -90,10 +90,10 @@ def test_config_warns_on_unknown_tracetest_env(monkeypatch: pytest.MonkeyPatch) 
 def test_all_code_env_vars_in_example_and_docs() -> None:
     """Ensures that every environment variable defined in Settings or read in code
 
-    is documented in .env.example and docs/ENVIRONMENT.md to prevent documentation drift.
+    is documented in .env.example and docs/ENGINEERING_OPERATIONS.md to prevent documentation drift.
     """
     example_text = (REPO_ROOT / ".env.example").read_text()
-    docs_text = (REPO_ROOT / "docs" / "ENVIRONMENT.md").read_text()
+    docs_text = (REPO_ROOT / "docs" / "ENGINEERING_OPERATIONS.md").read_text()
 
     # Extract all aliases and field names from Settings
     for field in Settings.model_fields.values():
@@ -104,12 +104,12 @@ def test_all_code_env_vars_in_example_and_docs() -> None:
             "OLLAMA_BASE_URL", "OLLAMA_MODEL", "GITHUB_TOKEN", "GITHUB_API_URL",
         ):
             assert var_name in example_text, f"{var_name} missing from .env.example"
-            assert var_name in docs_text, f"{var_name} missing from docs/ENVIRONMENT.md"
+            assert var_name in docs_text, f"{var_name} missing from docs/ENGINEERING_OPERATIONS.md"
 
     # Specific additional code variables
     for extra in ("TRACETEST_CI_TOKEN", "TRACETEST_URL"):
         assert extra in example_text, f"{extra} missing from .env.example"
-        assert extra in docs_text, f"{extra} missing from docs/ENVIRONMENT.md"
+        assert extra in docs_text, f"{extra} missing from docs/ENGINEERING_OPERATIONS.md"
 
 
 def test_dual_control_reviewer_switch(anon) -> None:

@@ -34,7 +34,23 @@ The goal is to establish a continuous connection between requirements, implement
 
 ---
 
-## 3. Project Structure
+## 3. Authoritative Technical Documentation
+
+TraceTest AI documentation has been consolidated into **five comprehensive, authoritative guides**:
+
+| Document | Purpose & Scope |
+|---|---|
+| 📘 **[Product Overview](docs/PRODUCT_OVERVIEW.md)** | Product objectives, capabilities, Requirements vs Code-Based workflows, Dayforce & EchoBox case studies, and target execution matrix. |
+| 🏗️ **[System Architecture](docs/ARCHITECTURE.md)** | Complete repository layout, React frontend design, FastAPI backend, all 44 SQLAlchemy database models, LangGraph pipelines, and ADRs. |
+| 🔌 **[API Contract & Reference](docs/API_CONTRACT.md)** | Full REST API contract across 12 endpoint groups, OpenAPI schemas, session HMAC auth, CSRF headers, and error responses. |
+| 📋 **[Requirements & Workflows](docs/REQUIREMENTS_AND_WORKFLOWS.md)** | The 7-stage lifecycle (Connect $\rightarrow$ Analyse $\rightarrow$ Clauses $\rightarrow$ Generate $\rightarrow$ Review $\rightarrow$ Execute $\rightarrow$ Triage), AST allowlists, dual-control, and execution modes. |
+| ⚙️ **[Engineering & Operations](docs/ENGINEERING_OPERATIONS.md)** | Fresh-clone setup, database initialization, verification test suites, production systemd/Nginx hosting, security invariants, and troubleshooting. |
+
+Companion machine-readable OpenAPI specification: [`docs/openapi.json`](docs/openapi.json).
+
+---
+
+## 4. Project Structure
 
 ```text
 TEAM3/
@@ -59,7 +75,7 @@ TEAM3/
 
 ---
 
-## 4. Product Workflow
+## 5. Product Workflow
 
 TraceTest follows a seven-stage quality engineering workflow, from repository ingestion to defect analysis and retesting.
 
@@ -104,7 +120,7 @@ flowchart LR
 
 ---
 
-## 5. Technology Stack
+## 6. Technology Stack
 
 | Layer | Technologies |
 |---|---|
@@ -118,7 +134,7 @@ flowchart LR
 
 ---
 
-## 6. Installation and Execution
+## 7. Installation and Execution
 
 Follow these steps to run TraceTest locally.
 
@@ -218,7 +234,7 @@ Select an existing workspace or create a project and begin with the Requirements
 
 ---
 
-## 7. Conclusion
+## 8. Conclusion
 
 TraceTest brings requirements engineering, AI-assisted test generation, validation, execution, and defect management into a unified quality engineering platform.
 
