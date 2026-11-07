@@ -156,15 +156,19 @@ cd tracetest-ai
 cp .env.example .env
 ```
 
-### 2. Backend Initialization
+### 2. Backend Initialization & Default Project Seeding
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 
-# Run migrations and seed baseline data
-make db-upgrade
-make seed
+# Run migrations and initialize all default projects:
+# EchoBox (Code-Based, ID 5), Cureonix (Code-Based, ID 8),
+# Dayforce (Requirements-Based, ID 9), WFMQ (Requirements-Based, ID 10)
+PYTHONPATH=backend python3 -m app.db.init_db
+
+# Initial operator credentials are generated in var/initial_credentials.txt
+cat var/initial_credentials.txt
 
 # Start FastAPI server (binds strictly to loopback 127.0.0.1)
 PYTHONPATH=backend uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
@@ -178,6 +182,25 @@ npm run build
 npm run dev
 # Access the web UI at http://localhost:5173
 ```
+
+### 4. Expected Default Projects on Fresh Setup
+When starting TraceTest AI on any fresh clone, the following 4 projects are automatically initialized in SQLite (`var/tracetest.db`):
+- **EchoBox** (`ECHO`, ID: 5) — Code-Based project with real AWS Cognito/DynamoDB Lambda harness, 21 requirements, 21 test cases, 9 execution runs, and 7 defect records.
+- **Cureonix** (`CUREON`, ID: 8) — Code-Based project with GitHub integration and 23 extracted requirements.
+- **Dayforce** (`DAYFORCE`, ID: 9) — Requirements-Based project with 4 parsed specification documents (PRD, SRS, Business Rules, API docs), 56 requirements, 126 test cases, 24 test runs, and 3 defects.
+- **WFMQ** (`WFMQ`, ID: 10) — Requirements-Based project with 3 documents, 39 requirements, 391 test cases, simulation model, and execution runs.
+
+### 5. Troubleshooting & Database Reset
+- **Projects missing in project selector on a fresh machine?**
+  Run the idempotent database initialization command:
+  ```bash
+  PYTHONPATH=backend python3 -m app.db.init_db
+  ```
+- **Complete clean reset of local development database:**
+  ```bash
+  rm -f var/tracetest.db*
+  PYTHONPATH=backend python3 -m app.db.init_db
+  ```
 
 ---
 

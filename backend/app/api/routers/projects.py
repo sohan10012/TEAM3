@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
 from typing import Any
@@ -543,10 +544,16 @@ def refresh_repository(project_id: int, p: Principal = Depends(require("project.
 
     proj = get_project_checked(db, p, project_id)
     ig = db.execute(select(Integration).where(Integration.project_id == proj.id, Integration.kind == "github")).scalar_one_or_none()
-    if not ig or not ig.config or not ig.config.get("repo"):
+    ig_cfg = ig.config if ig else None
+    if isinstance(ig_cfg, str):
+        try:
+            ig_cfg = json.loads(ig_cfg)
+        except Exception:
+            ig_cfg = {}
+    if not ig or not ig_cfg or not ig_cfg.get("repo"):
         raise BadRequest("Project is not connected to a GitHub repository")
 
-    repo_full = ig.config["repo"]
+    repo_full = ig_cfg["repo"]
     owner, repo_name = repo_full.split("/")
     target_dir = REPO_ROOT / "var" / "repos" / f"{owner}_{repo_name}"
     if not target_dir.exists() and (REPO_ROOT / "var" / "repos" / repo_name).exists():

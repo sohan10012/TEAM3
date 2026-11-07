@@ -89,14 +89,19 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
         else:
             log.info("Dayforce project exists (ID: %d) but has incomplete data. Re-hydrating...", proj.id)
     elif not proj:
-        proj = Project(
-            key="DAYFORCE",
-            name="Dayforce — Enterprise HR & Workforce Management",
-            description="Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll.",
-            organisation_id=org.id,
-            project_type="requirements_based",
-            status="active",
-        )
+        desired_id = 9
+        id_free = db.execute(select(Project).where(Project.id == desired_id)).scalar_one_or_none() is None
+        p_kwargs: dict[str, Any] = {
+            "key": "DAYFORCE",
+            "name": "Dayforce — Enterprise HR & Workforce Management",
+            "description": "Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll.",
+            "organisation_id": org.id,
+            "project_type": "requirements_based",
+            "status": "active",
+        }
+        if id_free:
+            p_kwargs["id"] = desired_id
+        proj = Project(**p_kwargs)
         db.add(proj)
         db.flush()
 

@@ -734,7 +734,8 @@ def diff_aware_refresh(
     if not ig or not ig.config:
         raise BadRequest("Project is not connected to a git repository")
 
-    old_sha = ig.config.get("commit_sha", "unknown")
+    ig_cfg = json.loads(ig.config) if isinstance(ig.config, str) else (ig.config or {})
+    old_sha = ig_cfg.get("commit_sha", "unknown")
 
     # Get current commit sha
     current_sha = "unknown"

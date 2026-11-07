@@ -2,7 +2,10 @@ PY ?= python3
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: setup env install backend frontend dev test test-backend test-frontend lint typecheck openapi screenshots db-backup db-reset ci doctor
+.PHONY: setup env install backend frontend dev test test-backend test-frontend lint typecheck openapi screenshots db-backup db-reset db-init ci doctor
+
+db-init:
+	cd backend && ../$(BIN)/python -m app.db.init_db
 
 doctor:
 	$(BIN)/python scripts/doctor.py
