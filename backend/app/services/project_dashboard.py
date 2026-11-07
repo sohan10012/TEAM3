@@ -99,8 +99,14 @@ def get_project_dashboard_data(
     # Clause coverage calculation
     covered_clause_keys: set[str] = set()
     for t in tests:
-        if t.clause_keys:
-            covered_clause_keys.update(t.clause_keys)
+        c_keys = t.clause_keys
+        if isinstance(c_keys, str):
+            try:
+                c_keys = json.loads(c_keys)
+            except Exception:
+                c_keys = []
+        if c_keys and isinstance(c_keys, (list, set, tuple)):
+            covered_clause_keys.update(c_keys)
 
     clause_keys_all = []
     if req_ids:
