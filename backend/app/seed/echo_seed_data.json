@@ -2370,12 +2370,23 @@
       "project_id": 5,
       "requirement_id": 1,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-001.C1\", \"ECHO-REQ-001.C2\", \"ECHO-REQ-001.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-001.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-001.C1",
+        "ECHO-REQ-001.C2",
+        "ECHO-REQ-001.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-001.AC1"
+      ],
       "title": "Verify Public Room Creation and Expiration Epoch Calculation",
       "description": "Verify Public Room Creation and Expiration Epoch Calculation",
       "preconditions": "EchoBox backend is ready to accept requests.",
-      "test_data": "{\"action\": \"create_room\", \"room_name\": \"General Feedback\", \"room_description\": \"Anonymous retrospective\", \"visibility\": \"public\"}",
+      "test_data": {
+        "action": "create_room",
+        "room_name": "General Feedback",
+        "room_description": "Anonymous retrospective",
+        "visibility": "public"
+      },
       "expected_result": "HTTP 201 returned with room_id of length 8 and expires_at equal to created_at epoch plus 86400.",
       "priority": "high",
       "test_type": "positive",
@@ -2410,12 +2421,20 @@
       "project_id": 5,
       "requirement_id": 2,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-002.C1\", \"ECHO-REQ-002.C2\", \"ECHO-REQ-002.C4\"]",
-      "ac_keys": "[\"ECHO-REQ-002.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-002.C1",
+        "ECHO-REQ-002.C2",
+        "ECHO-REQ-002.C4"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-002.AC1"
+      ],
       "title": "Verify Public Discovery Lists Active Rooms and Counts Messages",
       "description": "Verify Public Discovery Lists Active Rooms and Counts Messages",
       "preconditions": "At least one public room created and one message submitted.",
-      "test_data": "{\"action\": \"discover_rooms\"}",
+      "test_data": {
+        "action": "discover_rooms"
+      },
       "expected_result": "HTTP 200 with matching room and message_count equal to 1.",
       "priority": "high",
       "test_type": "positive",
@@ -2450,12 +2469,20 @@
       "project_id": 5,
       "requirement_id": 3,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-003.C1\", \"ECHO-REQ-003.C4\"]",
-      "ac_keys": "[\"ECHO-REQ-003.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-003.C1",
+        "ECHO-REQ-003.C4"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-003.AC1"
+      ],
       "title": "Verify Message Submission and Character Boundary Enforcement",
       "description": "Verify Message Submission and Character Boundary Enforcement",
       "preconditions": "Room exists and is active.",
-      "test_data": "{\"valid_length\": 1999, \"invalid_length\": 2001}",
+      "test_data": {
+        "valid_length": 1999,
+        "invalid_length": 2001
+      },
       "expected_result": "Valid message returns HTTP 201; oversized message returns HTTP 400.",
       "priority": "high",
       "test_type": "boundary",
@@ -2490,12 +2517,21 @@
       "project_id": 5,
       "requirement_id": 4,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-004.C1\", \"ECHO-REQ-004.C2\", \"ECHO-REQ-004.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-004.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-004.C1",
+        "ECHO-REQ-004.C2",
+        "ECHO-REQ-004.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-004.AC1"
+      ],
       "title": "Verify Room Ownership Authorization and Closed Room Message Blocking",
       "description": "Verify Room Ownership Authorization and Closed Room Message Blocking",
       "preconditions": "Room owned by user A; user B attempts modification.",
-      "test_data": "{\"owner_sub\": \"user_owner_1\", \"impostor_sub\": \"user_impostor_2\"}",
+      "test_data": {
+        "owner_sub": "user_owner_1",
+        "impostor_sub": "user_impostor_2"
+      },
       "expected_result": "Unauthorized user receives HTTP 403; owner succeeds; subsequent message rejected with 403.",
       "priority": "high",
       "test_type": "authorization",
@@ -2530,12 +2566,21 @@
       "project_id": 5,
       "requirement_id": 5,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-005.C2\", \"ECHO-REQ-005.C3\", \"ECHO-REQ-005.C4\"]",
-      "ac_keys": "[\"ECHO-REQ-005.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-005.C2",
+        "ECHO-REQ-005.C3",
+        "ECHO-REQ-005.C4"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-005.AC1"
+      ],
       "title": "Verify EchoBox ID Author Post Isolation and Author-Only Deletion",
       "description": "Verify EchoBox ID Author Post Isolation and Author-Only Deletion",
       "preconditions": "Post submitted with User 1 EchoBox ID token.",
-      "test_data": "{\"user1\": \"sub_user_1\", \"user2\": \"sub_user_2\"}",
+      "test_data": {
+        "user1": "sub_user_1",
+        "user2": "sub_user_2"
+      },
       "expected_result": "Foreign deletion returns 403; author deletion returns 200.",
       "priority": "high",
       "test_type": "data_isolation",
@@ -2570,12 +2615,20 @@
       "project_id": 5,
       "requirement_id": 6,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-006.C1\", \"ECHO-REQ-006.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-006.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-006.C1",
+        "ECHO-REQ-006.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-006.AC1"
+      ],
       "title": "Verify Expired Room Returns HTTP 410 Gone on Message Submission",
       "description": "Verify Expired Room Returns HTTP 410 Gone on Message Submission",
       "preconditions": "Room item injected with expires_at set to epoch 1000.",
-      "test_data": "{\"action\": \"submit_feedback\", \"past_epoch\": 1000}",
+      "test_data": {
+        "action": "submit_feedback",
+        "past_epoch": 1000
+      },
       "expected_result": "HTTP 410 returned with 24-hour limit reached error message.",
       "priority": "high",
       "test_type": "expiration",
@@ -2610,12 +2663,19 @@
       "project_id": 5,
       "requirement_id": 7,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-007.C1\", \"ECHO-REQ-007.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-007.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-007.C1",
+        "ECHO-REQ-007.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-007.AC1"
+      ],
       "title": "Verify 64KB Request Body Size Protection Rejects Oversized Payloads",
       "description": "Verify 64KB Request Body Size Protection Rejects Oversized Payloads",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"oversized_bytes\": 70000}",
+      "test_data": {
+        "oversized_bytes": 70000
+      },
       "expected_result": "HTTP 413 returned when body exceeds 65536 characters.",
       "priority": "high",
       "test_type": "security",
@@ -2650,12 +2710,19 @@
       "project_id": 5,
       "requirement_id": 8,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-008.C2\", \"ECHO-REQ-008.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-008.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-008.C2",
+        "ECHO-REQ-008.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-008.AC1"
+      ],
       "title": "Detect Description Length Specification vs Code Discrepancy",
       "description": "Detect Description Length Specification vs Code Discrepancy",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"desc_length\": 750}",
+      "test_data": {
+        "desc_length": 750
+      },
       "expected_result": "Room created with 750 characters, proving code allows >500 chars contrary to documentation.",
       "priority": "high",
       "test_type": "boundary",
@@ -2690,12 +2757,20 @@
       "project_id": 5,
       "requirement_id": 9,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-009.C1\", \"ECHO-REQ-009.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-009.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-009.C1",
+        "ECHO-REQ-009.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-009.AC1"
+      ],
       "title": "Detect Invalid Visibility Silent Fallback to Public Space",
       "description": "Detect Invalid Visibility Silent Fallback to Public Space",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"action\": \"create_room\", \"visibility\": \"confidential\"}",
+      "test_data": {
+        "action": "create_room",
+        "visibility": "confidential"
+      },
       "expected_result": "Room visibility is set to public instead of returning HTTP 400 rejection.",
       "priority": "high",
       "test_type": "security",
@@ -2730,12 +2805,19 @@
       "project_id": 5,
       "requirement_id": 10,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-010.C1\", \"ECHO-REQ-010.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-010.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-010.C1",
+        "ECHO-REQ-010.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-010.AC1"
+      ],
       "title": "Verify Frontend Empty Room ID Client Validation",
       "description": "Verify Frontend Empty Room ID Client Validation",
       "preconditions": "EchoBox frontend client loaded.",
-      "test_data": "{\"room_id\": \"\"}",
+      "test_data": {
+        "room_id": ""
+      },
       "expected_result": "Empty room ID is rejected prior to API dispatch.",
       "priority": "high",
       "test_type": "contract",
@@ -2770,12 +2852,21 @@
       "project_id": 5,
       "requirement_id": 11,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-002.C1\", \"ECHO-REQ-011.C2\", \"ECHO-REQ-011.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-011.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-002.C1",
+        "ECHO-REQ-011.C2",
+        "ECHO-REQ-011.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-011.AC1"
+      ],
       "title": "Live Integration Probe: Detect Upstream AWS Lambda 500 Server Error",
       "description": "Live Integration Probe: Detect Upstream AWS Lambda 500 Server Error",
       "preconditions": "AWS API Gateway live endpoint accessible via HTTPS.",
-      "test_data": "{\"endpoint\": \"https://bnbpmiljw9.execute-api.ap-south-1.amazonaws.com\", \"action\": \"discover_rooms\"}",
+      "test_data": {
+        "endpoint": "https://bnbpmiljw9.execute-api.ap-south-1.amazonaws.com",
+        "action": "discover_rooms"
+      },
       "expected_result": "Live AWS Gateway returns HTTP 500 Internal Server Error, documenting blocked upstream state.",
       "priority": "high",
       "test_type": "contract",
@@ -2810,12 +2901,20 @@
       "project_id": 5,
       "requirement_id": 12,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-012.C1\", \"ECHO-REQ-012.C2\", \"ECHO-REQ-012.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-012.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-012.C1",
+        "ECHO-REQ-012.C2",
+        "ECHO-REQ-012.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-012.AC1"
+      ],
       "title": "Verify get_feedback Returns Chronological Message Stream",
       "description": "Verify get_feedback Returns Chronological Message Stream",
       "preconditions": "Room created and message posted.",
-      "test_data": "{\"action\": \"get_feedback\"}",
+      "test_data": {
+        "action": "get_feedback"
+      },
       "expected_result": "HTTP 200 with matching messages and count.",
       "priority": "high",
       "test_type": "positive",
@@ -2850,12 +2949,19 @@
       "project_id": 5,
       "requirement_id": 13,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-013.C1\", \"ECHO-REQ-013.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-013.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-013.C1",
+        "ECHO-REQ-013.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-013.AC1"
+      ],
       "title": "Verify Room Reopening Constraints and Ephemeral Expiration Block",
       "description": "Verify Room Reopening Constraints and Ephemeral Expiration Block",
       "preconditions": "Owner creates and closes room.",
-      "test_data": "{\"action\": \"reopen_room\"}",
+      "test_data": {
+        "action": "reopen_room"
+      },
       "expected_result": "Active reopen returns HTTP 200; expired reopen returns HTTP 400.",
       "priority": "high",
       "test_type": "boundary",
@@ -2890,12 +2996,19 @@
       "project_id": 5,
       "requirement_id": 14,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-014.C1\", \"ECHO-REQ-014.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-014.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-014.C1",
+        "ECHO-REQ-014.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-014.AC1"
+      ],
       "title": "Verify get_owner_rooms Returns Only Caller Owned Rooms",
       "description": "Verify get_owner_rooms Returns Only Caller Owned Rooms",
       "preconditions": "Owner creates room with token.",
-      "test_data": "{\"action\": \"get_owner_rooms\"}",
+      "test_data": {
+        "action": "get_owner_rooms"
+      },
       "expected_result": "HTTP 200 with count equal to owned rooms.",
       "priority": "high",
       "test_type": "authorization",
@@ -2930,12 +3043,19 @@
       "project_id": 5,
       "requirement_id": 15,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-015.C1\", \"ECHO-REQ-015.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-015.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-015.C1",
+        "ECHO-REQ-015.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-015.AC1"
+      ],
       "title": "Verify CORS Wildcard Headers Present in API Responses",
       "description": "Verify CORS Wildcard Headers Present in API Responses",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"action\": \"health_check\"}",
+      "test_data": {
+        "action": "health_check"
+      },
       "expected_result": "Access-Control-Allow-Origin header is present and equals '*'.",
       "priority": "high",
       "test_type": "contract",
@@ -2970,12 +3090,19 @@
       "project_id": 5,
       "requirement_id": 16,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-016.C1\", \"ECHO-REQ-016.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-016.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-016.C1",
+        "ECHO-REQ-016.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-016.AC1"
+      ],
       "title": "Verify Health Check Action Returns 200 Healthy",
       "description": "Verify Health Check Action Returns 200 Healthy",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"action\": \"health_check\"}",
+      "test_data": {
+        "action": "health_check"
+      },
       "expected_result": "HTTP 200 with healthy status.",
       "priority": "high",
       "test_type": "positive",
@@ -3010,12 +3137,19 @@
       "project_id": 5,
       "requirement_id": 17,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-017.C1\", \"ECHO-REQ-017.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-017.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-017.C1",
+        "ECHO-REQ-017.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-017.AC1"
+      ],
       "title": "Detect Silent Truncation on Oversized Room Name (DEF-ECHO-002)",
       "description": "Detect Silent Truncation on Oversized Room Name (DEF-ECHO-002)",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"oversized_name_len\": 120}",
+      "test_data": {
+        "oversized_name_len": 120
+      },
       "expected_result": "Room name is silently truncated to 100 characters instead of returning HTTP 400.",
       "priority": "high",
       "test_type": "boundary",
@@ -3050,12 +3184,19 @@
       "project_id": 5,
       "requirement_id": 18,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-018.C1\", \"ECHO-REQ-018.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-018.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-018.C1",
+        "ECHO-REQ-018.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-018.AC1"
+      ],
       "title": "Detect Discovery N+1 Query Amplification Pattern (DEF-ECHO-004)",
       "description": "Detect Discovery N+1 Query Amplification Pattern (DEF-ECHO-004)",
       "preconditions": "Two public rooms created.",
-      "test_data": "{\"action\": \"discover_rooms\"}",
+      "test_data": {
+        "action": "discover_rooms"
+      },
       "expected_result": "Secondary count executed per room, verifying N+1 architecture.",
       "priority": "high",
       "test_type": "integration",
@@ -3090,12 +3231,20 @@
       "project_id": 5,
       "requirement_id": 19,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-019.C1\", \"ECHO-REQ-019.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-019.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-019.C1",
+        "ECHO-REQ-019.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-019.AC1"
+      ],
       "title": "Verify Toast Notification Accessibility and Contract",
       "description": "Verify Toast Notification Accessibility and Contract",
       "preconditions": "Frontend components bundled.",
-      "test_data": "{\"type\": \"success\", \"message\": \"Feedback submitted successfully\"}",
+      "test_data": {
+        "type": "success",
+        "message": "Feedback submitted successfully"
+      },
       "expected_result": "Toast contract defines accessible alert container.",
       "priority": "high",
       "test_type": "contract",
@@ -3130,12 +3279,19 @@
       "project_id": 5,
       "requirement_id": 20,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-020.C1\", \"ECHO-REQ-020.C3\"]",
-      "ac_keys": "[\"ECHO-REQ-020.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-020.C1",
+        "ECHO-REQ-020.C3"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-020.AC1"
+      ],
       "title": "Verify RoomView Disables Input on Closed or Expired State",
       "description": "Verify RoomView Disables Input on Closed or Expired State",
       "preconditions": "Component contract verification.",
-      "test_data": "{\"room_status\": \"closed\"}",
+      "test_data": {
+        "room_status": "closed"
+      },
       "expected_result": "Input is disabled when status is closed or is_expired is true.",
       "priority": "high",
       "test_type": "contract",
@@ -3170,12 +3326,19 @@
       "project_id": 5,
       "requirement_id": 21,
       "requirement_version": 1,
-      "clause_keys": "[\"ECHO-REQ-021.C1\", \"ECHO-REQ-021.C2\"]",
-      "ac_keys": "[\"ECHO-REQ-021.AC1\"]",
+      "clause_keys": [
+        "ECHO-REQ-021.C1",
+        "ECHO-REQ-021.C2"
+      ],
+      "ac_keys": [
+        "ECHO-REQ-021.AC1"
+      ],
       "title": "Verify Legacy Room Claim Action Requires Authentication",
       "description": "Verify Legacy Room Claim Action Requires Authentication",
       "preconditions": "EchoBox backend initialized.",
-      "test_data": "{\"action\": \"claim_legacy_room\"}",
+      "test_data": {
+        "action": "claim_legacy_room"
+      },
       "expected_result": "Unauthenticated call returns 401; authenticated call returns 200.",
       "priority": "high",
       "test_type": "authorization",
