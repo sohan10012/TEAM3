@@ -6,6 +6,7 @@ TraceTest AI Project Dashboard across any ingested repository (EchoBox, Cureonix
 from __future__ import annotations
 
 import html
+import json
 from collections import defaultdict
 from datetime import datetime
 from typing import Any

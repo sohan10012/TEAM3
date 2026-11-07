@@ -36,6 +36,7 @@ export interface Requirement { id: number; key: string; project_id: number; proj
   author: UserRef | null; analysed_at: string | null; created_at: string; updated_at: string;
   current?: RequirementVersion; clauses?: Clause[]; test_count?: number;
   document_id?: number | null; evidence_excerpt?: string | null; description?: string | null;
+  source_page?: string | null; source_section?: string | null;
   review_status?: string | null; confidence?: number | null; }
 export interface Criterion { id: number; key: string; clause_keys: string[]; description: string; preconditions: string;
   expected_behaviour: string; validation_conditions: string[]; source_quote: string; quote_verified: boolean;

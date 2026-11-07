@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, GitCommit } from "lucide-react";
+import { AlertTriangle, Check, Copy, GitCommit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataTable, FilterChips } from "@/components/DataTable";
@@ -15,11 +15,7 @@ import { api, downloadUrl } from "@/services/api";
 import type { Defect, Execution, ExecResult, Page, Project, User } from "@/types/models";
 import { cn, fmtDate, fmtDuration, label } from "@/utils/format";
 
-export function ExecutionsPage() {
-  const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <TestRunsManagementView projectId={projectId} current={current} />;
-  }
+function CodeBasedExecutionsView({ projectId }: { projectId: number | null }) {
   const st = useListState(["project_id", "status", "source", "suite_id"], { sort: "started_at" });
   const pid = st.filters.project_id || (projectId ? String(projectId) : "");
   const params = { ...st.params, ...(pid ? { project_id: pid } : {}) };
@@ -54,6 +50,14 @@ export function ExecutionsPage() {
   );
 }
 
+export function ExecutionsPage() {
+  const { projectId, current } = useProjects();
+  if (projectId && current?.project_type === "requirements_based") {
+    return <TestRunsManagementView projectId={projectId} current={current} />;
+  }
+  return <CodeBasedExecutionsView projectId={projectId} />;
+}
+
 function ResultBar({ e }: { e: Execution }) {
   const t = Math.max(1, e.total);
   return (
@@ -78,6 +82,7 @@ export function ExecutionDetailPage() {
   const toast = useToast();
   const nav = useNavigate();
   const [selected, setSelected] = useState<ExecResult | null>(null);
+  const [defectFor, setDefectFor] = useState<ExecResult | null>(null);
   const [runIds, setRunIds] = useState<number[]>([]);
   const [env, setEnv] = useState("");
   const [copiedSha, setCopiedSha] = useState(false);
@@ -169,8 +174,16 @@ export function ExecutionDetailPage() {
                 className={cn("cursor-pointer border-t border-slate-100 hover:bg-slate-50", selected?.id === r.id && "bg-accent-soft")}>
                 <td className="px-3 py-2"><Key>{r.test_key}</Key><p className="text-xs text-slate-600">{r.test_title}</p></td><td className="px-3 py-2"><Badge value={r.status} /></td>
                 <td className="px-3 py-2 tabular-nums">{fmtDuration(r.duration_ms)}</td><td className="hidden max-w-[16rem] truncate px-3 py-2 font-mono text-2xs text-slate-600 lg:table-cell">{r.message.split("\n")[0]}</td></tr>)}</tbody></table></div></Panel>
-            <div className="min-w-0 xl:col-span-2">{selected ? <ResultEvidence r={selected} onAnalyse={() => analyse.mutate(selected.id)} canAnalyse={selected.status !== "passed"} /> :
-              <Panel><EmptyState title="Select a result" body="Choose a test to see its output, stack trace and failure analysis." /></Panel>}</div>
+            <div className="min-w-0 xl:col-span-2">{selected ? (
+              <ResultEvidence
+                r={selected}
+                onAnalyse={() => analyse.mutate(selected.id)}
+                canAnalyse={selected.status !== "passed"}
+                onLogDefect={() => setDefectFor(selected)}
+              />
+            ) : (
+              <Panel><EmptyState title="Select a result" body="Choose a test to see its output, stack trace and failure analysis." /></Panel>
+            )}</div>
           </div>) },
         { value: "logs", label: "Logs", content: <Panel title="Pytest output">{logs.data ? <Code className="max-h-[36rem]">{logs.data.log || "No output"}</Code> : <LoadingBlock />}</Panel> },
         { value: "artifacts", label: "Artifacts", content: <Panel bodyClass="p-0">{!e.artifacts?.length ? <EmptyState title="No artifacts stored" /> :
@@ -184,34 +197,177 @@ export function ExecutionDetailPage() {
           ["Rerun of", e.retry_of_id ? <Link className="text-accent hover:underline" to={`/executions/${e.retry_of_id}`}>Execution #{e.retry_of_id}</Link> : "—"],
           ["Started", fmtDate(e.started_at)], ["Finished", fmtDate((e as any).finished_at)]]} /></Panel> },
       ]} />
+      {defectFor && <CreateDefectDialog initialResult={defectFor} onClose={() => setDefectFor(null)} />}
     </>
   );
 }
 
-function ResultEvidence({ r, onAnalyse, canAnalyse }: { r: ExecResult; onAnalyse: () => void; canAnalyse: boolean }) {
+function ResultEvidence({
+  r,
+  onAnalyse,
+  canAnalyse,
+  onLogDefect,
+}: {
+  r: ExecResult;
+  onAnalyse: () => void;
+  canAnalyse: boolean;
+  onLogDefect?: () => void;
+}) {
   const fa = r.failure_analysis;
+  const comp: any = (r as any).comparison;
+
   return (
     <div className="space-y-3">
-      <Panel title={<span className="flex items-center gap-2"><Key>{r.test_key}</Key><Badge value={r.status} /></span>}
-        actions={canAnalyse && <Button size="sm" onClick={onAnalyse}>Analyse this failure</Button>}>
-        <KV items={[["Test version", `v${r.test_case_version}`], ["Script hash", <span className="break-all font-mono text-2xs">{r.script_hash}</span>], ["Duration", fmtDuration(r.duration_ms)]]} />
-        <Link to={`/tests/${r.test_case_id}`} className="mt-2 inline-block text-sm text-accent hover:underline">Open test case</Link>
+      {/* Overview & Quick Actions */}
+      <Panel
+        title={<span className="flex items-center gap-2"><Key>{r.test_key}</Key><Badge value={r.status} /></span>}
+        actions={
+          <div className="flex items-center gap-2">
+            {canAnalyse && <Button size="sm" onClick={onAnalyse}>Analyse</Button>}
+            {r.status !== "passed" && onLogDefect && (
+              <Button size="sm" variant="danger" onClick={onLogDefect}>
+                Log Defect
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <KV items={[
+          ["Test Scenario", r.test_title || "—"],
+          ["Version", `v${r.test_case_version}`],
+          ["Duration", fmtDuration(r.duration_ms)],
+          ...((r as any).requirement_key ? ([["Requirement", <Link key="req" to={`/requirements/${(r as any).requirement_id}`} className="text-[#3067DB] hover:underline font-medium">{(r as any).requirement_key}</Link>]] as [string, React.ReactNode][]) : []),
+        ]} />
+        <Link to={`/tests/${r.test_case_id}`} className="mt-2.5 inline-block text-xs font-medium text-[#3067DB] hover:underline">
+          Open Test Case Details →
+        </Link>
       </Panel>
-      {r.message && <Panel title="Failure message"><Code>{r.message}</Code></Panel>}
-      {r.stack_trace && <Panel title="Stack trace"><Code>{r.stack_trace}</Code></Panel>}
-      {fa && <Panel title="Failure analysis">
-        <div className="space-y-2 text-sm">
-          <p><span className="text-slate-500">Deterministic category </span><Badge value={fa.deterministic_category} /></p>
-          <div><p className="text-xs font-medium text-slate-500">Observed facts</p><ul className="list-disc pl-4">{fa.observed_facts?.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></div>
-          {fa.ai?.status === "ok" ? <div className="rounded border border-violet-200 bg-violet-50 p-2">
-            <p className="text-xs font-medium text-violet-900">AI hypothesis ({fa.ai.provider}, {fa.ai.model}), not confirmed</p>
-            <p className="mt-1">{fa.ai.probable_cause}</p>
-            {fa.ai.hypotheses?.length > 0 && <ul className="mt-1 list-disc pl-4 text-violet-900">{fa.ai.hypotheses.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>}
-            {fa.ai.suggested_actions?.length > 0 && <><p className="mt-1 text-xs font-medium text-violet-900">Suggested actions</p>
-              <ul className="list-disc pl-4">{fa.ai.suggested_actions.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></>}
-          </div> : <p className="text-xs text-slate-500">{fa.ai?.status === "not_run" ? "AI analysis was not run for this record." : "AI analysis was unavailable; only deterministic evidence is shown."}</p>}
-          {fa.related_failures?.length > 0 && <p className="text-xs text-slate-600">Related failures in this execution: {fa.related_failures.join(", ")}</p>}
-        </div></Panel>}
+
+      {/* Expected vs Actual Comparison (Phase 4.3) */}
+      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs">
+        <div className="bg-slate-50/80 px-3.5 py-2 border-b border-slate-200 text-xs font-semibold text-slate-800 flex items-center justify-between">
+          <span>Expected vs. Actual Verification</span>
+          <Badge value={r.status} />
+        </div>
+        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div>
+            <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
+              Expected Outcome (Specification)
+            </span>
+            <div className="font-mono text-slate-800 bg-emerald-50/40 p-2.5 rounded border border-emerald-100 text-[11px] leading-relaxed">
+              {comp?.expected || "Condition strictly satisfies specification rules."}
+            </div>
+          </div>
+          <div>
+            <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
+              Observed Result (Execution)
+            </span>
+            <div
+              className={cn(
+                "font-mono p-2.5 rounded border text-[11px] leading-relaxed",
+                r.status === "passed"
+                  ? "bg-emerald-50/40 border-emerald-100 text-slate-800"
+                  : "bg-red-50/60 border-red-200 text-red-900 font-semibold"
+              )}
+            >
+              {r.message || comp?.actual || "All assertions verified successfully."}
+            </div>
+          </div>
+        </div>
+
+        {comp?.condition && (
+          <div className="px-3.5 py-1.5 bg-slate-50/60 border-t border-slate-100 text-2xs text-slate-600 flex items-center gap-2">
+            <span className="font-semibold text-slate-500 uppercase tracking-wider">Condition:</span>
+            <span className="font-mono">{comp.condition}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Step by step verification breakdown (Phase 4.2) */}
+      {comp?.steps?.length > 0 && (
+        <Panel title={`Executed Steps (${comp.steps.length})`} bodyClass="p-0">
+          <ol className="divide-y divide-slate-100 text-xs">
+            {comp.steps.map((st: any, sIdx: number) => (
+              <li key={sIdx} className="p-3 flex items-start gap-3">
+                <span className="font-mono font-semibold text-slate-400 text-2xs mt-0.5">0{sIdx + 1}</span>
+                <div className="flex-1">
+                  <span className="font-medium text-slate-900">{st.action}</span>
+                  <div className="text-[11px] text-slate-500 mt-0.5 font-mono">Expected: {st.expected}</div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Panel>
+      )}
+
+      {/* Failure Root Cause Analysis (Phase 4.4) */}
+      {r.status !== "passed" && (
+        <div className="rounded-lg border border-red-200 bg-red-50/60 p-3.5 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-red-900 flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              Failure Reason & Recommended Action
+            </span>
+            {onLogDefect && (
+              <Button variant="danger" size="sm" onClick={onLogDefect}>
+                Log Defect from Failure
+              </Button>
+            )}
+          </div>
+          <p className="text-red-950 font-mono text-[11px] leading-relaxed">
+            {r.message || "Assertion failed during test execution."}
+          </p>
+          {(r as any).requirement_key && (
+            <div className="text-2xs text-red-800 pt-1.5 border-t border-red-200">
+              Grounded Requirement:{" "}
+              <Link to={`/requirements/${(r as any).requirement_id}`} className="font-semibold underline">
+                {(r as any).requirement_key} · {(r as any).requirement_title}
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Expandable Technical Details (Progressive Disclosure) */}
+      {r.stack_trace && (
+        <details className="group rounded-lg border border-slate-200 bg-white overflow-hidden text-xs">
+          <summary className="px-3.5 py-2 font-medium text-slate-700 bg-slate-50 cursor-pointer hover:bg-slate-100 flex items-center justify-between select-none">
+            <span>Technical Stack Trace & Sandbox Diagnostics</span>
+            <span className="text-2xs text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="p-3 bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto leading-relaxed">
+            <pre className="whitespace-pre-wrap">{r.stack_trace}</pre>
+          </div>
+        </details>
+      )}
+
+      {/* AI Failure Hypothesis */}
+      {fa && (
+        <Panel title="Failure analysis">
+          <div className="space-y-2 text-sm">
+            <p><span className="text-slate-500">Deterministic category </span><Badge value={fa.deterministic_category} /></p>
+            <div><p className="text-xs font-medium text-slate-500">Observed facts</p><ul className="list-disc pl-4">{fa.observed_facts?.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></div>
+            {fa.ai?.status === "ok" ? (
+              <div className="rounded border border-violet-200 bg-violet-50 p-2">
+                <p className="text-xs font-medium text-violet-900">AI hypothesis ({fa.ai.provider}, {fa.ai.model}), not confirmed</p>
+                <p className="mt-1">{fa.ai.probable_cause}</p>
+                {fa.ai.hypotheses?.length > 0 && <ul className="mt-1 list-disc pl-4 text-violet-900">{fa.ai.hypotheses.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>}
+                {fa.ai.suggested_actions?.length > 0 && (
+                  <>
+                    <p className="mt-1 text-xs font-medium text-violet-900">Suggested actions</p>
+                    <ul className="list-disc pl-4">{fa.ai.suggested_actions.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>
+                  </>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                {fa.ai?.status === "not_run" ? "AI analysis was not run for this record." : "AI analysis was unavailable; only deterministic evidence is shown."}
+              </p>
+            )}
+            {fa.related_failures?.length > 0 && <p className="text-xs text-slate-600">Related failures in this execution: {fa.related_failures.join(", ")}</p>}
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }
@@ -271,9 +427,27 @@ export function DefectsPage() {
   );
 }
 
-function CreateDefectDialog({ onClose }: { onClose: () => void }) {
+function CreateDefectDialog({ onClose, initialResult }: { onClose: () => void; initialResult?: any }) {
   const { projects, projectId } = useProjects();
-  const [f, setF] = useState({ project_id: projectId ?? projects[0]?.id, title: "", description: "", severity: "medium", priority: "p3", execution_result_id: "", reproduction_steps: "" });
+  const [f, setF] = useState({
+    project_id: projectId ?? projects[0]?.id,
+    title: initialResult
+      ? `[Failure] ${initialResult.test_key || ""}: ${initialResult.test_title || "Assertion failed"}`
+      : "",
+    description: initialResult
+      ? `Observed failure during execution run:\n${initialResult.message || initialResult.stdout || "Assertion failed"}`
+      : "",
+    severity: initialResult?.status === "error" ? "critical" : "high",
+    priority: "p2",
+    execution_result_id: initialResult ? String(initialResult.id) : "",
+    reproduction_steps: initialResult?.comparison?.steps?.length
+      ? initialResult.comparison.steps
+          .map((s: any, idx: number) => `${idx + 1}. ${s.action} -> Expected: ${s.expected}`)
+          .join("\n")
+      : initialResult
+      ? `Execute test scenario ${initialResult.test_key} against target environment.`
+      : "",
+  });
   const toast = useToast();
   const nav = useNavigate();
   const m = useMutation({ mutationFn: () => api.post<Defect>("/defects", { ...f, execution_result_id: f.execution_result_id ? Number(f.execution_result_id) : null }),
@@ -287,7 +461,12 @@ function CreateDefectDialog({ onClose }: { onClose: () => void }) {
       <Field label="Description" htmlFor="dd"><Textarea id="dd" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Severity" htmlFor="ds"><Select id="ds" value={f.severity} onChange={(e) => setF({ ...f, severity: e.target.value })}>{["critical", "high", "medium", "low"].map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select></Field>
-        <Field label="Priority" htmlFor="dpr"><Select id="dpr" value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{["p1", "p2", "p3", "p4"].map((s) => <option key={s} value={s}>{s.toUpperCase()}</option>)}</Select></Field>
+        <Field label="Priority" htmlFor="dpr"><Select id="dpr" value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{[
+          { value: "p1", label: "P1 — Critical" },
+          { value: "p2", label: "P2 — High" },
+          { value: "p3", label: "P3 — Medium" },
+          { value: "p4", label: "P4 — Low" },
+        ].map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</Select></Field>
       </div>
       <Field label="Execution result ID" htmlFor="dr" hint="Optional. Shown on the execution's results tab."><Input id="dr" inputMode="numeric" value={f.execution_result_id} onChange={(e) => setF({ ...f, execution_result_id: e.target.value.replace(/\D/g, "") })} /></Field>
       <Field label="Reproduction steps" htmlFor="drs"><Textarea id="drs" rows={3} value={f.reproduction_steps} onChange={(e) => setF({ ...f, reproduction_steps: e.target.value })} /></Field>
@@ -407,7 +586,12 @@ function DecisionDialog({ d, mode, onClose }: { d: Defect; mode: "approve" | "di
         {mode === "approve" ? "Approve defect" : "Dismiss"}</Button></>}>
       {mode === "approve" && <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Severity" htmlFor="as"><Select id="as" value={f.severity} onChange={(e) => setF({ ...f, severity: e.target.value })}>{["critical", "high", "medium", "low"].map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select></Field>
-        <Field label="Priority" htmlFor="ap"><Select id="ap" value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{["p1", "p2", "p3", "p4"].map((s) => <option key={s} value={s}>{s.toUpperCase()}</option>)}</Select></Field></div>}
+        <Field label="Priority" htmlFor="ap"><Select id="ap" value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{[
+          { value: "p1", label: "P1 — Critical" },
+          { value: "p2", label: "P2 — High" },
+          { value: "p3", label: "P3 — Medium" },
+          { value: "p4", label: "P4 — Low" },
+        ].map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</Select></Field></div>}
       <Field label="Comment" htmlFor="ac"><Textarea id="ac" rows={3} value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></Field>
     </Dialog>
   );

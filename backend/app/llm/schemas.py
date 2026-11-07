@@ -57,6 +57,7 @@ class TestCaseOut(BaseModel):
     expected_result: str = Field(min_length=3)
     priority: Literal["critical", "high", "medium", "low"] = "medium"
     test_type: str
+    test_category: str | None = None
     confidence: float = Field(ge=0, le=1)
     source_quote: str = Field(min_length=8)
     rationale: str = ""
@@ -85,9 +86,18 @@ class FailureAnalysisOut(BaseModel):
     suggested_actions: list[str] = Field(default_factory=list)
     confidence: float = Field(ge=0, le=1)
     recommended_severity: Literal["critical", "high", "medium", "low"] = "medium"
-    recommended_priority: Literal["p1", "p2", "p3", "p4"] = "p3"
+    recommended_priority: str = "p3"
     defect_title: str = ""
     defect_summary: str = ""
+
+    @field_validator("recommended_priority")
+    @classmethod
+    def _pri(cls, v: str) -> str:
+        from app.domain.enums import normalize_defect_priority
+        try:
+            return normalize_defect_priority(v)
+        except ValueError:
+            return "p3"
 
     @field_validator("category")
     @classmethod

@@ -5,18 +5,16 @@ Aggregates real database records for requirements-based quality engineering proj
 from __future__ import annotations
 
 import html
-import json
 import logging
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api import serializers as S
 from app.core.errors import BadRequest
 from app.db.models import (
     AcceptanceCriterion,
-    AuditLog,
     BusinessScenario,
     Defect,
     Document,
@@ -224,7 +222,7 @@ def get_project_traceability_matrix(db: Session, project_id: int) -> dict[str, A
         acs = db.execute(select(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == r.id)).scalars().all()
         tests = db.execute(select(TestCase).where(TestCase.requirement_id == r.id)).scalars().all()
 
-        test_keys = [t.key for t in tests]
+        _test_keys = [t.key for t in tests]
         test_ids = [t.id for t in tests]
 
         # Executions covering these tests

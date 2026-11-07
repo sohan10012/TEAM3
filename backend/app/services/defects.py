@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from app.core.errors import BadRequest, Conflict, NotFound
 from app.db.base import session_scope, utcnow
 from app.db.models import Defect, DefectComment, DefectLink, Execution, ExecutionResult, Run, TestCase
-from app.domain.enums import DEFECT_PRIORITIES, SEVERITIES, can_transition_defect
+from app.domain.enums import (
+    SEVERITIES,
+    can_transition_defect,
+    normalize_defect_priority,
+)
 from app.guardrails.duplicates import similarity
 from app.services import audit
 from app.services.keys import next_key
@@ -29,8 +33,12 @@ def duplicate_candidates(db: Session, project_id: int, title: str, test_case_id:
 
 
 def create_manual(db: Session, project_id: int, project_key: str, data: dict, actor_id: int) -> Defect:
-    if data.get("severity") not in SEVERITIES or data.get("priority") not in DEFECT_PRIORITIES:
-        raise BadRequest("Invalid severity or priority")
+    if data.get("severity") not in SEVERITIES:
+        raise BadRequest(f"Invalid severity '{data.get('severity')}'. Must be one of {SEVERITIES}")
+    try:
+        data["priority"] = normalize_defect_priority(data.get("priority", "p3"))
+    except ValueError as e:
+        raise BadRequest(str(e))
     res = None
     if data.get("execution_result_id"):
         res = db.get(ExecutionResult, data["execution_result_id"])

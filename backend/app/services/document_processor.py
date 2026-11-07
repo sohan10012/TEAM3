@@ -8,7 +8,6 @@ import csv
 import hashlib
 import io
 import logging
-import os
 import re
 from pathlib import Path
 from typing import Any
@@ -91,19 +90,30 @@ def parse_pdf(file_path: Path) -> dict[str, Any]:
     pages_text: list[str] = []
     sections: list[dict[str, Any]] = []
     items: list[dict[str, Any]] = []
+    tables: list[dict[str, Any]] = []
     warnings: list[str] = []
 
-    current_section = "General"
+    current_section = "General Specification"
     for page_idx, page in enumerate(reader.pages, start=1):
         try:
-            txt = page.extract_text() or ""
-            pages_text.append(f"--- [Page {page_idx}] ---\n{txt}")
-            # Scan for headings
-            lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
+            raw_txt = page.extract_text() or ""
+            # AI-EXT-01: De-hyphenate broken words across line breaks in multi-column layouts
+            clean_txt = re.sub(r"(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)", r"\1\2", raw_txt)
+
+            pages_text.append(f"--- [Page {page_idx}] ---\n{clean_txt}")
+            # Scan for headings and regulatory sections (§, Chapter, Section, numbered clauses)
+            lines = [ln.strip() for ln in clean_txt.splitlines() if ln.strip()]
+            potential_table_rows: list[list[str]] = []
+
             for line_idx, line in enumerate(lines):
-                if re.match(r"^(\d+(\.\d+)*\.?|[A-Z]\.)\s+[A-Za-z0-9\s_-]{3,80}$", line) or (
-                    len(line) < 60 and line.isupper() and len(line.split()) <= 6
-                ):
+                # Detect structured headings (including regulatory § 778.xxx, 1.2.3, uppercase headers)
+                is_heading = (
+                    re.match(r"^(\d+(\.\d+)*\.?|[A-Z]\.|§\s*\d+(\.\d+)*)\s+[A-Za-z0-9\s_\-\.]{3,90}$", line)
+                    or re.match(r"^(Section|Chapter|Part|Clause|Subpart)\s+[0-9A-Z\.]+", line, re.IGNORECASE)
+                    or (len(line) < 60 and line.isupper() and len(line.split()) <= 6)
+                )
+
+                if is_heading:
                     current_section = line
                     sections.append({
                         "title": line,
@@ -111,10 +121,30 @@ def parse_pdf(file_path: Path) -> dict[str, Any]:
                         "level": line.count(".") + 1 if "." in line else 1,
                         "line": line_idx + 1,
                     })
-            if txt.strip():
+                    continue
+
+                # AI-EXT-02: Scan for tabular data (delimited by tabs, pipes, or structured columnar spacing)
+                if "|" in line and len(line.split("|")) >= 3:
+                    cells = [c.strip() for c in line.split("|") if c.strip()]
+                    if len(cells) >= 2:
+                        potential_table_rows.append(cells)
+                elif "\t" in line and len(line.split("\t")) >= 2:
+                    cells = [c.strip() for c in line.split("\t") if c.strip()]
+                    if len(cells) >= 2:
+                        potential_table_rows.append(cells)
+
+            if potential_table_rows:
+                tables.append({
+                    "title": f"Table on Page {page_idx} ({current_section})",
+                    "headers": potential_table_rows[0],
+                    "rows": potential_table_rows[1:15],
+                    "page": page_idx,
+                })
+
+            if clean_txt.strip():
                 items.append({
                     "content_type": "text",
-                    "content": txt.strip(),
+                    "content": clean_txt.strip(),
                     "source_page": page_idx,
                     "source_section": current_section,
                     "source_location": f"Page {page_idx}",
@@ -127,7 +157,7 @@ def parse_pdf(file_path: Path) -> dict[str, Any]:
     return {
         "extracted_text": full_text,
         "sections": sections,
-        "tables": [],
+        "tables": tables,
         "pages_count": len(reader.pages),
         "items": items,
         "warnings": warnings,
@@ -325,7 +355,7 @@ def parse_markdown(file_path: Path) -> dict[str, Any]:
     for idx, line in enumerate(lines, start=1):
         line_s = line.strip()
         if line_s.startswith("#"):
-            if cur_lines and any(l.strip() for l in cur_lines):
+            if cur_lines and any(ln.strip() for ln in cur_lines):
                 items.append({
                     "content_type": "section",
                     "content": "\n".join(cur_lines).strip(),
@@ -347,7 +377,7 @@ def parse_markdown(file_path: Path) -> dict[str, Any]:
         else:
             cur_lines.append(line)
 
-    if cur_lines and any(l.strip() for l in cur_lines):
+    if cur_lines and any(ln.strip() for ln in cur_lines):
         items.append({
             "content_type": "section",
             "content": "\n".join(cur_lines).strip(),
@@ -380,7 +410,7 @@ def parse_txt(file_path: Path) -> dict[str, Any]:
         line_s = line.strip()
         # Heuristic for section titles: numbered or uppercase short lines
         if re.match(r"^(\d+(\.\d+)*\.?|[A-Z]\.)\s+[A-Za-z0-9\s_-]{3,80}$", line_s):
-            if cur_lines and any(l.strip() for l in cur_lines):
+            if cur_lines and any(ln.strip() for ln in cur_lines):
                 items.append({
                     "content_type": "section",
                     "content": "\n".join(cur_lines).strip(),
@@ -401,7 +431,7 @@ def parse_txt(file_path: Path) -> dict[str, Any]:
         else:
             cur_lines.append(line)
 
-    if cur_lines and any(l.strip() for l in cur_lines):
+    if cur_lines and any(ln.strip() for ln in cur_lines):
         items.append({
             "content_type": "section",
             "content": "\n".join(cur_lines).strip(),

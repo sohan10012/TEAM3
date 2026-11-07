@@ -18,9 +18,49 @@ PERMISSIONS: dict[str, set[str]] = {
 }
 
 TEST_TYPES = ("functional", "positive", "negative", "boundary", "regression", "security", "compliance", "integration")
+ALL_TEST_CATEGORIES = (
+    "positive",
+    "negative",
+    "boundary_value",
+    "edge_case",
+    "input_validation",
+    "business_rule",
+    "permission_role",
+    "security",
+    "error_handling",
+    "integration",
+)
 PRIORITIES = ("critical", "high", "medium", "low")
 SEVERITIES = ("critical", "high", "medium", "low")
 DEFECT_PRIORITIES = ("p1", "p2", "p3", "p4")
+DEFECT_PRIORITY_MAP: dict[str, str] = {
+    "p1": "p1",
+    "p2": "p2",
+    "p3": "p3",
+    "p4": "p4",
+    "critical": "p1",
+    "high": "p2",
+    "medium": "p3",
+    "low": "p4",
+}
+DEFECT_PRIORITY_REVERSE_MAP: dict[str, str] = {
+    "p1": "critical",
+    "p2": "high",
+    "p3": "medium",
+    "p4": "low",
+}
+ALL_ACCEPTABLE_DEFECT_PRIORITIES = tuple(DEFECT_PRIORITY_MAP.keys())
+
+
+def normalize_defect_priority(val: str | None) -> str:
+    """Normalize defect priority from either standard (critical/high/medium/low) or legacy (p1-p4) representation."""
+    if not val:
+        return "p3"
+    cleaned = str(val).strip().lower()
+    if cleaned in DEFECT_PRIORITY_MAP:
+        return DEFECT_PRIORITY_MAP[cleaned]
+    raise ValueError(f"Invalid defect priority '{val}'. Must be one of: {', '.join(ALL_ACCEPTABLE_DEFECT_PRIORITIES)}")
+
 FAILURE_CATEGORIES = ("application_defect", "test_automation_defect", "configuration_issue", "environment_failure",
                       "data_validation_failure", "permission_issue", "timeout", "unknown")
 

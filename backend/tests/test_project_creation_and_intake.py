@@ -14,9 +14,6 @@ Covers:
 """
 from __future__ import annotations
 
-import pytest
-from app.db.models import Document, Project, ProjectContext, ProjectRole, BusinessScenario, DocumentProcessingJob
-
 
 def test_validate_project_key(admin):
     # Test valid key

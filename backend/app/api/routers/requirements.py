@@ -487,7 +487,7 @@ def get_requirement_history(
             {
                 "id": a.id,
                 "action": a.action,
-                "user_id": a.user_id,
+                "user_id": a.actor_id,
                 "created_at": a.created_at.isoformat() if a.created_at else None,
                 "details": a.details,
             }

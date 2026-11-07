@@ -12,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import BadRequest
-from app.db.base import utcnow
 from app.db.models import (
     BusinessScenario,
     Document,
@@ -75,42 +74,118 @@ def classify_priority(text: str) -> str:
     return "low"
 
 
+def _classify_category(stmt: str) -> str:
+    s = stmt.lower()
+    if any(k in s for k in ["statute", "regulation", "act", "law", "flsa", "paye", "hmrc", "penalty", "statutory", "compliance", "legal"]):
+        return "compliance"
+    if any(k in s for k in ["rate", "calculate", "multiplier", "formula", "threshold", "percent", "deduction", "payout", "gross pay", "net pay"]):
+        return "business_rule"
+    if any(k in s for k in ["maximum", "minimum", "cap", "exceed", "limit", "at least", "not more than", "boundary"]):
+        return "boundary_value"
+    if any(k in s for k in ["permission", "role", "encrypt", "sanitize", "credential", "auth", "token", "secret", "prohibit"]):
+        return "security"
+    if any(k in s for k in ["store", "audit", "timestamp", "log", "persist", "foreign key", "unique", "database"]):
+        return "data_integrity"
+    if any(k in s for k in ["latency", "throughput", "concurrent", "performance", "availability", "scale", "load"]):
+        return "non_functional"
+    return "functional"
+
+
+def _calc_confidence(stmt: str) -> float:
+    s = stmt.lower()
+    score = 0.86
+    if "shall" in s or "must" in s or "enforces" in s:
+        score += 0.05
+    elif "should" in s or "allows" in s:
+        score += 0.02
+    if re.search(r"\b\d+(\.\d+)?\b", s):
+        score += 0.04
+    if 40 <= len(stmt) <= 300:
+        score += 0.03
+    if any(amb in s for amb in ["reasonable", "promptly", "as needed", "etc", "user friendly", "appropriate", "fast"]):
+        score -= 0.12
+    return round(min(0.98, max(0.68, score)), 2)
+
+
 def extract_requirements_from_text(text: str, source_doc: Document) -> list[dict[str, Any]]:
     """Extract individual grounded requirement statements from text with section and quote provenance."""
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    raw_lines = [ln.strip() for ln in text.splitlines()]
     extracted: list[dict[str, Any]] = []
+    seen_hashes: set[str] = set()
 
     current_section = "General Specification"
     current_page = "Page 1"
 
-    for line in lines:
+    # AI-EXT-01 & AI-REQ-01: Reconstruct paragraphs across line wraps before sentence tokenization
+    paragraphs: list[tuple[str, str, str]] = []  # (content, page, section)
+    current_para_lines: list[str] = []
+
+    for line in raw_lines:
+        if not line:
+            if current_para_lines:
+                paragraphs.append((" ".join(current_para_lines), current_page, current_section))
+                current_para_lines = []
+            continue
+
         if line.startswith("--- [Page ") or line.startswith("--- [Sheet: "):
+            if current_para_lines:
+                paragraphs.append((" ".join(current_para_lines), current_page, current_section))
+                current_para_lines = []
             current_page = line.replace("---", "").strip()
             continue
+
         if line.startswith("#"):
+            if current_para_lines:
+                paragraphs.append((" ".join(current_para_lines), current_page, current_section))
+                current_para_lines = []
             current_section = line.lstrip("#").strip()
             continue
-        if re.match(r"^(\d+(\.\d+)*|[A-Z]\.)\s+[A-Za-z0-9\s_-]{3,80}$", line):
+
+        is_heading = (
+            re.match(r"^(\d+(\.\d+)*|[A-Z]\.|§\s*\d+(\.\d+)*)\s+[A-Za-z0-9\s_\-\.]{3,80}$", line)
+            or re.match(r"^(Section|Chapter|Part|Clause|Subpart)\s+[0-9A-Z\.]+", line, re.IGNORECASE)
+        )
+        if is_heading:
+            if current_para_lines:
+                paragraphs.append((" ".join(current_para_lines), current_page, current_section))
+                current_para_lines = []
             current_section = line
             continue
 
-        # Split line into sentences if multiple sentences exist
-        sentences = re.split(r"(?<=[.!?])\s+", line)
+        current_para_lines.append(line)
+
+    if current_para_lines:
+        paragraphs.append((" ".join(current_para_lines), current_page, current_section))
+
+    for para_text, page, section in paragraphs:
+        # Split paragraph into complete sentences
+        sentences = re.split(r"(?<=[.!?])\s+", para_text)
         for s in sentences:
             s_clean = s.strip()
             if not s_clean:
                 continue
             is_req = any(kw in s_clean.lower() for kw in [
                 "shall", "must", "should", "will support", "required to", "endpoint:", "api:", "allows",
-                "enforces", "validates", "prohibits", "rejects", "returns status", "stores"
+                "enforces", "validates", "prohibits", "rejects", "returns status", "stores", "calculates", "complies"
             ])
             if is_req and len(s_clean) >= 20:
                 clean_stmt = re.sub(r"^[-*•\d\.\)\s]+", "", s_clean).strip()
                 if len(clean_stmt) >= 15:
+                    # Semantic deduplication
+                    norm_key = re.sub(r"[^\w]", "", clean_stmt.lower())[:80]
+                    if norm_key in seen_hashes:
+                        continue
+                    seen_hashes.add(norm_key)
+
+                    category = _classify_category(clean_stmt)
+                    confidence = _calc_confidence(clean_stmt)
+
                     extracted.append({
                         "raw_text": clean_stmt,
-                        "section": current_section,
-                        "page": current_page,
+                        "section": section,
+                        "page": page,
+                        "category": category,
+                        "confidence": confidence,
                     })
 
     return extracted
@@ -202,7 +277,7 @@ def detect_contradictions_across_requirements(
         ),
     ]
 
-    for topic, pattern, q_tmpl, impact, resolution in extractors:
+    for _topic, pattern, q_tmpl, impact, resolution in extractors:
         matches = []
         for r in reqs:
             full_txt = f"{r.title} {r.evidence_excerpt or ''} {r.related_scenario or ''}"
@@ -270,8 +345,9 @@ def analyze_and_extract_project_requirements(
             if title.lower() in existing_req_titles:
                 continue
 
-            category = classify_category(raw)
+            category = stmt.get("category") or classify_category(raw)
             priority = classify_priority(raw)
+            confidence = stmt.get("confidence", 0.90)
 
             req = create_requirement(
                 db,
@@ -287,7 +363,7 @@ def analyze_and_extract_project_requirements(
                 evidence_excerpt=raw[:500],
                 extraction_provenance="explicit_documented",
                 review_status="pending_review",
-                confidence=0.95,
+                confidence=confidence,
                 author_id=author_id,
             )
             existing_req_titles.add(title.lower())
@@ -453,7 +529,7 @@ def analyze_and_extract_project_requirements(
             proj,
             title=title,
             description=sc_text,
-            business_objective=f"Provided in Project Business Scenarios",
+            business_objective="Provided in Project Business Scenarios",
             category=category,
             priority=priority,
             related_scenario=f"Business Scenario #{sc_idx}",

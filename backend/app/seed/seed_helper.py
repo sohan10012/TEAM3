@@ -1,6 +1,7 @@
 """Shared helper for idempotent project seeding from verified reference datasets."""
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
 from typing import Any
@@ -33,14 +34,16 @@ from app.db.models import (
 log = logging.getLogger("tracetest.seed.helper")
 
 
-def parse_val(v: Any) -> Any:
+def parse_val(v: Any, key: str = "") -> Any:
     if isinstance(v, str):
         if len(v) >= 19 and len(v) <= 35 and v[10] in ("T", " "):
             try:
                 return datetime.fromisoformat(v.replace("Z", "").replace("T", " "))
             except Exception:
                 pass
-        if (v.startswith("{") and v.endswith("}")) or (v.startswith("[") and v.endswith("]")):
+        # Do not parse raw string/text columns into dicts
+        text_cols = {"stdout", "stack_trace", "script", "text", "description", "title", "content", "evidence_excerpt", "message", "expected_result", "actual_result", "notes"}
+        if key not in text_cols and ((v.startswith("{") and v.endswith("}")) or (v.startswith("[") and v.endswith("]"))):
             try:
                 return json.loads(v)
             except Exception:
@@ -49,7 +52,7 @@ def parse_val(v: Any) -> Any:
 
 
 def clean_dict(d: dict[str, Any], exclude: tuple[str, ...]) -> dict[str, Any]:
-    return {k: parse_val(v) for k, v in d.items() if k not in exclude}
+    return {k: parse_val(v, k) for k, v in d.items() if k not in exclude}
 
 
 def seed_project_from_data(

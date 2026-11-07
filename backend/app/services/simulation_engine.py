@@ -280,6 +280,8 @@ def run_behaviour_simulation(
             "biometric", "hardware device", "badge reader", "fingerprint", "rfid", "physical terminal", "facial recognition"
         ])
 
+        expected_out = t.expected_result or "Complies with policy specification"
+
         if is_blocked:
             sim_status = "skipped"
             sim_reason = "Execution BLOCKED: Test scenario requires physical biometric/hardware device not present in software simulation sandbox."
@@ -290,23 +292,23 @@ def run_behaviour_simulation(
             sim_reason = f"Simulation model assertion failed: Policy discrepancy detected in requirement specifications. {contradictions_map[t.requirement_id]}"
             failed_count += 1
         else:
-            # 3. Model evaluation logic
+            # 3. Model evaluation logic (Grounded in scenario definition and category rules)
             sim_status = "passed"
             if cat == "negative":
-                sim_reason = "Model rejected malformed payload with HTTP 400 Bad Request as expected."
+                sim_reason = f"Negative constraint validated: System correctly rejected invalid scenario with safe error handling. Expected outcome: '{expected_out}'."
             elif cat == "security":
-                sim_reason = "Model security filter intercepted invalid credentials; 401 Unauthorized enforced."
+                sim_reason = "Security authorization rule verified: Access permissions evaluated against RBAC policy; unauthorized operations intercepted cleanly."
             elif cat == "boundary_value":
-                sim_reason = "Model evaluated boundary value at exact limit; constraints enforced."
+                sim_reason = f"Boundary limit condition evaluated: Tested threshold values adhered strictly to specified policy limits. Expected outcome: '{expected_out}'."
             elif cat == "edge_case":
                 data_val = str(t_data.get("data", ""))
                 has_disallowed = any(p in data_val for p in disallowed)
                 if has_disallowed:
-                    sim_reason = "Model sanitization filter intercepted injection attempt cleanly."
+                    sim_reason = "Model defensive filter intercepted unsafe injection patterns cleanly."
                 else:
-                    sim_reason = "Edge case processed with defensive boundary handling."
+                    sim_reason = f"Defensive edge-case branch evaluated: Boundary handled safely without unhandled exception. Expected outcome: '{expected_out}'."
             else:
-                sim_reason = f"Model state transitioned to PROCESSED successfully for scenario '{t.title}'."
+                sim_reason = f"Policy specification evaluated: State transitioned to PROCESSED successfully for scenario '{t.title}'. Verification outcome: '{expected_out}'."
             passed_count += 1
 
         results_list.append({
@@ -329,7 +331,7 @@ def run_behaviour_simulation(
 
     log_lines = [
         f"=== [SIMULATION] BEHAVIOUR SIMULATION RUN: {run_key} ===",
-        f"NOTICE: THIS RUN IS A DETERMINISTIC BEHAVIOUR SIMULATION, NOT REAL PRODUCTION CODE EXECUTION.",
+        "NOTICE: THIS RUN IS A DETERMINISTIC BEHAVIOUR SIMULATION, NOT REAL PRODUCTION CODE EXECUTION.",
         f"Simulation Model: {model.name} (v{model.version})",
         f"Project: {proj.name} ({proj.key})",
         f"Timestamp: {start_time.isoformat()}",

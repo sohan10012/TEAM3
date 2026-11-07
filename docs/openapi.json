@@ -5194,6 +5194,22 @@
             }
           },
           {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
             "name": "approval_status",
             "in": "query",
             "required": false,
@@ -7112,7 +7128,7 @@
           },
           "file": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File"
           }
         },
@@ -7128,7 +7144,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File"
           },
           "display_name": {
@@ -7197,7 +7213,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File"
           },
           "project_id": {
@@ -7453,7 +7469,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^p[1-4]$"
+                "pattern": "^(p[1-4]|critical|high|medium|low)$"
               },
               {
                 "type": "null"
@@ -7601,7 +7617,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^p[1-4]$"
+                "pattern": "^(p[1-4]|critical|high|medium|low)$"
               },
               {
                 "type": "null"
@@ -8942,6 +8958,11 @@
             "title": "Test Type",
             "default": "functional"
           },
+          "test_category": {
+            "type": "string",
+            "title": "Test Category",
+            "default": "positive"
+          },
           "source_quote": {
             "type": "string",
             "minLength": 8,
@@ -9056,6 +9077,17 @@
               }
             ],
             "title": "Test Type"
+          },
+          "test_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Category"
           },
           "clause_keys": {
             "anyOf": [
@@ -9267,6 +9299,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

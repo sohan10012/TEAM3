@@ -8,6 +8,7 @@ from app.core.errors import BadRequest, Conflict, Forbidden
 from app.core.security import sha256_text
 from app.db.base import utcnow
 from app.db.models import Clause, Requirement, Review, TestCase, TestCaseVersion, TestStep, User
+from app.domain.enums import ALL_TEST_CATEGORIES
 from app.guardrails.ast_validator import validate_script
 from app.guardrails.duplicates import similarity
 from app.guardrails.quotes import verify_quote
@@ -61,7 +62,7 @@ def validate_test(db: Session, t: TestCase, clauses: list[Clause] | None = None)
 def snapshot(t: TestCase) -> dict:
     return {"title": t.title, "description": t.description, "preconditions": t.preconditions,
             "test_data": t.test_data, "expected_result": t.expected_result, "priority": t.priority,
-            "test_type": t.test_type, "clause_keys": t.clause_keys, "ac_keys": t.ac_keys,
+            "test_type": t.test_type, "test_category": t.test_category, "clause_keys": t.clause_keys, "ac_keys": t.ac_keys,
             "source_quote": t.source_quote, "automation": t.automation, "script": t.script,
             "steps": [{"action": s.action, "expected": s.expected} for s in t.steps], "status": t.status}
 
@@ -73,11 +74,27 @@ def create_test(db: Session, req: Requirement, data: dict, *, actor_id: int | No
     project_key = req.key.split("-")[0]
     key = key or next_key(db, TestCase, f"TC-{project_key}", 4)
     ts = created_at or utcnow()
+
+    cat = data.get("test_category") or data.get("category")
+    if not cat:
+        tt = (data.get("test_type") or "").lower()
+        if tt == "boundary":
+            cat = "boundary_value"
+        elif tt in ALL_TEST_CATEGORIES:
+            cat = tt
+        else:
+            cat = "positive"
+    elif cat == "boundary":
+        cat = "boundary_value"
+    elif cat not in ALL_TEST_CATEGORIES:
+        raise BadRequest(f"Invalid test category '{cat}'. Must be one of {ALL_TEST_CATEGORIES}")
+
     t = TestCase(key=key, project_id=req.project_id, requirement_id=req.id, requirement_version=req.current_version,
                  clause_keys=data["clause_keys"], ac_keys=data.get("ac_keys", []), title=data["title"],
                  description=data.get("description", ""), preconditions=data.get("preconditions", ""),
                  test_data=data.get("test_data", {}), expected_result=data.get("expected_result", ""),
                  priority=data.get("priority", "medium"), test_type=data.get("test_type", "functional"),
+                 test_category=cat,
                  confidence=float(data.get("confidence", 1.0)), source_quote=data.get("source_quote", ""),
                  rationale=data.get("rationale", ""), automation=data.get("automation", "manual"),
                  script=data.get("script"), status=status, provider=provider, model=model, created_by=actor_id,
@@ -98,12 +115,18 @@ def create_test(db: Session, req: Requirement, data: dict, *, actor_id: int | No
 
 
 EDITABLE = ("title", "description", "preconditions", "test_data", "expected_result", "priority", "test_type",
-            "clause_keys", "source_quote", "automation", "script")
+            "test_category", "clause_keys", "source_quote", "automation", "script")
 
 
 def edit_test(db: Session, t: TestCase, changes: dict, actor: User, note: str = "") -> TestCase:
     if t.status == "deprecated":
         raise Conflict("Deprecated tests cannot be edited")
+    if "test_category" in changes and changes["test_category"]:
+        cat = changes["test_category"]
+        if cat == "boundary":
+            changes["test_category"] = "boundary_value"
+        elif cat not in ALL_TEST_CATEGORIES:
+            raise BadRequest(f"Invalid test category '{cat}'. Must be one of {ALL_TEST_CATEGORIES}")
     for f in EDITABLE:
         if f in changes and changes[f] is not None:
             setattr(t, f, changes[f])

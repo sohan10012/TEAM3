@@ -38,9 +38,9 @@ def initialise(seed: bool | None = None) -> dict:
 
     # Ensure permanent default projects: EchoBox (code-based), Cureonix (code-based), Dayforce (requirements-based), WFMQ (requirements-based)
     from app.db.base import session_scope
-    from app.seed.echobox_seed import ensure_echobox_project
     from app.seed.cureonix_seed import ensure_cureonix_project
     from app.seed.dayforce_seed import ensure_dayforce_project
+    from app.seed.echobox_seed import ensure_echobox_project
     from app.seed.wfmq_seed import ensure_wfmq_project
     with session_scope() as db:
         ensure_echobox_project(db)

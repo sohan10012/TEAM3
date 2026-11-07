@@ -7,14 +7,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import BadRequest
-from app.db.base import utcnow
-from app.db.models import AcceptanceCriterion, Clause, Project, Requirement, TestCase, TestStep
+from app.db.models import AcceptanceCriterion, Project, Requirement, TestCase, TestStep
 from app.guardrails.duplicates import similarity
-from app.guardrails.quotes import verify_quote
 from app.services import audit
 from app.services.keys import next_key
 from app.services.requirements import clauses_for, current_version

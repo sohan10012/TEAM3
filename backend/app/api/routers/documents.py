@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -16,9 +16,9 @@ from app.api.deps import (
     get_project_checked,
     require,
 )
-from app.core.errors import BadRequest, NotFound
+from app.core.errors import NotFound
 from app.db.base import get_db, utcnow
-from app.db.models import Document, DocumentProcessingJob, ExtractedContent, Project, Requirement
+from app.db.models import Document, DocumentProcessingJob, ExtractedContent, Requirement
 from app.services import audit
 from app.services.document_processor import (
     process_document,
@@ -68,13 +68,14 @@ def list_project_documents(
     ).scalars().all()
 
     # Pre-fetch requirement counts per document
-    counts = dict(
-        db.execute(
+    counts = {
+        row[0]: row[1]
+        for row in db.execute(
             select(Requirement.document_id, func.count(Requirement.id))
             .where(Requirement.project_id == project_id, Requirement.document_id.isnot(None))
             .group_by(Requirement.document_id)
         ).all()
-    )
+    }
 
     return [S.document(d, requirements_count=counts.get(d.id, 0)) for d in docs]
 

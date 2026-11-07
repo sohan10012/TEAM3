@@ -11,5 +11,5 @@ os.environ.setdefault("TRACETEST_DATA_DIR", tempfile.mkdtemp(prefix="tt-openapi-
 
 from app.main import app  # noqa: E402
 
-(ROOT / "docs" / "openapi.json").write_text(json.dumps(app.openapi(), indent=1, sort_keys=True) + "\n")
+(ROOT / "docs" / "openapi.json").write_text(json.dumps(app.openapi(), indent=2))
 print("wrote docs/openapi.json with", len(app.openapi()["paths"]), "paths")

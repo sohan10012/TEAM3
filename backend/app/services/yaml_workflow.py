@@ -9,6 +9,7 @@ Provides:
 """
 from __future__ import annotations
 
+import json
 import math
 import re
 import time
@@ -1226,8 +1227,9 @@ def ingest_policy_pipeline(
     # Optional Live AI invocation via Groq & Gemini
     if use_llm:
         import time
+
         from app.core.config import get_settings
-        from app.llm.providers import GroqProvider, GeminiProvider
+        from app.llm.providers import GeminiProvider, GroqProvider
         s = get_settings()
 
         # 1. Live Groq call for Gherkin acceptance criteria

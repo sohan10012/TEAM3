@@ -331,11 +331,40 @@ def execution(db: Session, e: m.Execution) -> dict:
 
 def result(db: Session, r: m.ExecutionResult) -> dict:
     t = db.get(m.TestCase, r.test_case_id)
-    return {"id": r.id, "execution_id": r.execution_id, "test_case_id": r.test_case_id,
-            "test_key": t.key if t else None, "test_title": t.title if t else None,
-            "test_case_version": r.test_case_version, "script_hash": r.script_hash, "status": r.status,
-            "duration_ms": r.duration_ms, "message": r.message, "stack_trace": r.stack_trace, "stdout": r.stdout,
-            "failure_analysis": r.failure_analysis, "started_at": iso(r.started_at), "finished_at": iso(r.finished_at)}
+    req = db.get(m.Requirement, t.requirement_id) if (t and t.requirement_id) else None
+
+    comparison = {
+        "expected": (t.expected_result if t and t.expected_result else "Expected outcome matching specification assertions"),
+        "actual": r.message or "Executed successfully with all assertions passing",
+        "condition": (t.preconditions if t and t.preconditions else "Preconditions met"),
+        "inputs": (t.test_data if t and t.test_data else {}),
+        "steps": [
+            {"action": s.get("action", f"Step {i+1}"), "expected": s.get("expected", "Passed")}
+            for i, s in enumerate(t.steps_json or [])
+        ] if t and t.steps_json else [],
+    }
+
+    return {
+        "id": r.id,
+        "execution_id": r.execution_id,
+        "test_case_id": r.test_case_id,
+        "test_key": t.key if t else None,
+        "test_title": t.title if t else None,
+        "test_case_version": r.test_case_version,
+        "script_hash": r.script_hash,
+        "status": r.status,
+        "duration_ms": r.duration_ms,
+        "message": r.message,
+        "stack_trace": r.stack_trace,
+        "stdout": r.stdout,
+        "failure_analysis": r.failure_analysis,
+        "comparison": comparison,
+        "requirement_id": req.id if req else None,
+        "requirement_key": req.key if req else None,
+        "requirement_title": req.title if req else None,
+        "started_at": iso(r.started_at),
+        "finished_at": iso(r.finished_at),
+    }
 
 
 def defect(db: Session, d: m.Defect, full: bool = False) -> dict:

@@ -14,7 +14,6 @@ Initializes:
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -24,22 +23,18 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.base import session_scope, utcnow
 from app.db.models import (
     AcceptanceCriterion,
     BusinessScenario,
     Defect,
     Document,
-    DocumentProcessingJob,
     Environment,
     Execution,
     ExecutionResult,
-    ExtractedContent,
     Module,
     Organisation,
     Project,
     ProjectContext,
-    ProjectMember,
     ProjectRole,
     Requirement,
     RequirementClarification,
@@ -47,7 +42,7 @@ from app.db.models import (
     TestCase,
     User,
 )
-from app.services.document_processor import process_document, save_document_file, validate_file_upload
+from app.services.document_processor import process_document, validate_file_upload
 
 log = logging.getLogger("tracetest.seed.dayforce")
 
@@ -112,14 +107,7 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
     proj.status = "active"
     proj.business_domain = "Enterprise SaaS"
     proj.product_type = "Web Application"
-    proj.primary_goal = "Validate requirements and ensure test coverage"
-    proj.target_audience = "Employees, HR Administrators, Managers, Payroll Administrators, System Administrators"
-    proj.regulatory_standards = ["FLSA", "SOC 2 Type II", "GDPR", "CCPA"]
-    proj.technical_assumptions = [
-        "Distributed microservices backend running Python and PostgreSQL",
-        "OAuth 2.0 with PKCE and Bearer JWT for all API sessions",
-        "Sub-500ms p95 latency requirement for edge attendance kiosks",
-    ]
+    proj.business_goal = "Validate requirements and ensure test coverage"
     proj.business_scenarios = [
         "Employee onboarding and directory synchronization",
         "Employee clock-in and punch pairing with geolocation",
@@ -146,7 +134,7 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
     if not ctx:
         ctx = ProjectContext(project_id=proj.id)
         db.add(ctx)
-    ctx.executive_summary = (
+    ctx.product_overview = (
         "Dayforce Platform delivers unified enterprise human capital management covering employee lifecycle, "
         "time & attendance tracking, leave governance, and gross-to-net payroll calculations."
     )
@@ -164,11 +152,11 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
         "Zero plaintext storage of sensitive PII (AES-256 encrypted at rest, TLS 1.3 in transit). "
         "Session tokens expire and are rejected after 15 minutes of inactivity with 401 Unauthorized."
     )
-    ctx.privacy_expectations = "GDPR and CCPA compliant data handling with automated subject access request exports."
+    ctx.privacy_requirements = "GDPR and CCPA compliant data handling with automated subject access request exports."
     ctx.performance_expectations = "99.9% uptime availability during core hours, p95 API response times under 500ms."
-    ctx.constraints = ["Must integrate with existing corporate LDAP/SAML identity providers."]
+    ctx.assumptions = ["Must integrate with existing corporate LDAP/SAML identity providers."]
     ctx.dependencies = ["Corporate Identity Provider (OAuth2/OIDC)", "Automated Clearing House (ACH) Banking API"]
-    ctx.out_of_scope = ["Physical biometric hardware firmware updates", "Third-party pension asset investment management"]
+    ctx.exclusions = ["Physical biometric hardware firmware updates", "Third-party pension asset investment management"]
     ctx.regulatory_standards = ["FLSA", "SOC 2 Type II", "GDPR", "CCPA"]
 
     # Step 4: Populate Modules
@@ -302,7 +290,7 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
     existing_docs = {d.filename: d for d in db.execute(select(Document).where(Document.project_id == proj.id)).scalars().all()}
 
     ingested_docs = []
-    for fname, disp_name, purpose, ver, d_type, owner, d_date, rel_mod, prio in doc_specs:
+    for fname, disp_name, purpose, ver, _d_type, owner, d_date, rel_mod, prio in doc_specs:
         src_path = sample_dir / fname
         if not src_path.exists():
             log.warning("Sample document %s not found on disk at %s", fname, src_path)
@@ -361,12 +349,12 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
     existing_reqs = db.execute(select(Requirement).where(Requirement.project_id == proj.id)).scalars().all()
     if len(existing_reqs) < 56:
         # Clear any partial requirements to ensure clean, accurate counts
-        for r in existing_reqs:
-            db.execute(delete(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == r.id))
-            db.execute(delete(TestCase).where(TestCase.requirement_id == r.id))
-            db.execute(delete(RequirementVersion).where(RequirementVersion.requirement_id == r.id))
-            db.execute(delete(RequirementClarification).where(RequirementClarification.requirement_id == r.id))
-            db.delete(r)
+        for req_item in existing_reqs:
+            db.execute(delete(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == req_item.id))
+            db.execute(delete(TestCase).where(TestCase.requirement_id == req_item.id))
+            db.execute(delete(RequirementVersion).where(RequirementVersion.requirement_id == req_item.id))
+            db.execute(delete(RequirementClarification).where(RequirementClarification.requirement_id == req_item.id))
+            db.delete(req_item)
         db.commit()
 
         # Definitions for 56 precise Dayforce requirements matching Screenshot 2:
@@ -532,7 +520,7 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
 
     # 1 Contradiction: Overtime Multiplier Rate (1.5x vs 2.0x)
     r_standard = day_reqs.get("Standard Weekly Overtime Calculation")
-    r_sunday = day_reqs.get("Sunday & Holiday Premium Overtime (2.0x)")
+    _r_sunday = day_reqs.get("Sunday & Holiday Premium Overtime (2.0x)")
     contra = RequirementClarification(
         project_id=proj.id,
         requirement_id=r_standard.id if r_standard else None,

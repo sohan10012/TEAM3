@@ -95,14 +95,42 @@ def ac_prompt(req_key: str, clauses: list[dict], untrusted: str) -> str:
             '"rationale":str,"assumptions":[str]}]}')
 
 
+GENERIC_TEST_EXAMPLES = """### Grounded Pytest Script Examples:
+
+# Example 1: Boundary Value Verification
+def test_boundary_condition():
+    input_value = 100
+    assert input_value <= 100
+
+# Example 2: Negative Input Validation Handling
+import pytest
+
+def test_negative_input_rejected():
+    with pytest.raises((ValueError, TypeError)):
+        assert False, "Validation rejected as expected"
+"""
+
+
 def test_prompt(req_key: str, clauses: list[dict], criteria: list[dict], untrusted: str, edge_cases: bool) -> str:
     focus = ("Focus on boundary values, negative inputs and edge cases not already covered."
              if edge_cases else "Cover functional, positive and negative behaviour.")
     clause_bullets = "\n".join(f"- {c['key']}: \"{c['text']}\"" for c in clauses)
+
+    # AI-TEST-01: Decouple domain guidance: only inject Reference HCM API when requirement pertains to payroll/HCM
+    is_hcm = any(
+        any(k in c["text"].lower() for k in ["overtime", "payroll", "shift", "timesheet", "punch", "wage", "hcm"])
+        for c in clauses
+    ) or any(k in req_key.upper() for k in ["PAY", "DAYFORCE", "WFMQ"])
+
+    domain_guidance = (
+        f"{HCM_API_REFERENCE}\n\n{FEW_SHOT_HCM_EXAMPLES}"
+        if is_hcm
+        else f"Allowed imports: pytest, decimal, datetime, math, re, json, typing. Nothing else.\n\n{GENERIC_TEST_EXAMPLES}"
+    )
+
     return (payload("edge_case_tests" if edge_cases else "test_cases",
                     {"requirement": req_key, "clauses": clauses, "acceptance_criteria": criteria})
-            + "\n\nSource:\n" + untrusted + "\n\n" + focus + "\n" + HCM_API_REFERENCE + "\n\n"
-            + FEW_SHOT_HCM_EXAMPLES + "\n\n"
+            + "\n\nSource:\n" + untrusted + "\n\n" + focus + "\n" + domain_guidance + "\n\n"
             "Exact clauses to cover:\n" + clause_bullets + "\n\n"
             "Each test MUST cite clause_keys from the payload and MUST include a `source_quote` copied EXACTLY VERBATIM "
             "(at least 12 characters) from the text of one cited clause. Do NOT paraphrase or alter words. "

@@ -2,11 +2,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   BookOpen,
   Check,
   CheckCircle2,
   Clock,
+  Copy,
   Cpu,
+  Download,
   FileCode,
   FileText,
   Flame,
@@ -128,7 +131,28 @@ export default function SimulationPage() {
   const [customEvalResult, setCustomEvalResult] = useState<any>(null);
   const [useLiveAI, setUseLiveAI] = useState<boolean>(true);
   const [showStageExplain, setShowStageExplain] = useState<boolean>(false);
+  const [copiedYaml, setCopiedYaml] = useState<boolean>(false);
   const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleCopyYaml = () => {
+    if (!activePolicy?.yaml_spec) return;
+    navigator.clipboard.writeText(activePolicy.yaml_spec);
+    setCopiedYaml(true);
+    setTimeout(() => setCopiedYaml(false), 2000);
+  };
+
+  const handleDownloadYaml = () => {
+    if (!activePolicy?.yaml_spec) return;
+    const blob = new Blob([activePolicy.yaml_spec], { type: "text/yaml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activePolicy.policy_id || "policy"}.yaml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Clear simulation timer on unmount
   useEffect(() => {
@@ -1102,9 +1126,10 @@ export default function SimulationPage() {
           </div>
         )}
 
-        {/* Tab 2: No-Code Policy YAML Engine */}
+        {/* Tab 2: No-Code Policy YAML Engine & Visual Rule Flow */}
         {activeTab === "yaml" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Left: Compiled YAML Specification */}
             <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
@@ -1113,46 +1138,75 @@ export default function SimulationPage() {
                     Compiled YAML Specification
                   </h3>
                 </div>
-                <span className="text-2xs font-mono text-slate-500">Safe Rule Spec v1.0</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    AST Validated ✓
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyYaml}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-200 bg-white text-2xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    {copiedYaml ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-slate-500" />}
+                    <span>{copiedYaml ? "Copied" : "Copy"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadYaml}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#3067DB] text-white text-2xs font-medium hover:bg-[#2554B8] transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <Download className="h-3 w-3" />
+                    <span>Download</span>
+                  </button>
+                </div>
               </div>
 
-              <pre className="p-3 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
+              <pre className="p-4 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 select-all">
                 {activePolicy?.yaml_spec || "# No YAML loaded"}
               </pre>
             </Panel>
 
-            <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-[#3067DB]" />
-                  <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
-                    Decomposed HCM Rules ({activePolicy?.parsed_rules?.length || 0})
-                  </h3>
-                </div>
-                <span className="text-2xs text-slate-500 font-mono">Non-eval Rule Engine</span>
-              </div>
-
-              <div className="space-y-2.5">
-                {(activePolicy?.parsed_rules || []).map((r, idx) => (
-                  <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-slate-900 text-xs">{r.rule_id}</span>
-                      <span className="px-2 py-0.5 rounded text-2xs font-semibold uppercase bg-blue-100 text-[#3067DB]">
-                        {r.rule_type}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-[11px]">{r.description}</p>
-                    <div className="flex items-center gap-3 pt-1 text-2xs text-slate-500 font-mono">
-                      <span>Threshold: {r.threshold_hours} hrs</span>
-                      <span>Multiplier: {r.multiplier}x</span>
-                      {r.max_hours && <span>Max Cap: {r.max_hours} hrs</span>}
-                    </div>
+            {/* Right: Visual Rule Flow + Custom Upload */}
+            <div className="space-y-4">
+              <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-[#3067DB]" />
+                    <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+                      Visual Rule Flow ({activePolicy?.parsed_rules?.length || 0})
+                    </h3>
                   </div>
-                ))}
-              </div>
+                  <span className="text-2xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Safe Rule Spec
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                  {(activePolicy?.parsed_rules || []).map((r, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-slate-900 text-xs">{r.rule_id}</span>
+                        <span className="px-2 py-0.5 rounded text-2xs font-semibold uppercase bg-blue-50 text-[#3067DB] border border-blue-200">
+                          {r.rule_type?.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-xs">{r.description}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 p-2 rounded bg-white border border-slate-200 text-2xs font-mono">
+                        <span className="font-bold text-blue-700">IF:</span>
+                        <span>Hours &gt; {r.threshold_hours}h</span>
+                        <ArrowRight className="h-3 w-3 text-slate-400" />
+                        <span className="font-bold text-purple-700">THEN:</span>
+                        <span>{r.multiplier}x</span>
+                        <ArrowRight className="h-3 w-3 text-slate-400" />
+                        <span className="font-bold text-emerald-700">PAID AS OT</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
 
               {/* Upload Scenario Custom Box */}
-              <div className="pt-3 border-t border-slate-200 space-y-2">
+              <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
                 <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <Upload className="h-3.5 w-3.5 text-[#3067DB]" />
                   Upload / Paste Custom Policy Scenario:
@@ -1165,7 +1219,7 @@ export default function SimulationPage() {
                         "Employees receive overtime pay at 1.5x after 8 hours per day and double time at 2.0x after 12 hours daily. Work time is rounded to the nearest 15 minutes with base rate of $32 per hour."
                       )
                     }
-                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200"
+                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200 cursor-pointer"
                   >
                     Preset: CA 8h/12h Two-Tier
                   </button>
@@ -1176,7 +1230,7 @@ export default function SimulationPage() {
                         "Shift employees receive 1.5x premium pay for all hours worked exceeding 35 hours per workweek under CBA agreement. Standard shift rate is $28/hr."
                       )
                     }
-                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200"
+                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200 cursor-pointer"
                   >
                     Preset: CBA 35h Workweek
                   </button>
@@ -1187,7 +1241,7 @@ export default function SimulationPage() {
                         "Hazard field maintenance shifts exceeding 10 hours trigger immediate double-time pay (2.0x) for hours beyond 10h. Weekly overtime applies after 40 regular hours."
                       )
                     }
-                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200"
+                    className="px-2 py-0.5 rounded text-2xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200 cursor-pointer"
                   >
                     Preset: Field 10h Double-Time
                   </button>
@@ -1226,8 +1280,8 @@ export default function SimulationPage() {
                   <Play className="h-3.5 w-3.5 mr-1 fill-white" />
                   Compile Custom Policy to YAML & Run
                 </Button>
-              </div>
-            </Panel>
+              </Panel>
+            </div>
           </div>
         )}
 

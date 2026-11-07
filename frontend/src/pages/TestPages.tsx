@@ -73,11 +73,7 @@ function Filters({ st }: { st: ReturnType<typeof useListState> }) {
       <option value="">Any validation</option><option value="valid">Valid</option><option value="invalid">Invalid</option></Select></>;
 }
 
-export function TestsPage() {
-  const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <TestCasesManagementView projectId={projectId} current={current} />;
-  }
+function CodeBasedTestsView() {
   const { st, q } = useTestList(false);
   const nav = useNavigate();
   const { can } = useAuth();
@@ -94,6 +90,14 @@ export function TestsPage() {
       {create && <CreateTestDialog onClose={() => setCreate(false)} />}
     </>
   );
+}
+
+export function TestsPage() {
+  const { projectId, current } = useProjects();
+  if (projectId && current?.project_type === "requirements_based") {
+    return <TestCasesManagementView projectId={projectId} current={current} />;
+  }
+  return <CodeBasedTestsView />;
 }
 
 function AddToSuite({ ids, onDone }: { ids: number[]; onDone: () => void }) {

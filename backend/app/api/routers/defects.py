@@ -4,7 +4,7 @@ import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -34,6 +34,7 @@ from app.db.models import (
     TestCase,
     User,
 )
+from app.domain.enums import normalize_defect_priority
 from app.graph import execution_graph
 from app.integrations import github
 from app.services import audit
@@ -45,12 +46,13 @@ router = APIRouter(prefix="/defects", tags=["defects"])
 
 @router.get("")
 def list_defects(pp: PageParams = Depends(page_params), project_id: int | None = None, status: str | None = None,
-                 severity: str | None = None, approval_status: str | None = "approved", owner_id: int | None = None,
-                 evidence_type: str | None = None, open_only: bool = False,
+                 severity: str | None = None, priority: str | None = None, approval_status: str | None = "approved",
+                 owner_id: int | None = None, evidence_type: str | None = None, open_only: bool = False,
                  p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
+    normalized_pri = normalize_defect_priority(priority) if priority else None
     stmt = select(Defect).where(Defect.project_id.in_(scoped_project_ids(db, p, project_id) or [-1]))
-    for col, val in ((Defect.status, status), (Defect.severity, severity), (Defect.owner_id, owner_id),
-                     (Defect.evidence_type, evidence_type),
+    for col, val in ((Defect.status, status), (Defect.severity, severity), (Defect.priority, normalized_pri),
+                     (Defect.owner_id, owner_id), (Defect.evidence_type, evidence_type),
                      (Defect.approval_status, approval_status if approval_status != "all" else None)):
         if val is not None:
             stmt = stmt.where(col == val)
@@ -97,6 +99,14 @@ class DefectIn(BaseModel):
     reproduction_steps: str = ""
     owner_id: int | None = None
 
+    @field_validator("priority")
+    @classmethod
+    def _validate_priority(cls, v: str) -> str:
+        try:
+            return normalize_defect_priority(v)
+        except ValueError as e:
+            raise BadRequest(str(e))
+
 
 @router.post("", status_code=201)
 def create_defect(body: DefectIn, p: Principal = Depends(require("defect.write")), db: Session = Depends(get_db)):
@@ -111,9 +121,19 @@ class DefectPatch(BaseModel):
     title: str | None = Field(None, min_length=5, max_length=300)
     description: str | None = None
     severity: str | None = Field(None, pattern="^(critical|high|medium|low)$")
-    priority: str | None = Field(None, pattern="^p[1-4]$")
+    priority: str | None = Field(None, pattern="^(p[1-4]|critical|high|medium|low)$")
     owner_id: int | None = None
     reproduction_steps: str | None = None
+
+    @field_validator("priority")
+    @classmethod
+    def _validate_priority(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            return normalize_defect_priority(v)
+        except ValueError as e:
+            raise BadRequest(str(e))
 
 
 @router.patch("/{defect_id}")
@@ -174,7 +194,17 @@ def link(defect_id: int, body: LinkIn, p: Principal = Depends(require("defect.wr
 class DecisionIn(BaseModel):
     comment: str = ""
     severity: str | None = Field(None, pattern="^(critical|high|medium|low)$")
-    priority: str | None = Field(None, pattern="^p[1-4]$")
+    priority: str | None = Field(None, pattern="^(p[1-4]|critical|high|medium|low)$")
+
+    @field_validator("priority")
+    @classmethod
+    def _validate_priority(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            return normalize_defect_priority(v)
+        except ValueError as e:
+            raise BadRequest(str(e))
 
 
 def _decide(db: Session, p: Principal, d: Defect, decision: str, body: DecisionIn) -> dict:

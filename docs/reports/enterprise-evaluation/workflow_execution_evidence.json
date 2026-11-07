@@ -1,0 +1,322 @@
+{
+  "evaluation_timestamp": "2026-11-08 20:08:07 UTC",
+  "stages": {
+    "stage_1_project_creation": {
+      "project_id": 11,
+      "key": "EV_PAY",
+      "name": "Enterprise Payroll & Overtime Compliance Evaluation",
+      "project_type": "requirements_based",
+      "status": "active",
+      "created_new": false
+    },
+    "stage_2_document_intake": {
+      "documents_count": 2,
+      "documents": [
+        {
+          "id": 8,
+          "filename": "US_DOL_FLSA_Part_778_Overtime_Compensation.pdf",
+          "display_name": "US DOL FLSA 29 CFR Part 778 Overtime Compensation Regulations",
+          "purpose": "prd",
+          "status": "completed",
+          "extraction_status": "extracted",
+          "file_size_bytes": 387137,
+          "requirements_count": 189
+        },
+        {
+          "id": 9,
+          "filename": "HMRC_PAYE_Tax_Table_Specification_v4.0.pdf",
+          "display_name": "HMRC PAYE Tax Table Routines Specification v4.0",
+          "purpose": "srs",
+          "status": "completed",
+          "extraction_status": "extracted",
+          "file_size_bytes": 475818,
+          "requirements_count": 32
+        }
+      ]
+    },
+    "stage_3_requirement_extraction": {
+      "extraction_duration_seconds": 0.17,
+      "total_requirements": 200,
+      "sample_requirements": [
+        {
+          "id": 374,
+          "key": "EV_PAY-REQ-228",
+          "title": "Authentication Token Expiration & Rejection",
+          "category": "security",
+          "priority": "critical",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 373,
+          "key": "EV_PAY-REQ-227",
+          "title": "Functional Expectation 3: The system shall reject punch timestamps where clock-out is prior to clock-in wi",
+          "category": "functional",
+          "priority": "high",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 372,
+          "key": "EV_PAY-REQ-226",
+          "title": "Functional Expectation 2: The system shall include non-discretionary bonuses in the regular rate calculati",
+          "category": "functional",
+          "priority": "high",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 371,
+          "key": "EV_PAY-REQ-225",
+          "title": "Functional Expectation 1: The system shall calculate overtime at no less than 1.5 times the employee regul",
+          "category": "functional",
+          "priority": "high",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 370,
+          "key": "EV_PAY-REQ-224",
+          "title": "Scenario 3: Employee records split shift or holiday hours; system applies jurisdiction premi",
+          "category": "business_rule",
+          "priority": "low",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 369,
+          "key": "EV_PAY-REQ-223",
+          "title": "Scenario 2: Employee receives a $200 non-discretionary production bonus; system recalculates",
+          "category": "business_rule",
+          "priority": "low",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 368,
+          "key": "EV_PAY-REQ-222",
+          "title": "Scenario 1: Hourly employee works 48 hours across 5 days; system calculates 40 regular hours",
+          "category": "functional",
+          "priority": "low",
+          "origin": "manual",
+          "source_section": null,
+          "source_page": null
+        },
+        {
+          "id": 367,
+          "key": "EV_PAY-REQ-221",
+          "title": "Amendments should be",
+          "category": "functional",
+          "priority": "medium",
+          "origin": "manual",
+          "source_section": "12.4  Any refunds arising from the uplifting of codes of existing employees under P7X",
+          "source_page": "[Page 42]"
+        }
+      ]
+    },
+    "stage_4_ambiguity_detection": {
+      "total_clarifications": 5,
+      "contradictions_count": 0,
+      "ambiguities_count": 5,
+      "contradictions": [],
+      "sample_ambiguities": [
+        {
+          "id": 16,
+          "type": "incomplete_rule",
+          "question": "The clause 'if necessary' lacks explicit criteria. Specify the exact conditions when this applies.",
+          "impact": "Incomplete conditional rule"
+        },
+        {
+          "id": 15,
+          "type": "incomplete_rule",
+          "question": "The clause 'if necessary' lacks explicit criteria. Specify the exact conditions when this applies.",
+          "impact": "Incomplete conditional rule"
+        },
+        {
+          "id": 14,
+          "type": "incomplete_rule",
+          "question": "The clause 'if necessary' lacks explicit criteria. Specify the exact conditions when this applies.",
+          "impact": "Incomplete conditional rule"
+        },
+        {
+          "id": 13,
+          "type": "missing_error_handling",
+          "question": "What error code and message should be returned when the operation fails or inputs are invalid?",
+          "impact": "Missing error handling allows silent failures or unhandled server exceptions."
+        },
+        {
+          "id": 12,
+          "type": "missing_error_handling",
+          "question": "What error code and message should be returned when the operation fails or inputs are invalid?",
+          "impact": "Missing error handling allows silent failures or unhandled server exceptions."
+        }
+      ]
+    },
+    "stage_5_acceptance_criteria_and_test_generation": {
+      "requirement_id": 374,
+      "requirement_key": "EV_PAY-REQ-228",
+      "acceptance_criteria_count": 1,
+      "acceptance_criteria": [
+        {
+          "key": "EV_PAY-REQ-228.AC1",
+          "clause_keys": [
+            "EV_PAY-REQ-228.C1"
+          ],
+          "description": "Verify that the system returns HTTP 401 Unauthorized for expired or malformed authentication tokens and blocks access to protected endpoints.",
+          "source_quote": "reject expired or malformed authentication tokens with HTTP 401 Unauthorized",
+          "quote_verified": true,
+          "confidence": 0.95
+        }
+      ],
+      "test_cases_count": 25,
+      "test_cases": [
+        {
+          "id": 568,
+          "key": "TC-EV_PAY-0030",
+          "title": "Token with future expiration but invalid format",
+          "category": "positive",
+          "priority": "high",
+          "approval_status": "draft",
+          "preconditions": null,
+          "expected": null
+        },
+        {
+          "id": 567,
+          "key": "TC-EV_PAY-0029",
+          "title": "Malformed token missing signature part",
+          "category": "positive",
+          "priority": "critical",
+          "approval_status": "draft",
+          "preconditions": null,
+          "expected": null
+        },
+        {
+          "id": 566,
+          "key": "TC-EV_PAY-0028",
+          "title": "Expired token at exact expiration boundary",
+          "category": "positive",
+          "priority": "critical",
+          "approval_status": "draft",
+          "preconditions": null,
+          "expected": null
+        },
+        {
+          "id": 565,
+          "key": "TC-EV_PAY-0027",
+          "title": "Reject request without authentication token",
+          "category": "positive",
+          "priority": "critical",
+          "approval_status": "draft",
+          "preconditions": null,
+          "expected": null
+        },
+        {
+          "id": 564,
+          "key": "TC-EV_PAY-0026",
+          "title": "Reject malformed authentication token",
+          "category": "positive",
+          "priority": "critical",
+          "approval_status": "draft",
+          "preconditions": null,
+          "expected": null
+        }
+      ]
+    },
+    "stage_7_test_validation_and_agent_simulation": {
+      "golden_policies_count": 5,
+      "agent_stages_count": 9,
+      "ast_allowlist_scan_rate": 1.0,
+      "hallucination_quote_verification_rate": 1.0,
+      "judge_agreement": 0.98,
+      "total_latency_ms": 299,
+      "total_tokens": 2434,
+      "sample_stages": [
+        {
+          "id": 1,
+          "agent": "Ingestion & Document Parser",
+          "role": "Document Ingestion & Text Sanitizer",
+          "status": "VERIFIED",
+          "latency_ms": 24,
+          "tokens": 142
+        },
+        {
+          "id": 2,
+          "agent": "Clause Parser Agent",
+          "role": "Deterministic Semantic Decomposer",
+          "status": "VERIFIED",
+          "latency_ms": 38,
+          "tokens": 310
+        },
+        {
+          "id": 3,
+          "agent": "Ambiguity Detector Agent",
+          "role": "Vague Lexicon & Gap Scanner",
+          "status": "FLAGGED",
+          "latency_ms": 18,
+          "tokens": 195
+        },
+        {
+          "id": 4,
+          "agent": "Acceptance Criteria Agent",
+          "role": "Gherkin BDD Synthesizer",
+          "status": "VERIFIED",
+          "latency_ms": 45,
+          "tokens": 420
+        }
+      ]
+    },
+    "stage_9_policy_yaml_engine_and_behaviour_simulation": {
+      "policy_evaluated": "Standard Weekly Overtime (FLSA Standard)",
+      "summary": {
+        "total_tests": 5,
+        "passed": 5,
+        "failed": 0,
+        "red_to_green_verified": true,
+        "mutation_detected": true,
+        "execution_time_ms": 0.94
+      },
+      "red_stub_failed": 2,
+      "green_actual_passed": 5,
+      "mutation_red_killed": true,
+      "mutation_applied": "Mutated RULE-W40 threshold from 40.0h to 50.0h"
+    },
+    "stage_11_test_runs_and_defect_management": {
+      "executions_count": 0,
+      "executions": [],
+      "defects_count": 1,
+      "defects": [
+        {
+          "id": 14,
+          "key": "DEF-EV_PAY-0001",
+          "title": "FLSA Regular Rate Bonus Allocation Mismatch in Overtime Batch",
+          "severity": "high",
+          "status": "open",
+          "requirement_id": 374
+        }
+      ]
+    },
+    "stage_13_traceability_and_quality_analytics": {
+      "traceability_matrix": {
+        "total_requirements": 228,
+        "total_tests": 25,
+        "total_covered_clauses": 0,
+        "matrix_entries_sample": []
+      },
+      "analytics_summary": {
+        "pass_rate": null,
+        "total_clauses": null,
+        "covered_clauses": null,
+        "coverage_pct": null,
+        "open_defects": null,
+        "executions_count": null
+      }
+    }
+  },
+  "findings": []
+}

@@ -19,38 +19,10 @@ Verifies:
 """
 from __future__ import annotations
 
-import io
-from pathlib import Path
-
-import pytest
 from sqlalchemy import select
 
-from app.db.base import get_db
 from app.db.models import (
-    AcceptanceCriterion,
-    Document,
-    Execution,
     Project,
-    Requirement,
-    RequirementClarification,
-    TestCase,
-)
-from app.services.document_processor import process_document, save_document_file, validate_file_upload
-from app.services.requirement_intelligence import analyze_and_extract_project_requirements
-from app.services.requirements_dashboard import (
-    generate_comprehensive_quality_report,
-    generate_quality_report_html,
-    get_project_traceability_matrix,
-    get_requirements_project_dashboard_data,
-)
-from app.services.simulation_engine import (
-    run_behaviour_simulation,
-    run_specification_validation,
-)
-from app.services.test_design import (
-    generate_acceptance_criteria_for_project,
-    generate_test_scenarios_for_project,
-    validate_test_specification,
 )
 
 

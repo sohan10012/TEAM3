@@ -294,6 +294,16 @@ def _generate_tests(state: ReqState, edge: bool) -> ReqState:
             for item in valid_tests:
                 data = item.model_dump()
                 data["ac_keys"] = [group_crit[i - 1]["key"] for i in item.ac_refs if 0 < i <= len(group_crit)]
+                if edge:
+                    data["test_category"] = "edge_case"
+                elif not data.get("test_category"):
+                    tt = (data.get("test_type") or "").lower()
+                    if tt == "boundary":
+                        data["test_category"] = "boundary_value"
+                    elif tt in ("positive", "negative", "security", "integration"):
+                        data["test_category"] = tt
+                    else:
+                        data["test_category"] = "positive"
                 t = create_test(db, req, data, actor_id=state.get("actor_id"), provider=res.provider,
                                 model=res.model, clauses=clauses)
                 out["generated_tests"].append(t.key)

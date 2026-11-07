@@ -21,6 +21,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Dialog, Field, Input, Key, Select, Textarea } from "@/components/ui";
+import { EmbeddedDocumentViewer } from "@/components/documents/EmbeddedDocumentViewer";
 import { api } from "@/services/api";
 import type { Page, Project, Requirement } from "@/types/models";
 import { cn, fmtDate } from "@/utils/format";
@@ -59,6 +60,14 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
   const [activeTab, setActiveTab] = useState<"intake" | "extracted" | "insights" | "clarifications" | "traceability">("intake");
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [docSubTab, setDocSubTab] = useState<"overview" | "content" | "requirements" | "analysis" | "metadata">("overview");
+  const [viewerTargetPage, setViewerTargetPage] = useState<number>(1);
+  const [viewerTargetExcerpt, setViewerTargetExcerpt] = useState<string | null>(null);
+
+  const parsePageNum = (p: string | number | null | undefined): number => {
+    if (!p) return 1;
+    const match = String(p).match(/\d+/);
+    return match ? parseInt(match[0], 10) : 1;
+  };
 
   // Filter / Search states
   const [reqSearch, setReqSearch] = useState("");
@@ -720,40 +729,63 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       </div>
                     </div>
 
-                    {/* Bottom: Key Insights from This Document */}
+                    {/* Bottom: Dynamic Extraction Insights */}
                     <div className="pt-4 border-t border-slate-100">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 mb-2.5">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
-                        <span>Key Insights from This Document</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 border border-slate-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>Employee management & core HR</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 border border-slate-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>Time & attendance tracking</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 border border-slate-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>Payroll integration</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 border border-slate-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>Role-based access & security</span>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+                          <Sparkles className="h-4 w-4 text-[#3067DB]" />
+                          <span>Extracted Domain Capabilities & Coverage</span>
+                        </div>
+                        <span className="text-2xs text-slate-500">
+                          {docReqs.length} total requirements recorded
                         </span>
                       </div>
+                      {docReqs.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic">
+                          No requirements extracted yet. Click "Process Document" to begin automated extraction.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {Array.from(new Set(docReqs.map((r) => r.category || "functional"))).map((cat) => {
+                            const count = docReqs.filter((r) => (r.category || "functional") === cat).length;
+                            return (
+                              <span
+                                key={cat}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 border border-slate-200"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                <span className="capitalize">{cat.replace(/_/g, " ")} ({count})</span>
+                              </span>
+                            );
+                          })}
+                          {selectedDoc?.metadata?.pages_count && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200">
+                              <span>{selectedDoc.metadata.pages_count} Pages Analyzed</span>
+                            </span>
+                          )}
+                          {selectedDoc?.metadata?.sections?.length > 0 && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700 border border-purple-200">
+                              <span>{selectedDoc.metadata.sections.length} Sections Preserved</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Sub-tab 2: Extracted Content */}
+                {/* Sub-tab 2: Embedded Document Viewer */}
                 {docSubTab === "content" && (
-                  <div className="p-5 space-y-4">
-                    <div className="rounded border border-slate-200 bg-slate-50 p-4 font-mono text-xs text-slate-800 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed">
-                      {selectedDoc.extracted_text_preview || "No extracted text preview is available for this document."}
-                    </div>
+                  <div className="p-4">
+                    <EmbeddedDocumentViewer
+                      documentId={selectedDoc.id}
+                      filename={selectedDoc.filename || selectedDoc.display_name}
+                      fileType={selectedDoc.file_type || "pdf"}
+                      initialPage={viewerTargetPage}
+                      highlightExcerpt={viewerTargetExcerpt}
+                      extractedTextFallback={selectedDoc.extracted_text_preview}
+                      tablesFallback={selectedDoc.metadata?.tables || []}
+                    />
                   </div>
                 )}
 
@@ -762,16 +794,28 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                   <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
                     {docReqs.map((r) => (
                       <div key={r.id} className="p-3.5 hover:bg-slate-50 flex items-start justify-between gap-3">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Key className="text-2xs">{r.key}</Key>
                             <span className="text-xs font-semibold text-slate-900">{r.title}</span>
                           </div>
                           <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{r.description || r.evidence_excerpt}</p>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Badge value={r.category} />
                           <Badge value={r.priority} />
+                          <button
+                            onClick={() => {
+                              setViewerTargetPage(parsePageNum(r.source_page));
+                              setViewerTargetExcerpt(r.evidence_excerpt || null);
+                              setDocSubTab("content");
+                            }}
+                            className="inline-flex items-center gap-1 text-2xs font-medium text-[#3067DB] hover:bg-blue-50 px-2 py-1 rounded border border-blue-200 transition-colors"
+                            title="Open in Document Viewer"
+                          >
+                            <FileText className="h-3 w-3" />
+                            <span>{r.source_page || "View in PDF"}</span>
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -893,7 +937,27 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       <Badge value={r.status || "approved"} />
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className="text-[#3067DB] hover:underline font-medium">View</span>
+                      <div className="flex items-center justify-end gap-2">
+                        {r.document_id && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDocId(r.document_id ?? null);
+                              setViewerTargetPage(parsePageNum(r.source_page));
+                              setViewerTargetExcerpt(r.evidence_excerpt || null);
+                              setActiveTab("intake");
+                              setDocSubTab("content");
+                            }}
+                            className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-2xs font-medium text-[#3067DB] hover:bg-blue-100 transition-colors"
+                            title="Jump to original PDF source passage"
+                          >
+                            <FileText className="h-3 w-3" />
+                            <span>{r.source_page || "PDF"}</span>
+                          </button>
+                        )}
+                        <span className="text-[#3067DB] hover:underline font-medium">View</span>
+                      </div>
                     </td>
                   </tr>
                 ))}

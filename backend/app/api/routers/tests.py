@@ -19,7 +19,7 @@ from app.api.deps import (
 from app.core.errors import AppError, BadRequest
 from app.db.base import get_db
 from app.db.models import ExecutionResult, Requirement, Review, Run, TestCase, TestCaseVersion
-from app.domain.enums import TEST_TYPES
+from app.domain.enums import ALL_TEST_CATEGORIES, TEST_TYPES
 from app.graph import requirement_graph
 from app.services import audit
 from app.services.tests import create_test, edit_test, review_test
@@ -84,6 +84,7 @@ class TestIn(BaseModel):
     expected_result: str = Field(min_length=3)
     priority: str = "medium"
     test_type: str = "functional"
+    test_category: str = "positive"
     source_quote: str = Field(min_length=8)
     automation: str = Field("manual", pattern="^(pytest|playwright|manual)$")
     script: str | None = None
@@ -94,7 +95,13 @@ def create_manual(body: TestIn, p: Principal = Depends(require("test.write")), d
     req = check_entity_project(db, p, db.get(Requirement, body.requirement_id), "Requirement")
     if body.test_type not in TEST_TYPES:
         raise BadRequest(f"test_type must be one of {TEST_TYPES}")
+    cat = body.test_category or "positive"
+    if cat == "boundary":
+        cat = "boundary_value"
+    if cat not in ALL_TEST_CATEGORIES:
+        raise BadRequest(f"test_category must be one of {ALL_TEST_CATEGORIES}")
     data = body.model_dump()
+    data["test_category"] = cat
     data["steps"] = [s.model_dump() for s in body.steps]
     data["confidence"] = 1.0
     data["rationale"] = "Manually authored"
@@ -111,6 +118,7 @@ class TestPatch(BaseModel):
     expected_result: str | None = None
     priority: str | None = None
     test_type: str | None = None
+    test_category: str | None = None
     clause_keys: list[str] | None = None
     source_quote: str | None = None
     automation: str | None = Field(None, pattern="^(pytest|playwright|manual)$")
@@ -123,7 +131,16 @@ class TestPatch(BaseModel):
 def patch_test(test_id: int, body: TestPatch, p: Principal = Depends(require("test.write")),
                db: Session = Depends(get_db)):
     t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    if body.test_category:
+        cat = body.test_category
+        if cat == "boundary":
+            cat = "boundary_value"
+        if cat not in ALL_TEST_CATEGORIES:
+            raise BadRequest(f"test_category must be one of {ALL_TEST_CATEGORIES}")
     changes = body.model_dump(exclude={"note"}, exclude_none=True)
+    if "test_category" in changes:
+        if changes["test_category"] == "boundary":
+            changes["test_category"] = "boundary_value"
     if "steps" in changes:
         changes["steps"] = [s.model_dump() for s in body.steps or []]
     if not changes:

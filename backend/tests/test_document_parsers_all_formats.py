@@ -9,10 +9,11 @@ Verifies:
 - MD: Markdown headings, code blocks, sections
 - Edge cases: Empty files, unsupported extensions, oversized files, directory traversal attempts
 """
-import io
 from pathlib import Path
+
 import pytest
-from app.core.errors import AppError, BadRequest
+
+from app.core.errors import AppError
 from app.services.document_processor import (
     ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,
@@ -66,9 +67,13 @@ def test_validate_file_upload_traversal_sanitized():
     assert "/" not in name
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SAMPLE_DOCS_DIR = REPO_ROOT / "data" / "dayforce_sample_docs"
+
+
 def test_parse_dayforce_prd_pdf():
-    pdf_path = Path("data/dayforce_sample_docs/Dayforce_PRD_v1.2.pdf")
-    assert pdf_path.exists(), "Dayforce PRD PDF must exist"
+    pdf_path = SAMPLE_DOCS_DIR / "Dayforce_PRD_v1.2.pdf"
+    assert pdf_path.exists(), f"Dayforce PRD PDF must exist at {pdf_path}"
     res = parse_pdf(pdf_path)
     assert res["pages_count"] >= 2
     assert "Dayforce Enterprise Product Requirements" in res["extracted_text"]
@@ -78,8 +83,8 @@ def test_parse_dayforce_prd_pdf():
 
 
 def test_parse_dayforce_srs_docx():
-    docx_path = Path("data/dayforce_sample_docs/Dayforce_SRS_v1.0.docx")
-    assert docx_path.exists(), "Dayforce SRS DOCX must exist"
+    docx_path = SAMPLE_DOCS_DIR / "Dayforce_SRS_v1.0.docx"
+    assert docx_path.exists(), f"Dayforce SRS DOCX must exist at {docx_path}"
     res = parse_docx(docx_path)
     assert "Dayforce Software Requirements Specification" in res["extracted_text"]
     assert len(res["sections"]) >= 4
@@ -89,8 +94,8 @@ def test_parse_dayforce_srs_docx():
 
 
 def test_parse_dayforce_business_rules_xlsx():
-    xlsx_path = Path("data/dayforce_sample_docs/Business_Rules.xlsx")
-    assert xlsx_path.exists(), "Dayforce Business Rules XLSX must exist"
+    xlsx_path = SAMPLE_DOCS_DIR / "Business_Rules.xlsx"
+    assert xlsx_path.exists(), f"Dayforce Business Rules XLSX must exist at {xlsx_path}"
     res = parse_xlsx(xlsx_path)
     assert res["sheets_count"] >= 3
     assert "Attendance_Policies" in res["extracted_text"]
@@ -122,8 +127,8 @@ def test_parse_txt_file(tmp_path):
 
 
 def test_parse_markdown_file():
-    md_path = Path("data/dayforce_sample_docs/Dayforce_API_Integration.md")
-    assert md_path.exists()
+    md_path = SAMPLE_DOCS_DIR / "Dayforce_API_Integration.md"
+    assert md_path.exists(), f"Dayforce API Integration markdown must exist at {md_path}"
     res = parse_markdown(md_path)
     assert "Authentication & Security Expectations" in res["extracted_text"]
     assert len(res["sections"]) >= 3
@@ -131,6 +136,6 @@ def test_parse_markdown_file():
 
 
 def test_extract_document_content_routing():
-    pdf_path = Path("data/dayforce_sample_docs/Dayforce_PRD_v1.2.pdf")
+    pdf_path = SAMPLE_DOCS_DIR / "Dayforce_PRD_v1.2.pdf"
     res = extract_document_content(pdf_path, "pdf")
     assert "Dayforce" in res["extracted_text"]

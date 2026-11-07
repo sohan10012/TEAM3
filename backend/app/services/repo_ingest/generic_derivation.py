@@ -1,6 +1,7 @@
 """Generic repository derivation: parses README, extracts capabilities, clauses, and initial tests."""
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import time
@@ -734,7 +735,7 @@ def diff_aware_refresh(
     if not ig or not ig.config:
         raise BadRequest("Project is not connected to a git repository")
 
-    ig_cfg = json.loads(ig.config) if isinstance(ig.config, str) else (ig.config or {})
+    ig_cfg: dict[str, Any] = ig.config if isinstance(ig.config, dict) else (json.loads(str(ig.config)) if ig.config else {})
     old_sha = ig_cfg.get("commit_sha", "unknown")
 
     # Get current commit sha

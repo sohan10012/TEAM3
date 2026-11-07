@@ -40,6 +40,7 @@ def current_principal(request: Request, db: Session = Depends(get_db)) -> Princi
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
         from datetime import timedelta
+
         from app.core.config import get_settings
         s = get_settings()
         if s.single_operator and s.app_env != "test" and request.method in ("GET", "HEAD", "OPTIONS"):

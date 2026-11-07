@@ -64,6 +64,7 @@ jobs:
     env:
       TRACETEST_DATA_DIR: ${{ github.workspace }}/var
       TRACETEST_ENV: test
+      TRACETEST_SEED_ON_STARTUP: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

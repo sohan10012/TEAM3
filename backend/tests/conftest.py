@@ -31,6 +31,7 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
+
 get_settings.cache_clear()
 from app.services import tasks  # noqa: E402
 

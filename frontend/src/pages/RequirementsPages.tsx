@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Sparkles, Upload } from "lucide-react";
+import { AlertTriangle, FileText, Sparkles, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { DataTable, FilterChips } from "@/components/DataTable";
+import { EmbeddedDocumentViewer } from "@/components/documents/EmbeddedDocumentViewer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RequirementsManagementView } from "@/components/requirements/RequirementsManagementView";
 import { RunProgress } from "@/components/RunProgress";
@@ -25,11 +26,7 @@ const reqSchema = z.object({
   category: z.string(), module_id: z.number().nullable(),
 });
 
-export function RequirementsPage() {
-  const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <RequirementsManagementView projectId={projectId} current={current} />;
-  }
+function CodeBasedRequirementsView({ projectId }: { projectId: number | null }) {
   const st = useListState(["project_id", "status", "priority", "category"], { sort: "updated_at" });
   const pid = st.filters.project_id || (projectId ? String(projectId) : "");
   const params = { ...st.params, ...(pid ? { project_id: pid } : {}) };
@@ -133,6 +130,14 @@ export function RequirementsPage() {
       {mode === "upload" && <UploadDialog onClose={() => setMode(null)} />}
     </>
   );
+}
+
+export function RequirementsPage() {
+  const { projectId, current } = useProjects();
+  if (projectId && current?.project_type === "requirements_based") {
+    return <RequirementsManagementView projectId={projectId} current={current} />;
+  }
+  return <CodeBasedRequirementsView projectId={projectId} />;
 }
 
 function useProjectDetail(pid: number | null) {
@@ -301,10 +306,52 @@ export function RequirementDetailPage() {
           </div>
         } />
       <Tabs value={tab} onValueChange={(v) => setSp({ tab: v }, { replace: true })} tabs={[
-        { value: "clauses", label: `Clauses (${r.clauses?.length ?? 0})`, content: <ClausesTab r={r} /> },
+        { value: "clauses", label: `Clauses (${r.clauses?.length ?? 0})`, content: <ClausesTab r={r} onOpenDocument={() => setSp({ tab: "document" }, { replace: true })} /> },
         { value: "analysis", label: "AI analysis", content: <AnalysisTab r={r} onChange={q.refetch} /> },
         { value: "criteria", label: "Acceptance criteria", content: <CriteriaTab r={r} /> },
         { value: "tests", label: `Tests (${r.test_count ?? 0})`, content: <RequirementTests r={r} /> },
+        ...(r.document_id ? [{
+          value: "document",
+          label: "Source PDF",
+          content: (
+            <div className="space-y-4">
+              <Panel className="p-4 bg-white border-slate-200">
+                <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-[#3067DB]" />
+                    <span className="text-xs font-semibold text-slate-900">Original Document Source</span>
+                    {r.source_page && (
+                      <span className="rounded bg-blue-50 px-2 py-0.5 text-2xs font-mono text-blue-700 border border-blue-200">
+                        {r.source_page}
+                      </span>
+                    )}
+                    {r.source_section && (
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-2xs font-mono text-slate-700">
+                        § {r.source_section}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {r.evidence_excerpt && (
+                  <div className="rounded border border-blue-200 bg-blue-50/60 p-3 mb-4 text-xs font-mono text-blue-900 leading-relaxed">
+                    <span className="font-semibold text-blue-950 uppercase tracking-wider block text-2xs mb-1">Verbatim Grounded Passage:</span>
+                    "{r.evidence_excerpt}"
+                  </div>
+                )}
+                <EmbeddedDocumentViewer
+                  documentId={r.document_id}
+                  filename={r.title}
+                  fileType="pdf"
+                  initialPage={(() => {
+                    const match = String(r.source_page || "").match(/\d+/);
+                    return match ? parseInt(match[0], 10) : 1;
+                  })()}
+                  highlightExcerpt={r.evidence_excerpt}
+                />
+              </Panel>
+            </div>
+          ),
+        }] : []),
         { value: "versions", label: "Versions", content: <VersionsTab r={r} /> },
         { value: "impact", label: "Change impact", content: <ImpactTab r={r} /> },
       ]} />
@@ -313,7 +360,7 @@ export function RequirementDetailPage() {
   );
 }
 
-function ClausesTab({ r }: { r: Requirement }) {
+function ClausesTab({ r, onOpenDocument }: { r: Requirement; onOpenDocument?: () => void }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Panel title="Clauses" className="lg:col-span-2" bodyClass="p-0">
@@ -328,11 +375,47 @@ function ClausesTab({ r }: { r: Requirement }) {
             </div>
           </li>))}</ol>
       </Panel>
-      <Panel title="Details">
-        <KV stacked items={[["Business objective", r.current?.business_objective || "—"], ["Category", label(r.category)],
-          ["Source", label(r.source_type)], ["Project", r.project_key], ["Created", fmtDate(r.created_at)],
-          ["Analysed", fmtDate(r.analysed_at)]]} />
-      </Panel>
+      <div className="space-y-4">
+        {r.document_id && (
+          <Panel title="Source Grounding & Provenance" className="bg-blue-50/30 border-blue-200">
+            <div className="space-y-2.5 text-xs">
+              <div>
+                <span className="text-slate-500 block text-2xs">Document Reference</span>
+                <span className="font-semibold text-slate-800">Document #{r.document_id}</span>
+              </div>
+              {r.source_page && (
+                <div>
+                  <span className="text-slate-500 block text-2xs">Location</span>
+                  <span className="font-mono text-slate-700">{r.source_page} {r.source_section ? `· § ${r.source_section}` : ""}</span>
+                </div>
+              )}
+              {r.evidence_excerpt && (
+                <div>
+                  <span className="text-slate-500 block text-2xs">Cited Source Excerpt</span>
+                  <p className="font-mono text-[11px] text-slate-700 bg-white p-2 rounded border border-slate-200 mt-1 line-clamp-4">
+                    "{r.evidence_excerpt}"
+                  </p>
+                </div>
+              )}
+              {onOpenDocument && (
+                <button
+                  type="button"
+                  onClick={onOpenDocument}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded bg-[#3067DB] hover:bg-[#2554B8] text-white px-3 py-1.5 text-xs font-medium shadow-xs transition-colors mt-2"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Inspect in Embedded PDF Viewer</span>
+                </button>
+              )}
+            </div>
+          </Panel>
+        )}
+        <Panel title="Details">
+          <KV stacked items={[["Business objective", r.current?.business_objective || "—"], ["Category", label(r.category)],
+            ["Source", label(r.source_type)], ["Project", r.project_key], ["Created", fmtDate(r.created_at)],
+            ["Analysed", fmtDate(r.analysed_at)]]} />
+        </Panel>
+      </div>
     </div>
   );
 }

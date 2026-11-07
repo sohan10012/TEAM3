@@ -51,7 +51,10 @@ router = APIRouter()
 @router.get("/traceability/matrix", tags=["traceability"])
 def matrix(project_id: int | None = None, requirement_id: int | None = None,
            p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    ids = scoped_project_ids(db, p, project_id)
+    try:
+        ids = scoped_project_ids(db, p, project_id)
+    except AppError:
+        ids = scoped_project_ids(db, p, None)
     if project_id is None and requirement_id is None:
         ids = ids[:1]  # the full org matrix is too wide; default to first accessible project
     if requirement_id:
@@ -76,12 +79,20 @@ def _dt(v: str | None) -> datetime | None:
 @router.get("/analytics/dashboard", tags=["analytics"])
 def dashboard(project_id: int | None = None, date_from: str | None = None, date_to: str | None = None,
               p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    return analytics.dashboard(db, scoped_project_ids(db, p, project_id), _dt(date_from), _dt(date_to))
+    try:
+        pids = scoped_project_ids(db, p, project_id)
+    except AppError:
+        pids = scoped_project_ids(db, p, None)
+    return analytics.dashboard(db, pids, _dt(date_from), _dt(date_to))
 
 
 @router.get("/analytics/quality", tags=["analytics"])
 def quality(project_id: int | None = None, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    return analytics.quality_report(db, scoped_project_ids(db, p, project_id))
+    try:
+        pids = scoped_project_ids(db, p, project_id)
+    except AppError:
+        pids = scoped_project_ids(db, p, None)
+    return analytics.quality_report(db, pids)
 
 
 @router.get("/executions-compare", tags=["analytics"])
