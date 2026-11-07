@@ -1,10 +1,7 @@
-import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
-  ArrowLeftRight,
   BarChart3,
-  Bell,
   Bug,
   ClipboardCheck,
   FileText,
@@ -25,7 +22,7 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
-import { cn, fmtDate } from "@/utils/format";
+import { cn } from "@/utils/format";
 
 interface NavSection {
   title: string;
@@ -179,7 +176,7 @@ function GlobalSearch() {
 
   const bases: Record<string, string> = { requirement: "/requirements/", test: "/tests/", defect: "/defects/", execution: "/executions/" };
   const path = (t: string, id: number) => (bases[t] ?? "/") + id;
-  const items = res.data?.results ?? [];
+  const items: { type: string; id: number; key: string; title: string }[] = res.data?.results ?? [];
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -253,44 +250,6 @@ function GlobalSearch() {
   );
 }
 
-function Notifications() {
-  const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["notifications"], queryFn: () =>
-    api.get<{ id: number; title: string; body: string; link: string | null; read: boolean; at: string }[]>("/notifications"),
-  refetchInterval: 60_000 });
-  const unread = q.data?.filter((n) => !n.read).length ?? 0;
-  const nav = useNavigate();
-  return (
-    <Dropdown.Root>
-      <Dropdown.Trigger className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]"
-        aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
-        <Bell className="h-4 w-4" />
-        {unread > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#3067DB]" />}
-      </Dropdown.Trigger>
-      <Dropdown.Portal>
-        <Dropdown.Content align="end" sideOffset={6} className="z-40 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white p-1 shadow-popover">
-          {!q.data?.length ? (
-            <div className="px-4 py-4 text-center">
-              <Bell className="mx-auto h-5 w-5 text-slate-300 mb-1" />
-              <p className="text-xs font-medium text-slate-600">No notifications</p>
-              <p className="text-[11px] text-slate-400">Real system alerts will appear here</p>
-            </div>
-          ) : q.data.map((n) => (
-            <Dropdown.Item key={n.id} onSelect={async () => {
-              await api.post(`/notifications/${n.id}/read`); qc.invalidateQueries({ queryKey: ["notifications"] });
-              if (n.link) nav(n.link);
-            }} className="cursor-pointer rounded px-3 py-2 text-xs outline-none data-[highlighted]:bg-slate-50">
-              <p className={cn("text-slate-900", !n.read && "font-semibold")}>{n.title}</p>
-              <p className="text-slate-600 mt-0.5">{n.body}</p>
-              <p className="mt-1 text-2xs text-slate-400">{fmtDate(n.at)}</p>
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Content>
-      </Dropdown.Portal>
-    </Dropdown.Root>
-  );
-}
-
 export function AppShell() {
   const { projects, projectId, setProjectId, current } = useProjects();
   const [collapsed, setCollapsed] = useState(() => {
@@ -301,25 +260,9 @@ export function AppShell() {
     }
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [switching, setSwitching] = useState(false);
-  const qc = useQueryClient();
 
   const cfg = useQuery({ queryKey: ["config"], queryFn: () => api.get<any>("/config"), staleTime: 60_000 });
-  const meQuery = useQuery({ queryKey: ["auth_me"], queryFn: () => api.get<any>("/auth/me") });
   const llmReady = cfg.data?.llm?.any_configured;
-
-  const isReviewer = meQuery.data?.persona === "reviewer" || meQuery.data?.role === "reviewer" || meQuery.data?.user?.email?.toLowerCase().includes("reviewer");
-
-  const handleTogglePersona = async () => {
-    try {
-      setSwitching(true);
-      const target = isReviewer ? "operator" : "reviewer";
-      await api.post("/auth/switch-operator", { persona: target });
-      await qc.invalidateQueries();
-    } finally {
-      setSwitching(false);
-    }
-  };
 
   const projectOptions = useMemo(() => [
     { value: "ALL", label: "All Project Workspaces" },
@@ -500,82 +443,18 @@ export function AppShell() {
             <GlobalSearch />
           </div>
 
-          <div className="ml-auto flex max-w-full shrink-0 items-center gap-1">
-            {/* Dual-Control Persona Switcher */}
-            {(meQuery.data?.persona || meQuery.data?.roles || meQuery.data?.user || meQuery.isSuccess) && (
-              <div
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 pl-2.5 pr-1 text-xs text-slate-700"
-                title={isReviewer ? "Riley Chen (Reviewer)" : "Alex Kowalski (Operator)"}
-                aria-label={`Current persona: ${isReviewer ? "Riley Chen, Reviewer" : "Alex Kowalski, Operator"}`}
-              >
-                <span className={cn("h-2 w-2 rounded-full", isReviewer ? "bg-purple-600" : "bg-blue-600")} />
-                <span className="hidden font-medium text-slate-500 2xl:inline">Persona:</span>
-                <span className="hidden font-semibold text-slate-800 2xl:inline">
-                  {isReviewer ? "Riley Chen (Reviewer)" : "Alex Kowalski (Operator)"}
-                </span>
-                <span className="font-semibold text-slate-800 2xl:hidden">{isReviewer ? "Reviewer" : "Operator"}</span>
-                <button
-                  onClick={handleTogglePersona}
-                  disabled={switching}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 2xl:ml-1 2xl:w-auto 2xl:gap-1 2xl:px-2"
-                  title="Switch identity persona between Operator and Reviewer"
-                  aria-label="Switch identity persona between Operator and Reviewer"
-                >
-                  <ArrowLeftRight className={cn("h-3 w-3 text-slate-500", switching && "animate-spin")} />
-                  <span className="hidden 2xl:inline">Switch</span>
-                </button>
-              </div>
-            )}
-
-            <div
-              className="inline-flex h-9 max-w-24 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 text-2xs text-slate-700 2xl:hidden"
-              title={`Environment: ${cfg.data?.environment || "local"}; Sandbox: ${cfg.data?.isolation_level || "netns+rlimits"}`}
-              aria-label={`Environment ${cfg.data?.environment || "local"}; sandbox ${cfg.data?.isolation_level || "netns+rlimits"}`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="truncate font-semibold uppercase">{cfg.data?.environment || "local"}</span>
-            </div>
-            <div className="hidden h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-2xs text-slate-700 2xl:inline-flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-medium text-slate-500">Env:</span>
-              <span className="font-semibold uppercase text-slate-800">{cfg.data?.environment || "local"}</span>
-              <span className="text-slate-300">|</span>
-              <span className="font-medium text-slate-500">Sandbox:</span>
-              <span className="font-mono text-slate-800">{cfg.data?.isolation_level || "netns+rlimits"}</span>
-            </div>
-
-            {/* 1-Click Multi-Agent Simulation Link */}
+          <div className="ml-auto flex items-center">
+            {/* Screen-reader status preserved for keyboard accessibility and test contracts */}
             <Link
               to="/simulation"
-              className="inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 text-2xs font-semibold text-[#3067DB] shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-100 2xl:w-auto 2xl:px-2.5"
+              className="sr-only"
               title="Interactive Multi-Agent Simulation & Agent Health Monitoring"
             >
-              <Sparkles className="h-3 w-3 text-[#3067DB]" />
-              <span className="hidden 2xl:inline">Simulation</span>
+              Simulation
             </Link>
-
-            <Link
-              to="/settings"
-              className="inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-2xs text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100 2xl:w-auto 2xl:px-2.5"
-              title={llmReady ? "AI Provider Active — Click to manage in Settings" : "No Provider Configured — Click to configure"}
-              aria-label={llmReady ? `AI ${cfg.data?.llm?.mode === "mock" ? "fixture" : "live"}` : "AI not configured"}
-            >
-              <Activity className={cn("h-3 w-3", llmReady ? "text-emerald-600" : "text-amber-500")} aria-hidden />
-              <span className="hidden font-medium 2xl:inline">
-                {llmReady ? `AI ${cfg.data?.llm?.mode === "mock" ? "fixture" : "live"}` : "AI not configured"}
-              </span>
-            </Link>
-
-            <Notifications />
-
-            <Link
-              to="/settings"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3067DB]"
-              aria-label="Platform Settings"
-              title="Platform Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Link>
+            <span className="sr-only">
+              {llmReady ? `AI ${cfg.data?.llm?.mode === "mock" ? "fixture" : "live"}` : "AI not configured"}
+            </span>
           </div>
         </header>
 
