@@ -233,6 +233,12 @@ export function DefectsPage() {
         actions={<>
           <a className="text-sm text-accent hover:underline" href={downloadUrl("/exports/defects.csv", { project_id: pid })}>Export CSV</a>
           {can("defect.write") && <Button variant="primary" onClick={() => setCreate(true)}>Log defect</Button>}</>} />
+      {recs.error ? (
+        <Notice tone="warn">
+          Could not load pending defect recommendations.{" "}
+          <button type="button" className="font-medium underline" onClick={() => void recs.refetch()}>Retry</button>
+        </Notice>
+      ) : null}
       {(recs.data?.total ?? 0) > 0 && st.filters.approval_status !== "recommended" && <div className="mb-3"><Notice>
         {recs.data!.total} defect recommendation{recs.data!.total === 1 ? " is" : "s are"} waiting for human approval.{" "}
         <button className="font-medium underline" onClick={() => st.setFilter("approval_status", "recommended")}>Review recommendations</button></Notice></div>}

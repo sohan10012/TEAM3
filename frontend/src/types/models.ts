@@ -55,7 +55,8 @@ export interface Execution { id: number; key: string; project_id: number; suite:
   environment: Environment | null; source: string; runner: string; status: string; isolation_level?: string; hcm_version: string | null; total: number;
   passed: number; failed: number; errored: number; skipped: number; duration_ms: number; commit_sha: string | null;
   branch: string | null; retry_of_id: number | null; run_id: number | null; triggered_by: UserRef | null;
-  started_at: string | null; finished_at: string | null; results?: ExecResult[];
+  started_at: string | null; finished_at: string | null; execution_type?: string; log_excerpt?: string;
+  results?: ExecResult[];
   artifacts?: { id: number; kind: string; name: string; size_bytes: number; sha256: string }[] }
 export interface ExecResult { id: number; execution_id: number; test_case_id: number; test_key: string; test_title: string;
   test_case_version: number; script_hash: string | null; status: string; duration_ms: number; message: string;
@@ -332,7 +333,7 @@ export interface RequirementsDashboardData {
     specification_validation_runs: number;
     simulation_runs: number;
     external_executions: number;
-    latest_execution: {
+    latest_run: {
       id: number;
       key: string;
       source: string;

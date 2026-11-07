@@ -51,9 +51,9 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
     queryFn: () => api.get<any[]>(`/projects/${projectId}/clarifications`),
   });
 
-  const docs = docsQ.data || [];
-  const reqs = reqsQ.data?.items || [];
-  const clars = clarsQ.data || [];
+  const docs = useMemo(() => docsQ.data ?? [], [docsQ.data]);
+  const reqs = useMemo(() => reqsQ.data?.items ?? [], [reqsQ.data?.items]);
+  const clars = useMemo(() => clarsQ.data ?? [], [clarsQ.data]);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<"intake" | "extracted" | "insights" | "clarifications" | "traceability">("intake");
@@ -83,11 +83,13 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
   }, [docs, selectedDocId]);
 
   // Derived counts
-  const functionalCount = useMemo(() => reqs.filter((r) => r.category === "functional").length || 42, [reqs]);
-  const nonFunctionalCount = useMemo(() => reqs.filter((r) => r.category === "non_functional").length || 8, [reqs]);
-  const businessRulesCount = useMemo(() => reqs.filter((r) => r.category === "business_rule").length || 6, [reqs]);
-  const ambiguitiesCount = useMemo(() => clars.filter((c) => c.type !== "contradiction").length || 4, [clars]);
-  const contradictionsCount = useMemo(() => clars.filter((c) => c.type === "contradiction").length || 1, [clars]);
+  const requirementsTotal = reqsQ.data?.total ?? reqs.length;
+  const requirementsComplete = requirementsTotal === reqs.length;
+  const functionalCount = useMemo(() => requirementsComplete ? reqs.filter((r) => r.category === "functional").length : null, [reqs, requirementsComplete]);
+  const nonFunctionalCount = useMemo(() => requirementsComplete ? reqs.filter((r) => r.category === "non_functional").length : null, [reqs, requirementsComplete]);
+  const businessRulesCount = useMemo(() => requirementsComplete ? reqs.filter((r) => r.category === "business_rule").length : null, [reqs, requirementsComplete]);
+  const ambiguitiesCount = useMemo(() => clars.filter((c) => c.type !== "contradiction").length, [clars]);
+  const contradictionsCount = useMemo(() => clars.filter((c) => c.type === "contradiction").length, [clars]);
 
   // Document upload mutation
   const uploadM = useMutation({
@@ -121,16 +123,28 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
   });
 
   // Process all mutation
-  const [isProcessingAll, setIsProcessingAll] = useState(false);
-  const handleProcessAll = () => {
-    setIsProcessingAll(true);
-    setTimeout(() => {
-      setIsProcessingAll(false);
-      toast.ok("All project documents processed and verified");
+  const processAllM = useMutation({
+    mutationFn: async () => {
+      const needsProcessing = docs.filter((doc) =>
+        !["completed", "extracted", "queued", "processing"].includes(doc.extraction_status || doc.status)
+      );
+      const outcomes = await Promise.allSettled(
+        needsProcessing.map((doc) => api.post(`/documents/${doc.id}/retry`))
+      );
+      return {
+        queued: outcomes.filter((outcome) => outcome.status === "fulfilled").length,
+        failed: outcomes.filter((outcome) => outcome.status === "rejected").length,
+      };
+    },
+    onSuccess: ({ queued, failed }) => {
+      if (failed) toast.error(`Could not queue ${failed} document${failed === 1 ? "" : "s"} for processing`);
+      else if (queued) toast.ok(`Queued ${queued} document${queued === 1 ? "" : "s"} for processing`);
+      else toast.ok("No documents need processing");
       qc.invalidateQueries({ queryKey: ["project-documents", projectId] });
       qc.invalidateQueries({ queryKey: ["requirements"] });
-    }, 1200);
-  };
+    },
+    onError: toast.error,
+  });
 
   // Resolve clarification mutation
   const resolveClarM = useMutation({
@@ -177,9 +191,9 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
 
   // Breakdown for selected document
   const docBreakdown = useMemo(() => {
-    const fn = docReqs.filter((r) => r.category === "functional").length || 24;
-    const nf = docReqs.filter((r) => r.category === "non_functional").length || 3;
-    const br = docReqs.filter((r) => r.category === "business_rule").length || 1;
+    const fn = docReqs.filter((r) => r.category === "functional").length;
+    const nf = docReqs.filter((r) => r.category === "non_functional").length;
+    const br = docReqs.filter((r) => r.category === "business_rule").length;
     return { fn, nf, br, total: fn + nf + br };
   }, [docReqs]);
 
@@ -201,7 +215,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
           <Link to="/projects" className="hover:text-slate-800 transition-colors">Projects</Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <Link to={`/projects/${projectId}`} className="hover:text-slate-800 transition-colors">
-            {current?.name || "Dayforce"}
+            {current?.name || "Project"}
           </Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <span className="text-slate-900 font-semibold">Requirements</span>
@@ -224,8 +238,8 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <Button
               variant="outline"
               size="sm"
-              onClick={handleProcessAll}
-              loading={isProcessingAll}
+              onClick={() => processAllM.mutate()}
+              loading={processAllM.isPending}
               className="border-slate-200 text-slate-700 hover:bg-slate-50"
             >
               <RefreshCw className="h-3.5 w-3.5 text-slate-500 mr-1" />
@@ -264,9 +278,11 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Documents</span>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-slate-900">{docs.length || 3}</span>
+            <span className="text-2xl font-bold text-slate-900">{docs.length}</span>
             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
-              ✓ Processed: {docs.length || 3}
+              {docs.filter((doc) =>
+                doc.status === "completed" || ["extracted", "approved"].includes(doc.extraction_status)
+              ).length} processed
             </span>
           </div>
         </div>
@@ -280,7 +296,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Extracted Requirements</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{reqs.length || 56}</span>
+            <span className="text-2xl font-bold text-slate-900">{requirementsTotal}</span>
           </div>
         </div>
 
@@ -293,7 +309,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Functional</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{functionalCount}</span>
+            <span className="text-2xl font-bold text-slate-900">{functionalCount ?? "—"}</span>
           </div>
         </div>
 
@@ -306,7 +322,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Non-Functional</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{nonFunctionalCount}</span>
+            <span className="text-2xl font-bold text-slate-900">{nonFunctionalCount ?? "—"}</span>
           </div>
         </div>
 
@@ -319,7 +335,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Business Rules</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{businessRulesCount}</span>
+            <span className="text-2xl font-bold text-slate-900">{businessRulesCount ?? "—"}</span>
           </div>
         </div>
 
@@ -376,7 +392,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             )}
           >
             <FileText className="h-4 w-4" />
-            <span>Extracted Requirements ({reqs.length || 56})</span>
+            <span>Extracted Requirements ({requirementsTotal})</span>
           </button>
 
           <button
@@ -402,7 +418,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             )}
           >
             <AlertTriangle className="h-4 w-4" />
-            <span>Clarifications ({clars.length || 5})</span>
+            <span>Clarifications ({clars.length})</span>
           </button>
 
           <button
@@ -449,14 +465,14 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             {/* Uploaded Documents List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <h3 className="font-semibold text-slate-900">Uploaded Documents ({docs.length || 3})</h3>
+                <h3 className="font-semibold text-slate-900">Uploaded Documents ({docs.length})</h3>
                 <ListFilter className="h-4 w-4 text-slate-400" />
               </div>
 
               <div className="space-y-2">
                 {docs.map((doc) => {
                   const isSelected = selectedDoc?.id === doc.id;
-                  const sizeMb = ((doc.file_size_bytes || 5653) / (1024 * 1024)).toFixed(1);
+                  const sizeMb = (doc.file_size_bytes / (1024 * 1024)).toFixed(1);
                   return (
                     <div
                       key={doc.id}
@@ -474,14 +490,14 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                           <h4 className="text-xs font-semibold text-slate-900">{doc.filename}</h4>
                           <p className="text-[11px] text-slate-500 mt-0.5">{getDocTypeLabel(doc)}</p>
                           <p className="text-[10px] text-slate-400 mt-1 font-mono">
-                            v{doc.version || "1.0"} • {sizeMb} MB • Uploaded {fmtDate(doc.created_at, false)}
+                            v{doc.version} • {sizeMb} MB • Uploaded {fmtDate(doc.created_at, false)}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
-                          ✓ Extracted
+                        <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200">
+                          {doc.extraction_status}
                         </span>
                         <button
                           onClick={(e) => {
@@ -605,7 +621,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       {/* Stylized Document Thumbnail (3 cols) */}
                       <div className="md:col-span-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 flex flex-col justify-between items-center text-center shadow-2xs">
                         <div className="w-full space-y-2 py-3">
-                          <span className="text-[11px] font-bold text-slate-800 tracking-wider uppercase block">Dayforce</span>
+                          <span className="text-[11px] font-bold text-slate-800 tracking-wider uppercase block">Document</span>
                           <span className="text-[10px] text-slate-500 font-medium block leading-tight px-1">
                             {getDocTypeLabel(selectedDoc)}
                           </span>
@@ -618,7 +634,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                         </div>
                         <span className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200 shadow-2xs">
                           <FileText className="h-3 w-3 text-slate-400" />
-                          <span>{selectedDoc.metadata?.pages_count || 12} pages</span>
+                          <span>{selectedDoc.metadata?.pages_count ? `${selectedDoc.metadata.pages_count} pages` : "Page count unavailable"}</span>
                         </span>
                       </div>
 
@@ -642,26 +658,26 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-slate-500">Version</span>
-                            <span className="font-mono text-slate-800 font-medium">v{selectedDoc.version || "1.2"}</span>
+                            <span className="font-mono text-slate-800 font-medium">{selectedDoc.version ? `v${selectedDoc.version}` : "—"}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-slate-500">Owner / Source</span>
-                            <span className="font-medium text-slate-800">{selectedDoc.owner || "Product Management"}</span>
+                            <span className="font-medium text-slate-800">{selectedDoc.owner || "—"}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-slate-500">Document Date</span>
-                            <span className="font-medium text-slate-800">{selectedDoc.document_date || "Nov 5, 2026"}</span>
+                            <span className="font-medium text-slate-800">{selectedDoc.document_date || "—"}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-slate-500">Related Module</span>
                             <span className="font-medium text-slate-800 text-right max-w-[150px] truncate">
-                              {selectedDoc.related_module || "Employee Lifecycle, Time & Attendance"}
+                              {selectedDoc.related_module || "—"}
                             </span>
                           </div>
                           <div className="flex justify-between py-0.5 items-center">
                             <span className="text-slate-500">Priority</span>
                             <span className="inline-flex rounded bg-rose-50 px-1.5 py-0.2 text-[10px] font-semibold text-rose-700 border border-rose-200 uppercase">
-                              {selectedDoc.priority || "High"}
+                              {selectedDoc.priority || "—"}
                             </span>
                           </div>
                         </div>
@@ -674,32 +690,20 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                         </h4>
                         <div className="space-y-2 text-[11px]">
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>File uploaded</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400">Nov 7, 10:48 AM</span>
+                            <span className="text-slate-700 font-medium">Upload status</span>
+                            <span className="text-slate-600">{selectedDoc.upload_status || selectedDoc.status}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>Content extracted</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400">Nov 7, 10:49 AM</span>
+                            <span className="text-slate-700 font-medium">Extraction status</span>
+                            <span className="text-slate-600">{selectedDoc.extraction_status || "—"}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>Requirements identified</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400">Nov 7, 10:50 AM</span>
+                            <span className="text-slate-700 font-medium">Uploaded</span>
+                            <span className="text-slate-500">{fmtDate(selectedDoc.created_at, false)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>Analysis completed</span>
-                            </span>
-                            <span className="text-[10px] text-slate-400">Nov 7, 10:50 AM</span>
+                            <span className="text-slate-700 font-medium">Last updated</span>
+                            <span className="text-slate-500">{fmtDate(selectedDoc.updated_at, false)}</span>
                           </div>
 
                           {/* Highlight box */}
@@ -748,7 +752,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                 {docSubTab === "content" && (
                   <div className="p-5 space-y-4">
                     <div className="rounded border border-slate-200 bg-slate-50 p-4 font-mono text-xs text-slate-800 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed">
-                      {selectedDoc.extracted_text_preview || "Document text successfully parsed and indexed."}
+                      {selectedDoc.extracted_text_preview || "No extracted text preview is available for this document."}
                     </div>
                   </div>
                 )}
@@ -780,7 +784,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                     <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-2">
                       <span className="font-semibold text-slate-900 block">AI Quality Evaluation</span>
                       <p className="text-slate-600 leading-relaxed text-[11px]">
-                        Document exhibits high clause density with clear acceptance criteria grounding. Extracted 24 atomic functional obligations, 3 non-functional latency/security constraints, and 1 core attendance business rule.
+                        {docBreakdown.total} requirements are linked to this document: {docBreakdown.fn} functional, {docBreakdown.nf} non-functional, and {docBreakdown.br} business rules.
                       </p>
                     </div>
                   </div>
@@ -792,7 +796,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div className="p-2 rounded border border-slate-200 bg-slate-50">
                         <span className="text-slate-500 block">SHA-256 Checksum</span>
-                        <span className="font-mono text-slate-800 break-all">{selectedDoc.checksum || "a9c66d23..."}</span>
+                        <span className="font-mono text-slate-800 break-all">{selectedDoc.checksum || "—"}</span>
                       </div>
                       <div className="p-2 rounded border border-slate-200 bg-slate-50">
                         <span className="text-slate-500 block">File Size</span>
@@ -907,26 +911,26 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-600">Functional</span>
-                <span className="font-semibold text-slate-900">{functionalCount} (75%)</span>
+                <span className="font-semibold text-slate-900">{functionalCount ?? "—"} ({requirementsComplete && requirementsTotal ? `${Math.round((functionalCount! / requirementsTotal) * 100)}%` : "—"})</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
-                <div className="bg-[#3067DB] h-2 rounded-full" style={{ width: "75%" }} />
+                <div className="bg-[#3067DB] h-2 rounded-full" style={{ width: `${requirementsComplete && requirementsTotal ? (functionalCount! / requirementsTotal) * 100 : 0}%` }} />
               </div>
 
               <div className="flex justify-between pt-2">
                 <span className="text-slate-600">Non-Functional</span>
-                <span className="font-semibold text-slate-900">{nonFunctionalCount} (14.3%)</span>
+                <span className="font-semibold text-slate-900">{nonFunctionalCount ?? "—"} ({requirementsComplete && requirementsTotal ? `${Math.round((nonFunctionalCount! / requirementsTotal) * 100)}%` : "—"})</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
-                <div className="bg-cyan-500 h-2 rounded-full" style={{ width: "14.3%" }} />
+                <div className="bg-cyan-500 h-2 rounded-full" style={{ width: `${requirementsComplete && requirementsTotal ? (nonFunctionalCount! / requirementsTotal) * 100 : 0}%` }} />
               </div>
 
               <div className="flex justify-between pt-2">
                 <span className="text-slate-600">Business Rules</span>
-                <span className="font-semibold text-slate-900">{businessRulesCount} (10.7%)</span>
+                <span className="font-semibold text-slate-900">{businessRulesCount ?? "—"} ({requirementsComplete && requirementsTotal ? `${Math.round((businessRulesCount! / requirementsTotal) * 100)}%` : "—"})</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
-                <div className="bg-indigo-500 h-2 rounded-full" style={{ width: "10.7%" }} />
+                <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${requirementsComplete && requirementsTotal ? (businessRulesCount! / requirementsTotal) * 100 : 0}%` }} />
               </div>
             </div>
           </div>
@@ -934,8 +938,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-3 md:col-span-2">
             <h3 className="text-sm font-semibold text-slate-900">Coverage & Auditability Summary</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              TraceTest AI decomposed Dayforce documentation into 56 grounded obligations with 100% sentence-level citation.
-              All 126 test cases trace directly to approved acceptance criteria with SHA-256 evidence verification.
+              Category distribution reflects {requirementsComplete ? `${requirementsTotal} loaded requirements` : `${reqs.length} loaded of ${requirementsTotal} total requirements`}. Counts and percentages are based on the records currently available from the project API.
             </p>
           </div>
         </div>

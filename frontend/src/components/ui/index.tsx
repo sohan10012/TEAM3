@@ -1,7 +1,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { AlertTriangle, Inbox, Loader2, X } from "lucide-react";
-import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode,
+import { forwardRef, useEffect, useLayoutEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type RefObject,
   type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { ApiError } from "@/services/api";
 import { cn, label } from "@/utils/format";
@@ -21,15 +21,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
     <button ref={ref} disabled={disabled || loading}
       className={cn("inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed",
-        size === "sm" ? "h-7 px-2.5 text-xs" : "h-9 px-3.5 text-sm", variants[variant], className)} {...p}>
+        size === "sm" ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm", variants[variant], className)} {...p}>
       {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
       {children}
     </button>
   ));
 Button.displayName = "Button";
 
-const field = "w-full rounded-md border border-slate-300 bg-white px-2.5 text-sm text-ink placeholder:text-slate-400 " +
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft disabled:bg-slate-50";
+const field = "w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-ink placeholder:text-slate-400 " +
+  "transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft disabled:bg-slate-50";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...p }, ref) =>
   <input ref={ref} className={cn(field, "h-9", className)} {...p} />);
@@ -78,7 +78,7 @@ const tone: Record<string, string> = {
 export function Badge({ value, children, className }: { value?: string | null; children?: ReactNode; className?: string }) {
   const v = value ?? "";
   return (
-    <span className={cn("inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-2xs font-medium ring-1 ring-inset",
+    <span className={cn("inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-2xs font-medium ring-1 ring-inset",
       tone[v] ?? "bg-slate-100 text-slate-700 ring-slate-200", className)}>
       {children ?? (v === "historical_import" ? "Historical import" : v === "platform_run" ? "Platform run" :
         v === "ci" ? "CI" : label(v))}
@@ -92,26 +92,26 @@ export const Key = ({ children, className }: { children: ReactNode; className?: 
 export function Panel({ title, actions, children, className, bodyClass }: { title?: ReactNode; actions?: ReactNode;
   children: ReactNode; className?: string; bodyClass?: string }) {
   return (
-    <section className={cn("rounded-lg border border-slate-200 bg-white", className)}>
+    <section className={cn("min-w-0 rounded-xl border border-slate-200 bg-white shadow-card", className)}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2.5">
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
-          <div className="flex items-center gap-2">{actions}</div>
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
+          <h2 className="min-w-0 text-[15px] font-semibold text-ink">{title}</h2>
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
         </header>
       )}
-      <div className={cn("p-4", bodyClass)}>{children}</div>
+      <div className={cn("min-w-0 p-5", bodyClass)}>{children}</div>
     </section>
   );
 }
 
 export function PageHeader({ title, subtitle, actions }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="mb-6 flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-3xl text-xs text-slate-600 leading-relaxed">{subtitle}</p>}
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+        {subtitle && <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-slate-600">{subtitle}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div>}
+      {actions && <div className="flex max-w-full flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
     </div>
   );
 }
@@ -181,6 +181,75 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   );
 }
 
+export function ResponsiveDetailDrawer({ open, onOpenChange, title, anchorRef, children }: {
+  open: boolean; onOpenChange: (open: boolean) => void; title: string;
+  anchorRef: RefObject<HTMLElement | null>; children: ReactNode;
+}) {
+  const [inline, setInline] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 1536px)").matches
+  );
+  const [smallScreen, setSmallScreen] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches
+  );
+  const [drawerTop, setDrawerTop] = useState(0);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1536px)");
+    const narrow = window.matchMedia("(max-width: 639px)");
+    const update = () => {
+      setInline(media.matches);
+      setSmallScreen(narrow.matches);
+    };
+    update();
+    media.addEventListener("change", update);
+    narrow.addEventListener("change", update);
+    return () => {
+      media.removeEventListener("change", update);
+      narrow.removeEventListener("change", update);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (inline || smallScreen || !open) return;
+    const update = () => {
+      setDrawerTop(Math.max(0, anchorRef.current?.getBoundingClientRect().top ?? 0));
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [anchorRef, inline, open, smallScreen]);
+
+  if (inline) {
+    return <div className="min-w-0 2xl:col-span-4">{children}</div>;
+  }
+
+  const top = smallScreen ? 0 : drawerTop;
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal={false}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay
+          className="fixed inset-x-0 bottom-0 z-40 bg-slate-950/20 2xl:hidden"
+          style={{ top }}
+        />
+        <DialogPrimitive.Content
+          className="fixed right-0 z-50 w-[min(42rem,calc(100vw-1rem))] max-w-full overflow-y-auto border-l border-slate-200 bg-white shadow-2xl focus:outline-none sm:w-[min(42rem,calc(100vw-2rem))] 2xl:hidden"
+          style={{ top, bottom: 0 }}
+        >
+          <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">
+            View the selected record details and available actions.
+          </DialogPrimitive.Description>
+          {children}
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
 export function Tabs({ tabs, value, onValueChange }: { tabs: { value: string; label: ReactNode; content: ReactNode }[];
   value?: string; onValueChange?: (v: string) => void }) {
   return (
@@ -203,7 +272,7 @@ export function Stat({ label: l, value, hint, onClick, intent }: { label: string
   onClick?: () => void; intent?: "bad" | "good" }) {
   const C = onClick ? "button" : "div";
   return (
-    <C onClick={onClick} className={cn("rounded-lg border border-slate-200 bg-white px-4 py-3 text-left",
+    <C onClick={onClick} className={cn("min-w-0 rounded-xl border border-slate-200 bg-white px-5 py-4 text-left shadow-card",
       onClick && "transition-colors hover:border-accent-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring")}>
       <div className="text-xs text-slate-600">{l}</div>
       <div className={cn("mt-1 text-2xl font-semibold tabular-nums text-ink", intent === "bad" && "text-red-700",

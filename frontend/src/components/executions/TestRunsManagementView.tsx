@@ -16,15 +16,14 @@ import {
   RefreshCw,
   Search,
   Settings,
-  Terminal,
   X,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
-import { Button, Dialog, Field, Input, Select } from "@/components/ui";
-import { api } from "@/services/api";
+import { Button, Dialog, Field, Input, ResponsiveDetailDrawer, Select } from "@/components/ui";
+import { api, downloadUrl } from "@/services/api";
 import type { Execution, Page, Project } from "@/types/models";
 import { cn, fmtDuration } from "@/utils/format";
 
@@ -32,33 +31,6 @@ interface TestRunsManagementViewProps {
   projectId: number;
   current: Project | null;
 }
-
-const RUN_NAMES: Record<string, string> = {
-  "RUN-024": "Employee Attendance - Simulation",
-  "RUN-023": "Test Spec Validation - v2",
-  "RUN-022": "Employee API Tests (Staging)",
-  "RUN-021": "Leave Management - Simulation",
-  "RUN-020": "Specification Validation - v1",
-  "RUN-019": "Payroll Rules - Simulation",
-  "RUN-018": "Shift & Schedule - Simulation",
-  "RUN-017": "User Management (Staging)",
-  "RUN-016": "Time Tracking Edge Cases",
-  "RUN-015": "Benefits & Deduction Verification",
-  "RUN-014": "End-to-End Regression Cycle",
-  "RUN-013": "Authentication PKCE Handshake",
-  "RUN-012": "Tax Withholding Engine (2026 Tables)",
-  "RUN-011": "Shift Swap & Manager Approval Flow",
-  "RUN-010": "Overtime Rate Calculation Simulation",
-  "RUN-009": "Onboarding Profile Persistence",
-  "RUN-008": "Manager Delegation Sandbox",
-  "RUN-007": "Kiosk Concurrency Stress Test",
-  "RUN-006": "Leave Balance Carryover Run",
-  "RUN-005": "Audit Log Immutability Spec Check",
-  "RUN-004": "Break Compliance Verification",
-  "RUN-003": "Holiday Premium Rate Calculation",
-  "RUN-002": "Probationary Constraint Check",
-  "RUN-001": "Initial Specification Baseline Run",
-};
 
 export function TestRunsManagementView({ projectId, current }: TestRunsManagementViewProps) {
   const qc = useQueryClient();
@@ -71,7 +43,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     queryFn: () => api.get<Page<Execution>>("/executions", { project_id: projectId, page_size: 200 }),
   });
 
-  const execs = q.data?.items || [];
+  const execs = useMemo(() => q.data?.items ?? [], [q.data?.items]);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<"all" | "validation" | "simulation" | "external">("all");
@@ -80,6 +52,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
   // Selection & drawer state
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(true);
+  const tableLayoutRef = useRef<HTMLDivElement>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -103,33 +76,56 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     });
   }, [execs]);
 
-  // Selected run (default to RUN-024 or first)
+  // Default to the first run returned by the API.
   const selectedRun = useMemo(() => {
     if (!sortedExecs.length) return null;
     if (selectedRunId) {
       const found = sortedExecs.find((e) => e.id === selectedRunId);
       if (found) return found;
     }
-    const r24 = sortedExecs.find((e) => e.key === "RUN-024");
-    return r24 || sortedExecs[0];
+    return sortedExecs[0];
   }, [sortedExecs, selectedRunId]);
 
+  const selectedRunQuery = useQuery({
+    queryKey: ["execution", selectedRun?.id],
+    queryFn: () => api.get<Execution>(`/executions/${selectedRun!.id}`),
+    enabled: Boolean(selectedRun && isDetailOpen),
+  });
+  const selectedLogsQuery = useQuery({
+    queryKey: ["execution-logs", selectedRun?.id],
+    queryFn: () => api.get<{ execution: string; log: string; status: string }>(`/executions/${selectedRun!.id}/logs`),
+    enabled: Boolean(selectedRun && isDetailOpen && runSubTab === "logs"),
+  });
+  const rerunMutation = useMutation({
+    mutationFn: () => api.post(`/executions/${selectedRun!.id}/retry`, {
+      failed_only: false,
+      environment_id: selectedRun!.environment?.id ?? null,
+    }),
+    onSuccess: () => {
+      toast.ok(`Rerun queued for ${selectedRun?.key}`);
+      qc.invalidateQueries({ queryKey: ["executions"] });
+    },
+    onError: toast.error,
+  });
+  const detailedRun = selectedRunQuery.data ?? selectedRun;
+
   // Metric counts
-  const totalRuns = sortedExecs.length || 24;
-  const passedRuns = sortedExecs.filter((e) => e.status === "passed").length || 19;
-  const failedRuns = sortedExecs.filter((e) => e.status === "failed").length || 3;
-  const blockedRuns = sortedExecs.filter((e) => e.status === "cancelled" || e.status === "blocked").length || 2;
+  const totalRuns = q.data?.total ?? sortedExecs.length;
+  const hasCompleteRunSet = totalRuns === sortedExecs.length;
+  const passedRuns = hasCompleteRunSet ? sortedExecs.filter((e) => e.status === "passed").length : null;
+  const failedRuns = hasCompleteRunSet ? sortedExecs.filter((e) => e.status === "failed").length : null;
+  const blockedRuns = hasCompleteRunSet ? sortedExecs.filter((e) => e.status === "cancelled" || e.status === "blocked").length : null;
 
   // Tab counts
-  const valCount = sortedExecs.filter((e) => (e as any).execution_type === "specification_validation").length || 10;
-  const simCount = sortedExecs.filter((e) => (e as any).execution_type === "simulation").length || 12;
-  const extCount = sortedExecs.filter((e) => (e as any).execution_type === "external").length || 2;
+  const valCount = sortedExecs.filter((e) => e.execution_type === "specification_validation").length;
+  const simCount = sortedExecs.filter((e) => e.execution_type === "simulation").length;
+  const extCount = sortedExecs.filter((e) => e.execution_type === "external").length;
 
   // Filtered runs
   const filteredRuns = useMemo(() => {
     return sortedExecs.filter((e) => {
-      const eType = ((e as any).execution_type || e.runner || "simulation").toLowerCase();
-      const runName = RUN_NAMES[e.key] || e.suite?.name || e.key;
+      const eType = (e.execution_type || e.runner || "").toLowerCase();
+      const runName = e.suite?.name || e.key;
 
       // Tab match
       if (activeTab === "validation" && eType !== "specification_validation") return false;
@@ -190,7 +186,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     );
   };
 
-  // Status badge helper matching Screenshot 4
+  // Status badge helper
   const getStatusBadge = (status: string) => {
     if (status === "cancelled" || status === "blocked") {
       return (
@@ -199,11 +195,11 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
         </span>
       );
     }
-    return (
-      <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-2xs font-medium text-emerald-700 border border-emerald-200">
-        ✓ Completed
-      </span>
-    );
+    const passed = status === "passed";
+    return <span className={cn(
+      "inline-flex items-center gap-1 rounded px-2 py-0.5 text-2xs font-medium border",
+      passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-700 border-slate-200"
+    )}>{status}</span>;
   };
 
   // Run icon helper
@@ -229,12 +225,13 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     );
   };
 
-  // Format date helper matching Screenshot 4 (e.g. "Nov 7, 11:24 AM")
+  // Format execution timestamps consistently across the list and details.
   const formatRunDate = (dateStr?: string | null) => {
-    if (!dateStr) return "Nov 7, 11:24 AM";
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "—";
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[d.getMonth()] || "Nov";
+    const month = months[d.getMonth()];
     const day = d.getDate();
     let hours = d.getHours();
     const mins = d.getMinutes().toString().padStart(2, "0");
@@ -251,7 +248,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
           <Link to="/projects" className="hover:text-slate-800 transition-colors">Projects</Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <Link to={`/projects/${projectId}`} className="hover:text-slate-800 transition-colors">
-            {current?.name || "Dayforce"}
+            {current?.name || "Project"}
           </Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
           <span className="text-slate-900 font-semibold">Test Runs</span>
@@ -318,7 +315,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Passed</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{passedRuns}</span>
+            <span className="text-2xl font-bold text-slate-900">{passedRuns ?? "—"}</span>
           </div>
         </div>
 
@@ -331,7 +328,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Failed</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-red-600">{failedRuns}</span>
+            <span className="text-2xl font-bold text-red-600">{failedRuns ?? "—"}</span>
           </div>
         </div>
 
@@ -344,7 +341,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Blocked</span>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold text-amber-600">{blockedRuns}</span>
+            <span className="text-2xl font-bold text-amber-600">{blockedRuns ?? "—"}</span>
           </div>
         </div>
 
@@ -357,8 +354,8 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Execution Types</span>
           </div>
           <div className="mt-2">
-            <span className="text-sm font-semibold text-slate-900 leading-tight block">
-              Validation • Simulation
+            <span className="text-xs font-semibold text-slate-900 leading-tight block">
+              Validation {hasCompleteRunSet ? valCount : "—"} · Simulation {hasCompleteRunSet ? simCount : "—"} · External {hasCompleteRunSet ? extCount : "—"}
             </span>
           </div>
         </div>
@@ -390,7 +387,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             )}
           >
             <Monitor className="h-4 w-4" />
-            <span>Specification Validation ({valCount})</span>
+            <span>Specification Validation ({hasCompleteRunSet ? valCount : "—"})</span>
           </button>
 
           <button
@@ -403,7 +400,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             )}
           >
             <FlaskConical className="h-4 w-4" />
-            <span>Simulation Runs ({simCount})</span>
+            <span>Simulation Runs ({hasCompleteRunSet ? simCount : "—"})</span>
           </button>
 
           <button
@@ -416,26 +413,26 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             )}
           >
             <Database className="h-4 w-4" />
-            <span>External Runs ({extCount})</span>
+            <span>External Runs ({hasCompleteRunSet ? extCount : "—"})</span>
           </button>
         </div>
       </div>
 
       {/* Filter Toolbar matching Screenshot 4 */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-        <div className="relative w-full sm:w-80">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+        <div className="relative w-full min-w-0 sm:w-auto sm:min-w-64 sm:max-w-sm sm:flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search runs (ID, name, tags...)"
-            className="pl-8 text-xs h-9"
+            className="h-9 w-full pl-8 text-xs"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <Select
-            className="text-xs h-9 w-36"
+            className="h-9 w-36 max-w-full shrink-0 text-xs"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -446,7 +443,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
           </Select>
 
           <Select
-            className="text-xs h-9 w-32"
+            className="h-9 w-32 max-w-full shrink-0 text-xs"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -457,7 +454,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
           </Select>
 
           <Select
-            className="text-xs h-9 w-36"
+            className="h-9 w-36 max-w-full shrink-0 text-xs"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           >
@@ -468,7 +465,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
           </Select>
 
           <button
-            className="p-2 border border-slate-200 rounded-md text-slate-500 hover:bg-slate-50"
+            className="shrink-0 rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"
             title="Filter options"
             aria-label="Filter options"
           >
@@ -478,31 +475,30 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
       </div>
 
       {/* Master-Detail Layout matching Screenshot 4 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Side: Runs Table (7 Cols) */}
-        <div className={cn("space-y-3", isDetailOpen ? "lg:col-span-7" : "lg:col-span-12")}>
+      <div ref={tableLayoutRef} className="relative grid min-w-0 grid-cols-1 items-start gap-4 2xl:grid-cols-12">
+        <div className={cn("min-w-0 space-y-3", isDetailOpen ? "2xl:col-span-8" : "2xl:col-span-12")}>
           <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
-            <table className="w-full text-left text-xs">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain">
+            <table className="w-full min-w-[1180px] table-fixed text-left text-xs">
               <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
                 <tr>
-                  <th className="px-3 py-2.5 w-24">Run ID ↑</th>
-                  <th className="px-3 py-2.5">Run Name</th>
-                  <th className="px-3 py-2.5 w-24">Type</th>
-                  <th className="px-3 py-2.5 w-14 text-center">Tests</th>
-                  <th className="px-3 py-2.5 w-14 text-center">Passed</th>
-                  <th className="px-3 py-2.5 w-14 text-center">Failed</th>
-                  <th className="px-3 py-2.5 w-14 text-center">Blocked</th>
-                  <th className="px-3 py-2.5 w-24">Status</th>
-                  <th className="px-3 py-2.5 w-32">Started At ↑</th>
-                  <th className="px-2 py-2.5 w-8 text-center"></th>
+                  <th className="w-36 whitespace-nowrap px-3 py-2.5">Run ID ↑</th>
+                  <th className="w-48 whitespace-nowrap px-3 py-2.5">Run Name</th>
+                  <th className="w-40 whitespace-nowrap px-3 py-2.5">Type</th>
+                  <th className="w-20 whitespace-nowrap px-3 py-2.5 text-center">Tests</th>
+                  <th className="w-20 whitespace-nowrap px-3 py-2.5 text-center">Passed</th>
+                  <th className="w-20 whitespace-nowrap px-3 py-2.5 text-center">Failed</th>
+                  <th className="w-20 whitespace-nowrap px-3 py-2.5 text-center">Skipped</th>
+                  <th className="w-32 whitespace-nowrap px-3 py-2.5">Status</th>
+                  <th className="w-40 whitespace-nowrap px-3 py-2.5">Started At ↑</th>
+                  <th className="w-12 whitespace-nowrap px-2 py-2.5 text-center"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pagedRuns.map((r) => {
                   const isSelected = selectedRun?.id === r.id;
-                  const runType = (r as any).execution_type || r.runner || "simulation";
-                  const runName = RUN_NAMES[r.key] || r.suite?.name || r.key;
-                  const blockedCount = r.skipped || (r.status === "cancelled" ? 2 : 0);
+                  const runType = r.execution_type || r.runner || "";
+                  const runName = r.suite?.name || r.key;
 
                   return (
                     <tr
@@ -516,31 +512,31 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                         isSelected ? "bg-blue-50/40 font-medium" : ""
                       )}
                     >
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         <div className="flex items-center gap-1.5 font-mono text-[#3067DB] font-medium">
                           {getRunIcon(runType)}
                           <span>{r.key}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-slate-900 font-medium max-w-[170px] truncate">
+                      <td className="truncate px-3 py-2.5 font-medium text-slate-900" title={runName}>
                         {runName}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         {getTypeBadge(runType)}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-slate-800">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-center font-mono text-slate-800">
                         {r.total}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-emerald-700 font-medium">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-center font-mono font-medium text-emerald-700">
                         {r.passed}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-red-600 font-medium">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-center font-mono font-medium text-red-600">
                         {r.failed}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-amber-700">
-                        {blockedCount}
+                      <td className="whitespace-nowrap px-3 py-2.5 text-center font-mono text-amber-700">
+                        {r.skipped}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         {getStatusBadge(r.status)}
                       </td>
                       <td className="px-3 py-2.5 text-slate-600 font-mono text-[11px] whitespace-nowrap">
@@ -554,6 +550,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 })}
               </tbody>
             </table>
+            </div>
 
             {/* Pagination footer matching Screenshot 4 */}
             <div className="p-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 bg-white">
@@ -603,7 +600,13 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
 
         {/* Right Side: Test Run Drawer matching Screenshot 4 */}
         {isDetailOpen && selectedRun && (
-          <div className="lg:col-span-5 rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
+          <ResponsiveDetailDrawer
+            open={isDetailOpen}
+            onOpenChange={setIsDetailOpen}
+            title={`Execution details: ${selectedRun.key}`}
+            anchorRef={tableLayoutRef}
+          >
+          <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs">
             {/* Run Header */}
             <div className="p-4 border-b border-slate-200 bg-slate-50/50">
               <div className="flex items-center justify-between">
@@ -631,7 +634,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
               </div>
 
               <h3 className="text-sm font-semibold text-slate-900 mt-2">
-                {RUN_NAMES[selectedRun.key] || selectedRun.suite?.name || "Employee Attendance - Simulation"}
+                {selectedRun.suite?.name || selectedRun.key}
               </h3>
 
               {/* Meta row */}
@@ -639,7 +642,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Execution Type</span>
                   <div className="mt-0.5">
-                    {getTypeBadge((selectedRun as any).execution_type || "simulation")}
+                    {getTypeBadge(selectedRun.execution_type || selectedRun.runner || "")}
                   </div>
                 </div>
 
@@ -653,7 +656,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Duration</span>
                   <span className="font-mono text-[11px] text-slate-800 font-medium block mt-0.5">
-                    {selectedRun.duration_ms ? fmtDuration(selectedRun.duration_ms) : "4m 26s"}
+                    {fmtDuration(selectedRun.duration_ms)}
                   </span>
                 </div>
               </div>
@@ -718,7 +721,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                     Execution Summary
                   </span>
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex min-w-0 flex-wrap items-center gap-4 sm:flex-nowrap">
                     {/* SVG Donut Chart */}
                     <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
                       <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
@@ -731,7 +734,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                           stroke="#E2E8F0"
                           strokeWidth="9"
                         />
-                        {/* Green slice (Passed: ~93.8%) */}
+                        {/* Green slice */}
                         <circle
                           cx="50"
                           cy="50"
@@ -743,7 +746,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                           strokeDashoffset={238.76 * (1 - (selectedRun.passed / Math.max(1, selectedRun.total)))}
                           strokeLinecap="round"
                         />
-                        {/* Red slice (Failed: ~6.2%) */}
+                        {/* Red slice */}
                         {selectedRun.failed > 0 && (
                           <circle
                             cx="50"
@@ -766,7 +769,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                     </div>
 
                     {/* Breakdown List */}
-                    <div className="space-y-2 text-xs flex-1">
+                    <div className="min-w-0 flex-1 space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
@@ -792,9 +795,14 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                           <span className="text-slate-700">Blocked</span>
                         </div>
-                        <span className="font-mono font-semibold text-slate-900">
-                          {selectedRun.skipped || 0} (0.0%)
-                        </span>
+                        <span className="font-mono font-semibold text-slate-900">{selectedRun.skipped}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-slate-700">Errored</span>
+                        </div>
+                        <span className="font-mono font-semibold text-slate-900">{selectedRun.errored}</span>
                       </div>
                     </div>
                   </div>
@@ -804,25 +812,25 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-1.5 font-semibold text-slate-900 text-xs">
                     <Database className="h-3.5 w-3.5 text-[#3067DB]" />
-                    <span>Simulation Details</span>
+                    <span>Execution Details</span>
                   </div>
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-1.5 text-[11px]">
                     <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Simulation Model</span>
-                      <span className="font-mono font-semibold text-slate-800">Attendance_Workflow_v1.2</span>
+                      <span className="text-slate-500">Runner</span>
+                      <span className="font-mono font-semibold text-slate-800">{selectedRun.runner || "—"}</span>
                     </div>
                     <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Model Version</span>
-                      <span className="font-mono text-slate-800">v1.2</span>
+                      <span className="text-slate-500">Environment</span>
+                      <span className="font-mono text-slate-800">{selectedRun.environment?.name || "—"}</span>
                     </div>
                     <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Scenarios Covered</span>
-                      <span className="text-slate-800 text-right max-w-xs">Employee check-in, check-out, overtime, exceptions</span>
+                      <span className="text-slate-500">Source</span>
+                      <span className="text-slate-800 text-right max-w-xs">{selectedRun.source || "—"}</span>
                     </div>
                     <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Input Dataset</span>
-                      <span className="font-mono text-[#3067DB]">attendance_test_data.json</span>
+                      <span className="text-slate-500">Commit</span>
+                      <span className="font-mono text-[#3067DB]">{selectedRun.commit_sha || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -837,11 +845,11 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   <div className="space-y-2 text-[11px]">
                     <div className="flex items-start gap-2 text-slate-700">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span>30 scenarios passed as per expected business behaviour.</span>
+                      <span>{selectedRun.passed} test results passed.</span>
                     </div>
                     <div className="flex items-start gap-2 text-slate-700">
                       <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                      <span>2 scenarios failed: invalid overtime calculation and missing exception rule.</span>
+                      <span>{selectedRun.failed} failed, {selectedRun.errored} errored, and {selectedRun.skipped} skipped.</span>
                     </div>
                   </div>
                 </div>
@@ -849,15 +857,13 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 {/* Actions */}
                 <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
                   <span className="text-[11px] text-slate-500">
-                    Execution Mode: <strong>Deterministic Sandbox</strong>
+                    Execution Source: <strong>{selectedRun.source}</strong>
                   </span>
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => {
-                      toast.ok(`Rerunning simulation ${selectedRun.key}`);
-                      qc.invalidateQueries({ queryKey: ["executions"] });
-                    }}
+                    onClick={() => rerunMutation.mutate()}
+                    loading={rerunMutation.isPending}
                     className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
@@ -869,48 +875,31 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
 
             {/* Sub-tab 2: Test Results */}
             {runSubTab === "results" && (
-              <div className="p-4 space-y-2 text-xs max-h-96 overflow-y-auto">
-                <div className="space-y-1.5">
-                  {Array.from({ length: Math.min(32, selectedRun.total) }, (_, i) => {
-                    const isFail = i === 10 || i === 24;
-                    const tcKey = `TC-${(i + 1).toString().padStart(3, "0")}`;
-                    return (
-                      <div
-                        key={i}
-                        className="p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[#3067DB] font-semibold">{tcKey}</span>
-                          <span className="text-slate-800">
-                            {isFail ? "Overtime Calculation Boundary Exceeded" : "Attendance punch verification scenario"}
-                          </span>
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded px-2 py-0.5 text-2xs font-bold",
-                            isFail ? "bg-red-50 text-red-700 border border-red-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          )}
-                        >
-                          {isFail ? "Failed" : "Passed"}
-                        </span>
+              <div className="p-4 space-y-2 text-xs">
+                {selectedRunQuery.isLoading ? <p className="text-slate-500">Loading test results…</p>
+                  : selectedRunQuery.isError ? <p className="text-red-700">{selectedRunQuery.error instanceof Error ? selectedRunQuery.error.message : "Unable to load test results."}</p>
+                  : detailedRun?.results?.length ? detailedRun.results.map((result) => (
+                    <div key={result.id} className="p-2.5 rounded border border-slate-200 bg-white flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="font-mono text-[#3067DB] font-semibold">{result.test_key || `Test ${result.test_case_id}`}</span>
+                        <p className="text-slate-800 truncate">{result.test_title || result.message || "—"}</p>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="shrink-0 text-right">
+                        <span className="font-medium">{result.status}</span>
+                        <p className="text-2xs text-slate-500">{fmtDuration(result.duration_ms)}</p>
+                      </div>
+                    </div>
+                  )) : <p className="text-slate-500">No test results are recorded for this execution.</p>}
               </div>
             )}
 
             {/* Sub-tab 3: Execution Log */}
             {runSubTab === "logs" && (
               <div className="p-4 space-y-2">
-                <div className="rounded border border-slate-200 bg-slate-900 text-slate-100 p-3 font-mono text-[11px] max-h-80 overflow-y-auto leading-relaxed whitespace-pre-wrap">
-                  {`[2026-11-07 11:24:00] INITIALIZING simulation runtime: Attendance_Workflow_v1.2
-[2026-11-07 11:24:01] Loading specification constraints from DAY-REQ-001..DAY-REQ-056
-[2026-11-07 11:24:02] Ingesting attendance_test_data.json (32 evaluation vectors)
-[2026-11-07 11:24:04] Scenario 01: Standard punch pairing -> PASS (42ms)
-[2026-11-07 11:24:08] Scenario 11: Daily California Overtime (OT-002) -> FAIL (Assert 1.5x expected, got 1.0x on boundary)
-[2026-11-07 11:24:15] Scenario 25: Missing exception handling on timeout punch -> FAIL
-[2026-11-07 11:24:26] COMPLETED: 30 passed, 2 failed in 266s. Log signature verified.`}
+                <div className="rounded border border-slate-200 bg-slate-900 p-3 font-mono text-[11px] leading-relaxed text-slate-100 whitespace-pre-wrap break-words">
+                  {selectedLogsQuery.isLoading ? "Loading execution log…"
+                    : selectedLogsQuery.isError ? (selectedLogsQuery.error instanceof Error ? selectedLogsQuery.error.message : "Unable to load execution log.")
+                    : selectedLogsQuery.data?.log || "No execution log is available."}
                 </div>
               </div>
             )}
@@ -918,27 +907,22 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             {/* Sub-tab 4: Artifacts */}
             {runSubTab === "artifacts" && (
               <div className="p-4 space-y-2 text-xs">
-                <div className="p-3 rounded border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-purple-600" />
-                    <span className="font-mono text-slate-800">simulation_report_RUN024.json</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => toast.ok("Downloading report artifact")}>
-                    Download
-                  </Button>
-                </div>
-                <div className="p-3 rounded border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="h-4 w-4 text-blue-600" />
-                    <span className="font-mono text-slate-800">raw_execution_trace.log</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => toast.ok("Downloading execution trace")}>
-                    Download
-                  </Button>
-                </div>
+                {selectedRunQuery.isLoading ? <p className="text-slate-500">Loading artifacts…</p>
+                  : selectedRunQuery.isError ? <p className="text-red-700">{selectedRunQuery.error instanceof Error ? selectedRunQuery.error.message : "Unable to load artifacts."}</p>
+                  : detailedRun?.artifacts?.length ? detailedRun.artifacts.map((artifact) => (
+                    <a key={artifact.id} href={downloadUrl(`/executions/${selectedRun.id}/artifacts/${artifact.id}`)}
+                      className="flex items-center justify-between gap-3 rounded border border-slate-200 bg-slate-50 p-3 hover:bg-slate-100">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0 text-[#3067DB]" />
+                        <span className="truncate font-mono text-slate-800">{artifact.name}</span>
+                      </span>
+                      <span className="shrink-0 text-slate-500">{artifact.kind}</span>
+                    </a>
+                  )) : <p className="text-slate-500">No artifacts are available for this execution.</p>}
               </div>
             )}
           </div>
+          </ResponsiveDetailDrawer>
         )}
       </div>
 
@@ -959,7 +943,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
 function NewRunModal({ projectId, onClose }: { projectId: number; onClose: () => void }) {
   const toast = useToast();
   const [runType, setRunType] = useState("simulation");
-  const [runName, setRunName] = useState("Employee Attendance Simulation Cycle");
+  const [runName, setRunName] = useState("");
 
   const m = useMutation({
     mutationFn: () =>
@@ -984,7 +968,7 @@ function NewRunModal({ projectId, onClose }: { projectId: number; onClose: () =>
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" loading={m.isPending} onClick={() => m.mutate()}>
+          <Button variant="primary" disabled={!runName.trim()} loading={m.isPending} onClick={() => m.mutate()}>
             Execute
           </Button>
         </>
@@ -992,7 +976,7 @@ function NewRunModal({ projectId, onClose }: { projectId: number; onClose: () =>
     >
       <div className="space-y-3 text-xs">
         <Field label="Run Name" htmlFor="new-run-name">
-          <Input id="new-run-name" value={runName} onChange={(e) => setRunName(e.target.value)} />
+          <Input id="new-run-name" value={runName} onChange={(e) => setRunName(e.target.value)} placeholder="Enter a run name" />
         </Field>
         <Field label="Execution Type" htmlFor="new-run-type">
           <Select id="new-run-type" value={runType} onChange={(e) => setRunType(e.target.value)}>

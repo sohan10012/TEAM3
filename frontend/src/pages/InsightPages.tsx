@@ -65,12 +65,18 @@ export function TraceabilityPage() {
             </div>
           )}
         </>} />
+      {reqs.error ? (
+        <Notice tone="warn">
+          Could not load the requirements filter.{" "}
+          <button type="button" className="font-medium underline" onClick={() => void reqs.refetch()}>Retry</button>
+        </Notice>
+      ) : null}
       {q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : !d ? <LoadingBlock rows={10} /> : <>
         <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
           <Stat label="Clauses" value={d.summary.total_clauses} />
           <Stat label="Covered" value={d.summary.covered_clauses} />
           <Stat label="Untested" value={d.summary.untested_clauses} intent={d.summary.untested_clauses ? "bad" : "good"} onClick={() => setOnlyGaps(true)} />
-          <Stat label="Coverage" value={pct(d.summary.coverage_pct)} />
+          <Stat label="Clause coverage" value={pct(d.summary.coverage_pct)} />
           <Stat label="Orphan tests" value={d.summary.orphan_tests.length} hint="Cite no current clause" />
           <Stat label="Duplicate tests" value={d.summary.duplicate_tests.length} />
           <Stat label="Impacted tests" value={d.summary.impacted_tests.length} hint="Awaiting re-approval" />
@@ -139,7 +145,7 @@ export function AnalyticsPage() {
           {["pdf", "csv", "json", "md"].map((f) => <a key={f} className="rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50" href={exp(f)}>{f.toUpperCase()}</a>)}</div>} />
       {q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : !q.data ? <LoadingBlock rows={8} /> : <>
         <Panel title="Release quality summary" bodyClass="p-0" className="mb-4"><div className="overflow-x-auto"><table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs text-slate-600"><tr>{["Project", "Readiness", "Requirement coverage", "Automation coverage", "Approved tests", "Open defects", "Critical open", "Defect density", "Regressions", "Impacted tests", "Last execution"].map((h) =>
+          <thead className="bg-slate-50 text-xs text-slate-600"><tr>{["Project", "Readiness", "Clause coverage", "Automation coverage", "Approved tests", "Open defects", "Critical open", "Defect density", "Regressions", "Impacted tests", "Last execution"].map((h) =>
             <th key={h} className="whitespace-nowrap px-3 py-2 text-left font-medium">{h}</th>)}</tr></thead>
           <tbody>{q.data.projects.map((p: any) => <tr key={p.project} className="border-t border-slate-100">
             <td className="px-3 py-2 font-medium">{p.name}</td>
@@ -154,9 +160,9 @@ export function AnalyticsPage() {
             <CartesianGrid stroke="#e2e8f0" vertical={false} /><XAxis dataKey="project" tick={{ fontSize: 11 }} /><YAxis allowDecimals={false} tick={{ fontSize: 11 }} /><Tooltip />
             {[["0-7d", "#94a3b8"], ["8-30d", "#d97706"], ["31-90d", "#ea580c"], [">90d", "#b91c1c"]].map(([k, c]) => <Bar key={k} dataKey={k} stackId="a" fill={c} name={k} />)}
           </BarChart></ResponsiveContainer></Panel>
-          <Panel title="Coverage by project" bodyClass="h-64"><ResponsiveContainer><BarChart data={q.data.projects} margin={{ left: -10 }}>
+          <Panel title="Clause coverage by project" bodyClass="h-64"><ResponsiveContainer><BarChart data={q.data.projects} margin={{ left: -10 }}>
             <CartesianGrid stroke="#e2e8f0" vertical={false} /><XAxis dataKey="project" tick={{ fontSize: 11 }} /><YAxis unit="%" domain={[0, 100]} tick={{ fontSize: 11 }} /><Tooltip />
-            <Bar dataKey="requirement_coverage_pct" name="Requirement coverage" fill="#1f4fbf" /><Bar dataKey="automation_coverage_pct" name="Automation coverage" fill="#93c5fd" />
+            <Bar dataKey="requirement_coverage_pct" name="Clause coverage" fill="#1f4fbf" /><Bar dataKey="automation_coverage_pct" name="Automation coverage" fill="#93c5fd" />
           </BarChart></ResponsiveContainer></Panel>
         </div>
         <Panel title="Other exports" className="mt-4"><div className="flex flex-wrap gap-4 text-sm">
@@ -338,7 +344,9 @@ export function SettingsPage() {
         title="Settings"
         subtitle="AI provider configuration, multi-key rotation, execution engine sandbox, and workspace database health."
       />
-      {!c ? (
+      {cfg.error ? (
+        <ErrorState error={cfg.error} onRetry={cfg.refetch} />
+      ) : !c ? (
         <LoadingBlock rows={6} />
       ) : (
         <div className="grid gap-6 xl:grid-cols-2">
@@ -356,8 +364,8 @@ export function SettingsPage() {
               </Notice>
             )}
 
-            <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-              <table className="w-full text-xs">
+            <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+              <table className="w-full min-w-[760px] text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                   <tr>
                     <th className="py-2 px-3 text-left">Role</th>
@@ -432,8 +440,8 @@ export function SettingsPage() {
             {c.llm.providers.some((p: any) => p.slots?.length > 0) && (
               <div className="space-y-2 pt-2">
                 <p className="text-xs font-semibold text-slate-700">Credential Slots & Health</p>
-                <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50/50">
-                  <table className="w-full text-2xs">
+                <div className="overflow-x-auto rounded-md border border-slate-200 bg-slate-50/50">
+                <table className="w-full min-w-[640px] text-2xs">
                     <thead className="border-b border-slate-200 bg-slate-100/70 text-slate-500 font-medium">
                       <tr>
                         <th className="py-1.5 px-3 text-left">Provider</th>
@@ -490,30 +498,32 @@ export function SettingsPage() {
                   ["Execution timeout", `${c.sandbox.timeout_seconds} seconds`],
                   ["Execution memory limit", `${c.sandbox.memory_mb} MB`],
                   ["Sandbox output limit", `${Math.round(c.sandbox.max_output_bytes / 1024)} KB`],
-                  ["Playwright target", c.playwright_target_url ?? "Chromium Local Harness"],
-                  [
-                    "Reference HCM Harness",
-                    "Deterministic payroll/WFM engine (v1.0 baseline & v1.1 candidate)",
-                  ],
+                  ["Playwright target", c.playwright_target_url ?? "Not configured"],
                 ]}
               />
             </Panel>
 
             <Panel title="Database Health & Workspace Storage">
+              {health.error ? (
+                <Notice tone="warn">
+                  Could not load database health.{" "}
+                  <button type="button" className="font-medium underline" onClick={() => void health.refetch()}>Retry</button>
+                </Notice>
+              ) : null}
               <KV
                 items={[
                   ["Database path", c.data_dir ? `${c.data_dir}/tracetest.db` : "var/tracetest.db"],
                   [
                     "Integrity verification",
-                    health.data ? `${health.data.database.integrity} (PRAGMA quick_check)` : "Checking...",
+                    health.data ? `${health.data.database.integrity} (PRAGMA quick_check)` : health.isLoading ? "Checking..." : "Unavailable",
                   ],
                   [
                     "Journal mode",
-                    health.data ? `${health.data.database.journal_mode.toUpperCase()} journal` : "WAL",
+                    health.data ? `${health.data.database.journal_mode.toUpperCase()} journal` : health.isLoading ? "Checking..." : "Unavailable",
                   ],
                   [
                     "Foreign key violations",
-                    health.data ? `${health.data.database.foreign_key_violations} violations` : "0 violations",
+                    health.data ? `${health.data.database.foreign_key_violations} violations` : health.isLoading ? "Checking..." : "Unavailable",
                   ],
                   [
                     "Total workspace records",
