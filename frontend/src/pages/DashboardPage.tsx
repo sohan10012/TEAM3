@@ -199,6 +199,7 @@ function ProjectOnboardingHub({ current }: { current?: any }) {
 
 function AnalyticsDashboardView({ projectId, current }: { projectId: number | null; current: any }) {
   const nav = useNavigate();
+  const { setProjectId } = useProjects();
   const [range, setRange] = useState({ from: "", to: "" });
   const [connectOpen, setConnectOpen] = useState(false);
   const q = useQuery({
@@ -565,7 +566,10 @@ function AnalyticsDashboardView({ projectId, current }: { projectId: number | nu
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {d.projects.map((p: any) => (
-                          <tr key={p.project_id ?? p.key} className="hover:bg-slate-50 cursor-pointer" onClick={() => nav(`/projects/${p.project_id}`)}>
+                          <tr key={p.project_id ?? p.key} className="hover:bg-slate-50 cursor-pointer" onClick={() => {
+                            if (p.project_id) setProjectId(p.project_id);
+                            nav(`/projects/${p.project_id}`);
+                          }}>
                             <td className="px-4 py-2.5 font-medium text-slate-900">{p.key} — {p.name}</td>
                             <td className="px-4 py-2.5 text-slate-600">{pct(p.coverage_pct)}</td>
                             <td className="px-4 py-2.5 text-slate-600">{p.executions}</td>

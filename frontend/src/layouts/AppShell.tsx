@@ -19,7 +19,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -88,18 +88,36 @@ function Breadcrumbs() {
   const parts = pathname.split("/").filter(Boolean);
   const allItems = NAV_SECTIONS.flatMap((s) => s.items);
   const nav = allItems.find((n) => n.to !== "/" && pathname.startsWith(n.to.split("?")[0]));
+
+  const currentDisplayName = current
+    ? (current.key === "ECHO" ? "EchoBox" : current.key === "DAYFORCE" ? "Dayforce" : current.key === "CUREON" ? "Cureonix" : current.name.split(" — ")[0])
+    : null;
+
   if (!parts.length) {
-    if (current) {
+    if (currentDisplayName) {
       return (
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
           <Link to="/projects" className="font-medium text-slate-500 hover:text-slate-900">Projects</Link>
           <span className="text-slate-400">/</span>
-          <span className="truncate text-slate-900 font-semibold">{current.name}</span>
+          <span className="truncate text-slate-900 font-semibold">{currentDisplayName}</span>
         </nav>
       );
     }
     return <span className="text-xs font-medium text-slate-600">Dashboard</span>;
   }
+
+  if (currentDisplayName && nav && parts.length === 1 && parts[0] !== "projects") {
+    return (
+      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
+        <Link to="/projects" className="font-medium text-slate-500 hover:text-slate-900">Projects</Link>
+        <span className="text-slate-400">/</span>
+        <Link to={`/projects/${current!.id}`} className="font-medium text-slate-500 hover:text-slate-900">{currentDisplayName}</Link>
+        <span className="text-slate-400">/</span>
+        <span className="truncate text-slate-900 font-semibold">{nav.label}</span>
+      </nav>
+    );
+  }
+
   return (
     <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
       <Link to={nav?.to ?? "/"} className="font-medium text-slate-600 hover:text-slate-900">{nav?.label ?? parts[0]}</Link>
@@ -107,7 +125,7 @@ function Breadcrumbs() {
         let text = p.replace(/-/g, " ");
         if (/^\d+$/.test(p)) {
           const found = projects.find((pr) => pr.id === Number(p));
-          if (found) text = found.name;
+          if (found) text = found.key === "ECHO" ? "EchoBox" : found.key === "DAYFORCE" ? "Dayforce" : found.key === "CUREON" ? "Cureonix" : found.name.split(" — ")[0];
           else text = `#${p}`;
         }
         return (
@@ -303,10 +321,10 @@ export function AppShell() {
     }
   };
 
-  const projectOptions = [
+  const projectOptions = useMemo(() => [
     { value: "ALL", label: "All Project Workspaces" },
     ...projects.map((p) => ({ value: String(p.id), label: `${p.key} — ${p.name}` })),
-  ];
+  ], [projects]);
 
   return (
     <div className="flex h-[100dvh] min-h-[100dvh] min-w-0 overflow-x-clip bg-slate-50 text-slate-900">
@@ -474,7 +492,7 @@ export function AppShell() {
               onValueChange={(val) => setProjectId(val === "ALL" ? null : Number(val))}
               options={projectOptions}
               ariaLabel="Project Workspace"
-              triggerClassName="h-10 w-40 truncate rounded-lg sm:w-56"
+              triggerClassName="h-10 min-w-48 max-w-xs sm:w-64 font-medium text-xs sm:text-sm truncate rounded-lg"
             />
           </div>
 
