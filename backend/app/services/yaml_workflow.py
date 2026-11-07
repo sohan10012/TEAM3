@@ -959,8 +959,8 @@ def infer_yaml_spec_from_policy(
 
     # Detect daily overtime (e.g. "after 8 hours per day", "over 8 hours daily", "8 hours in a workday")
     daily_ot_match = (
-        re.search(rf"{th_prefix}(\d+(?:\.\d+)?)\s*(?:regular\s*)?(?:hours?|hrs?)[^.,;\n]*?(?:workday|day|shift|daily)", lowered)
-        or re.search(r"(\d+(?:\.\d+)?)\s*(?:regular\s*)?(?:hours?|hrs?)\s*(?:a day|per day|in a day|daily|per workday|per shift)", lowered)
+        re.search(rf"{th_prefix}(\d+(?:\.\d+)?)\s*(?:[a-z]+\s+)*(?:hours?|hrs?)[^.,;\n]*?(?:workday|day|shift|daily)", lowered)
+        or re.search(r"(\d+(?:\.\d+)?)\s*(?:[a-z]+\s+)*(?:hours?|hrs?)\s*(?:a day|per day|in a day|daily|per workday|per shift)", lowered)
         or re.search(rf"(?:workday|day|shift|daily)[^.,;\n]*?{th_prefix}(\d+(?:\.\d+)?)", lowered)
     )
     if daily_ot_match:
@@ -978,8 +978,8 @@ def infer_yaml_spec_from_policy(
 
     # Detect weekly overtime (e.g. "40 hours per week", "after 35 hours in a workweek", "exceeding 37.5 hours weekly")
     weekly_match = (
-        re.search(rf"{th_prefix}(\d+(?:\.\d+)?)\s*(?:regular\s*)?(?:hours?|hrs?)[^.,;\n]*?(?:week|workweek|weekly)", lowered)
-        or re.search(r"(\d+(?:\.\d+)?)\s*(?:regular\s*)?(?:hours?|hrs?)\s*(?:a week|per week|in a week|weekly|per workweek)", lowered)
+        re.search(rf"{th_prefix}(\d+(?:\.\d+)?)\s*(?:[a-z]+\s+)*(?:hours?|hrs?)[^.,;\n]*?(?:week|workweek|weekly)", lowered)
+        or re.search(r"(\d+(?:\.\d+)?)\s*(?:[a-z]+\s+)*(?:hours?|hrs?)\s*(?:a week|per week|in a week|weekly|per workweek)", lowered)
         or re.search(rf"(?:week|workweek|weekly)[^.,;\n]*?{th_prefix}(\d+(?:\.\d+)?)", lowered)
     )
     if weekly_match:

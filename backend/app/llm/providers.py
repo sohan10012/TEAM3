@@ -197,7 +197,10 @@ class GroqProvider(LLMProvider):
                         r = self._post(
                             f"{self.base}/chat/completions",
                             timeout=timeout,
-                            headers={"Authorization": f"Bearer {slot.secret}"},
+                            headers={
+                                "Authorization": f"Bearer {slot.secret}",
+                                "User-Agent": "TraceTest-AI/1.0 (Dayforce HCM Innovation Challenge)",
+                            },
                             json_body={
                                 "model": model,
                                 "temperature": 0.1,
@@ -292,8 +295,11 @@ class GeminiProvider(LLMProvider):
         self.keys = s.gemini_keys
         self.key = self.keys[0] if self.keys else s.gemini_api_key
         self.pool = SlotPool(self.keys, self.name, concurrency_limit=2)
-        # gemini-3.5-flash provides best reasoning/throughput with active quota across key slots
-        self.primary_model = "gemini-3.5-flash" if s.gemini_model in ("gemini-2.0-flash", "gemini-2.5-flash") else s.gemini_model
+        # gemini-3.1-flash-lite provides verified active quota and fast response times
+        if s.gemini_model in ("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"):
+            self.primary_model = "gemini-3.1-flash-lite"
+        else:
+            self.primary_model = s.gemini_model
         self.fallback_model = s.gemini_fallback_model
         self.model = self.primary_model
 
