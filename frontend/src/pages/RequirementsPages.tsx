@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { DataTable, FilterChips } from "@/components/DataTable";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RunProgress } from "@/components/RunProgress";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Dialog, EmptyState, ErrorState, Field, Input, Key, KV, LoadingBlock, Notice, PageHeader, Panel,
@@ -344,36 +345,47 @@ function AnalysisTab({ r, onChange }: { r: Requirement; onChange: () => void }) 
     onSuccess: (x) => setRunId(x.run_id),
     onError: (e) => toast.error(e),
   });
-  const analysed = r.clauses?.some((c) => c.analysis && Object.keys(c.analysis).length);
+  const analysed = r.clauses?.some((c) => {
+    const a = typeof c.analysis === "string" ? (() => { try { return JSON.parse(c.analysis); } catch { return null; } })() : c.analysis;
+    return a && typeof a === "object" && Object.keys(a).length > 0;
+  });
   return (
-    <div className="space-y-4">
-      {cfg.data && !ready && <Notice tone="warn">No AI provider is configured, so analysis and test generation are unavailable.
-        Deterministic clause parsing and ambiguity flags still work. <Link to="/settings" className="font-medium underline">Open Settings</Link> to see what to configure.</Notice>}
-      {can("requirement.analyse") && <div className="flex flex-wrap gap-2">
-        <Button variant="primary" disabled={!ready} loading={start.isPending && start.variables === "analyse"} onClick={() => start.mutate("analyse")}>
-          <Sparkles className="h-4 w-4" />Analyse requirement</Button>
-        <Button disabled={!ready} loading={start.isPending && start.variables === "generate-tests"} onClick={() => start.mutate("generate-tests")}>Generate acceptance criteria and tests</Button>
-      </div>}
-      {runId && <Panel title={`Workflow run #${runId}`}><RunProgress runId={runId} onDone={() => { onChange(); qc.invalidateQueries({ queryKey: ["criteria", r.id] }); qc.invalidateQueries({ queryKey: ["tests"] }); }} /></Panel>}
-      {!analysed ? <Panel><EmptyState title="This requirement has not been analysed yet" body="Run the analysis to extract business rules, ambiguities, missing information and clarifying questions per clause." /></Panel> :
-        <Panel title="Clause analysis" bodyClass="p-0"><div className="divide-y divide-slate-100">{r.clauses?.map((c) => {
-          const a = c.analysis ?? {};
-          return (
-            <div key={c.id} className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[9rem_1fr]">
-              <Key>{c.clause_key}</Key>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div><p className="text-xs font-medium text-slate-500">Source fact</p><p className="text-ink">{a.source_fact ?? c.text}</p></div>
-                <div><p className="text-xs font-medium text-slate-500">AI interpretation {a.provider && <span className="font-normal">({a.provider}{a.model ? `, ${a.model}` : ""})</span>}</p>
-                  <p className="text-slate-700">{a.ai_interpretation ?? (a.provider === "seed_import" ? "Imported from the historical test plan; no AI interpretation recorded." : "—")}</p></div>
-                {(a.missing_information?.length || a.ai_missing_information?.length) ? <div><p className="text-xs font-medium text-slate-500">Missing information</p>
-                  <ul className="list-disc pl-4 text-amber-900">{[...(a.missing_information ?? []), ...(a.ai_missing_information ?? [])].map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></div> : null}
-                {a.conflicts_with?.length ? <div><p className="text-xs font-medium text-slate-500">Conflicts with</p><p className="text-red-800">{a.conflicts_with.join(", ")}</p></div> : null}
-                {a.clarifying_questions?.length ? <div className="md:col-span-2"><p className="text-xs font-medium text-slate-500">Clarifying questions</p>
-                  <ul className="list-disc pl-4 text-slate-700">{a.clarifying_questions.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></div> : null}
-              </div>
-            </div>);
-        })}</div></Panel>}
-    </div>
+    <ErrorBoundary fallbackTitle="Analysis View Recovered" fallbackMessage="An error occurred rendering the AI analysis view. Your requirement clauses and tests are safe.">
+      <div className="space-y-4">
+        {cfg.data && !ready && <Notice tone="warn">No AI provider is configured, so analysis and test generation are unavailable.
+          Deterministic clause parsing and ambiguity flags still work. <Link to="/settings" className="font-medium underline">Open Settings</Link> to see what to configure.</Notice>}
+        {can("requirement.analyse") && <div className="flex flex-wrap gap-2">
+          <Button variant="primary" disabled={!ready} loading={start.isPending && start.variables === "analyse"} onClick={() => start.mutate("analyse")}>
+            <Sparkles className="h-4 w-4" />Analyse requirement</Button>
+          <Button disabled={!ready} loading={start.isPending && start.variables === "generate-tests"} onClick={() => start.mutate("generate-tests")}>Generate acceptance criteria and tests</Button>
+        </div>}
+        {runId && <Panel title={`Workflow run #${runId}`}><RunProgress runId={runId} onDone={() => { onChange(); qc.invalidateQueries({ queryKey: ["criteria", r.id] }); qc.invalidateQueries({ queryKey: ["tests"] }); }} /></Panel>}
+        {!analysed ? <Panel><EmptyState title="This requirement has not been analysed yet" body="Run the analysis to extract business rules, ambiguities, missing information and clarifying questions per clause." /></Panel> :
+          <Panel title="Clause analysis" bodyClass="p-0"><div className="divide-y divide-slate-100">{r.clauses?.map((c) => {
+            const a: any = typeof c.analysis === "string" ? (() => { try { return JSON.parse(c.analysis); } catch { return {}; } })() : (c.analysis ?? {});
+            const missing = [
+              ...(Array.isArray(a.missing_information) ? a.missing_information : []),
+              ...(Array.isArray(a.ai_missing_information) ? a.ai_missing_information : []),
+            ];
+            const conflicts = Array.isArray(a.conflicts_with) ? a.conflicts_with : [];
+            const questions = Array.isArray(a.clarifying_questions) ? a.clarifying_questions : [];
+            return (
+              <div key={c.id} className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[9rem_1fr]">
+                <Key>{c.clause_key}</Key>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div><p className="text-xs font-medium text-slate-500">Source fact</p><p className="text-ink">{a.source_fact ?? c.text}</p></div>
+                  <div><p className="text-xs font-medium text-slate-500">AI interpretation {a.provider && <span className="font-normal">({a.provider}{a.model ? `, ${a.model}` : ""})</span>}</p>
+                    <p className="text-slate-700">{a.ai_interpretation ?? (a.provider === "seed_import" ? "Imported from the historical test plan; no AI interpretation recorded." : "—")}</p></div>
+                  {missing.length > 0 ? <div><p className="text-xs font-medium text-slate-500">Missing information</p>
+                    <ul className="list-disc pl-4 text-amber-900">{missing.map((x: any, i: number) => <li key={i}>{typeof x === "string" ? x : JSON.stringify(x)}</li>)}</ul></div> : null}
+                  {conflicts.length > 0 ? <div><p className="text-xs font-medium text-slate-500">Conflicts with</p><p className="text-red-800">{conflicts.map((x: any) => typeof x === "string" ? x : JSON.stringify(x)).join(", ")}</p></div> : null}
+                  {questions.length > 0 ? <div className="md:col-span-2"><p className="text-xs font-medium text-slate-500">Clarifying questions</p>
+                    <ul className="list-disc pl-4 text-slate-700">{questions.map((x: any, i: number) => <li key={i}>{typeof x === "string" ? x : JSON.stringify(x)}</li>)}</ul></div> : null}
+                </div>
+              </div>);
+          })}</div></Panel>}
+      </div>
+    </ErrorBoundary>
   );
 }
 
@@ -399,7 +411,7 @@ function CriteriaTab({ r }: { r: Requirement }) {
         <p className="text-sm text-ink">{a.description}</p>
         <div className="mt-3 grid gap-3 text-sm md:grid-cols-2">
           <div><p className="text-xs text-slate-500">Expected behaviour</p><p>{a.expected_behaviour}</p></div>
-          <div><p className="text-xs text-slate-500">Cited clauses</p><p className="font-mono text-xs">{a.clause_keys.join(", ")}</p></div>
+          <div><p className="text-xs text-slate-500">Cited clauses</p><p className="font-mono text-xs">{(Array.isArray(a.clause_keys) ? a.clause_keys : [a.clause_keys]).filter(Boolean).join(", ")}</p></div>
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-1">
               <p className="text-xs font-medium text-slate-500">Source quotation</p>
@@ -418,13 +430,13 @@ function CriteriaTab({ r }: { r: Requirement }) {
             </blockquote>
             {!a.quote_verified && (
               <p className="mt-1 text-[11px] text-rose-600 font-medium">
-                Guardrail violation: Quotation does not appear verbatim in cited clauses ({a.clause_keys.join(", ")}).
+                Guardrail violation: Quotation does not appear verbatim in cited clauses ({(Array.isArray(a.clause_keys) ? a.clause_keys : [a.clause_keys]).filter(Boolean).join(", ")}).
               </p>
             )}
           </div>
           <div><p className="text-xs text-slate-500">Confidence</p><p className={cn(a.confidence < 0.6 && "text-amber-800")}>{Math.round(a.confidence * 100)}%{a.confidence < 0.6 && ", needs additional review"}</p></div>
           <div><p className="text-xs text-slate-500">Provenance</p><p>{a.provider}{a.model ? `, ${a.model}` : ""}</p></div>
-          {a.assumptions?.length > 0 && <div className="md:col-span-2"><p className="text-xs text-slate-500">Assumptions</p>
+          {Array.isArray(a.assumptions) && a.assumptions.length > 0 && <div className="md:col-span-2"><p className="text-xs font-medium text-slate-500">Assumptions</p>
             <ul className="list-disc pl-4">{a.assumptions.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
         </div>
       </Panel>))}</div>

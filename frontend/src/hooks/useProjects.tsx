@@ -9,7 +9,20 @@ const Ctx = createContext<ProjectCtx | null>(null);
 const KEY = "tracetest.project";
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const q = useQuery({ queryKey: ["projects", "switcher"], queryFn: () => api.get<Page<Project>>("/projects", { page_size: 200, sort: "key", order: "asc" }) });
+  const q = useQuery({
+    queryKey: ["projects", "switcher"],
+    queryFn: async () => {
+      try {
+        return await api.get<Page<Project>>("/projects", { page_size: 200, sort: "key", order: "asc" });
+      } catch {
+        // Fallback retry ensuring /auth/me cookie
+        await api.get("/auth/me").catch(() => {});
+        return await api.get<Page<Project>>("/projects", { page_size: 200, sort: "key", order: "asc" });
+      }
+    },
+    staleTime: 30_000,
+    retry: 2,
+  });
   const [projectId, setPid] = useState<number | null>(() => {
     try { const v = localStorage.getItem(KEY); return v ? Number(v) : null; } catch { return null; }
   });

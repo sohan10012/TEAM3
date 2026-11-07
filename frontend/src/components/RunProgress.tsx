@@ -31,6 +31,24 @@ const AGENT_WORKFLOW_STEPS = [
   { key: "review", label: "Human Review Gate", desc: "Persist LangGraph state for dual-control reviewer signoff" },
 ];
 
+function formatDetail(detail: any): string {
+  if (detail == null) return "";
+  if (typeof detail === "string") return detail;
+  if (typeof detail === "number" || typeof detail === "boolean") return String(detail);
+  if (typeof detail === "object") {
+    try {
+      const entries = Object.entries(detail);
+      if (entries.length === 0) return "";
+      return entries
+        .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+        .join(" · ");
+    } catch {
+      return JSON.stringify(detail);
+    }
+  }
+  return String(detail);
+}
+
 export function RunProgress({ runId, onDone }: RunProgressProps) {
   const { run, done } = useRun(runId);
   const fired = useRef(false);
@@ -83,7 +101,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
         {AGENT_WORKFLOW_STEPS.map((step, idx) => {
           // Check matching step from backend execution
           const matched = executedSteps.find(
-            (s) => s.name.toLowerCase().includes(step.key) || s.name.toLowerCase() === step.key
+            (s) => s?.name && (s.name.toLowerCase().includes(step.key) || s.name.toLowerCase() === step.key)
           );
           const isDone = matched && (matched.status === "completed" || matched.status === "passed" || matched.status === "reused");
           const isFailed = matched && (matched.status === "failed" || matched.status === "error");
@@ -125,6 +143,8 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
             );
           }
 
+          const detailStr = formatDetail(matched?.detail);
+
           return (
             <div key={step.key} className="p-3 flex items-start justify-between gap-4 hover:bg-slate-50/50 transition-colors">
               <div className="flex items-start gap-3">
@@ -134,9 +154,9 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-900">{step.label}</span>
-                    {matched?.detail && (
+                    {detailStr && (
                       <span className="text-[11px] text-slate-500 font-mono bg-slate-50 px-1 rounded border border-slate-100">
-                        {matched.detail}
+                        {detailStr}
                       </span>
                     )}
                   </div>
@@ -192,70 +212,84 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
       )}
 
       {/* Guardrail Rejections & Filter Detections */}
-      {((run.result?.invalid_items ?? []) as any[]).length > 0 && (
-        <div className="rounded-md border border-rose-200 bg-rose-50/60 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-700 shrink-0" />
-              <p className="text-xs font-semibold text-rose-900">
-                Guardrail Rejections: Ungrounded Content Blocked ({((run.result?.invalid_items ?? []) as any[]).length})
-              </p>
-            </div>
-            <span className="rounded bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-800 uppercase tracking-wider">
-              Enforced by Filter
-            </span>
-          </div>
-          <p className="text-[11px] text-rose-700">
-            The items below failed deterministic verbatim quote verification against source clauses and were automatically rejected after repair attempts.
-          </p>
-          <div className="space-y-2">
-            {((run.result?.invalid_items ?? []) as any[]).map((item: any, i: number) => (
-              <div key={i} className="rounded border border-rose-200/80 bg-white p-2.5 text-xs space-y-1.5 shadow-2xs">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-800 truncate">
-                    {item.description || item.title || "Synthesized Item"}
-                  </span>
-                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
-                    {item.task || "generation"}
-                  </span>
-                </div>
-                {item.clause_keys && item.clause_keys.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-medium text-slate-500">Cited Clauses:</span>
-                    <span className="font-mono text-[10px] text-[#3067DB] bg-blue-50 px-1 rounded">
-                      {item.clause_keys.join(", ")}
-                    </span>
-                  </div>
-                )}
-                {item.quote && (
-                  <div className="text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100">
-                    <span className="text-slate-400 font-medium mr-1">Rejected Quote:</span>
-                    <span className="italic text-slate-700 line-through">"{item.quote}"</span>
-                  </div>
-                )}
-                <p className="text-[11px] text-rose-700 font-medium">
-                  {item.error || "Source quote could not be verified against cited clauses."}
+      {(() => {
+        const resultObj: any = typeof run.result === "string"
+          ? (() => { try { return JSON.parse(run.result); } catch { return {}; } })()
+          : (run.result || {});
+        const invalidItems: any[] = Array.isArray(resultObj?.invalid_items) ? resultObj.invalid_items : [];
+        if (invalidItems.length === 0) return null;
+        return (
+          <div className="rounded-md border border-rose-200 bg-rose-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-rose-700 shrink-0" />
+                <p className="text-xs font-semibold text-rose-900">
+                  Guardrail Rejections: Ungrounded Content Blocked ({invalidItems.length})
                 </p>
               </div>
-            ))}
+              <span className="rounded bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-800 uppercase tracking-wider">
+                Enforced by Filter
+              </span>
+            </div>
+            <p className="text-[11px] text-rose-700">
+              The items below failed deterministic verbatim quote verification against source clauses and were automatically rejected after repair attempts.
+            </p>
+            <div className="space-y-2">
+              {invalidItems.map((item: any, i: number) => (
+                <div key={i} className="rounded border border-rose-200/80 bg-white p-2.5 text-xs space-y-1.5 shadow-2xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-slate-800 truncate">
+                      {item.description || item.title || "Synthesized Item"}
+                    </span>
+                    <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+                      {item.task || "generation"}
+                    </span>
+                  </div>
+                  {item.clause_keys && item.clause_keys.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-medium text-slate-500">Cited Clauses:</span>
+                      <span className="font-mono text-[10px] text-[#3067DB] bg-blue-50 px-1 rounded">
+                        {Array.isArray(item.clause_keys) ? item.clause_keys.join(", ") : String(item.clause_keys)}
+                      </span>
+                    </div>
+                  )}
+                  {item.quote && (
+                    <div className="text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100">
+                      <span className="text-slate-400 font-medium mr-1">Rejected Quote:</span>
+                      <span className="italic text-slate-700 line-through">"{typeof item.quote === "string" ? item.quote : JSON.stringify(item.quote)}"</span>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-rose-700 font-medium">
+                    {typeof item.error === "string" ? item.error : JSON.stringify(item.error || "Source quote could not be verified against cited clauses.")}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Provider & Network Errors */}
-      {(run.result?.provider_errors ?? []).length > 0 && (
-        <div className="rounded border border-amber-200 bg-amber-50/50 p-3">
-          <p className="text-xs font-semibold text-amber-900 flex items-center gap-1.5 mb-1.5">
-            <AlertCircle className="h-3.5 w-3.5" />
-            <span>AI Provider Diagnostics ({(run.result?.provider_errors ?? []).length})</span>
-          </p>
-          <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-800">
-            {(run.result?.provider_errors ?? []).map((e: string, i: number) => (
-              <li key={i}>{e}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {(() => {
+        const resultObj: any = typeof run.result === "string"
+          ? (() => { try { return JSON.parse(run.result); } catch { return {}; } })()
+          : (run.result || {});
+        const providerErrors: any[] = Array.isArray(resultObj?.provider_errors) ? resultObj.provider_errors : [];
+        if (providerErrors.length === 0) return null;
+        return (
+          <div className="rounded border border-amber-200 bg-amber-50/50 p-3">
+            <p className="text-xs font-semibold text-amber-900 flex items-center gap-1.5 mb-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>AI Provider Diagnostics ({providerErrors.length})</span>
+            </p>
+            <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-800">
+              {providerErrors.map((e: any, i: number) => (
+                <li key={i}>{typeof e === "string" ? e : JSON.stringify(e)}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
     </div>
   );
 }

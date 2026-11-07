@@ -22,6 +22,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import { cn, fmtDate } from "@/utils/format";
@@ -283,7 +284,7 @@ export function AppShell() {
   const meQuery = useQuery({ queryKey: ["auth_me"], queryFn: () => api.get<any>("/auth/me") });
   const llmReady = cfg.data?.llm?.any_configured;
 
-  const isReviewer = meQuery.data?.persona === "reviewer" || meQuery.data?.role === "reviewer";
+  const isReviewer = meQuery.data?.persona === "reviewer" || meQuery.data?.role === "reviewer" || meQuery.data?.user?.email?.toLowerCase().includes("reviewer");
 
   const handleTogglePersona = async () => {
     try {
@@ -469,8 +470,8 @@ export function AppShell() {
 
           <div className="ml-auto flex items-center gap-2 shrink-0">
             {/* Dual-Control Persona Switcher */}
-            {meQuery.data?.role && (
-              <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 pl-2.5 pr-1 py-0.5 text-2xs text-slate-700">
+            {(meQuery.data?.persona || meQuery.data?.roles || meQuery.data?.user || meQuery.isSuccess) && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 pl-2.5 pr-1 py-0.5 text-2xs text-slate-700">
                 <span className={cn("h-2 w-2 rounded-full", isReviewer ? "bg-purple-600" : "bg-blue-600")} />
                 <span className="font-medium text-slate-500">Persona:</span>
                 <span className="font-semibold text-slate-800">
@@ -536,7 +537,9 @@ export function AppShell() {
         </div>
 
         <main className="min-w-0 flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6" id="main">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
