@@ -25,6 +25,7 @@ from app.api.routers import (
     projects,
     reasonx,
     requirements,
+    settings_usage,
     simulation,
     tests,
     users,
@@ -157,7 +158,8 @@ async def platform_middleware(request: Request, call_next):
 
 api = APIRouter(prefix="/api/v1")
 for r in (auth.router, users.router, projects.router, documents.router, requirements.router, tests.router,
-          execution.router, defects.router, misc.router, simulation.router, intelligence_report.router, reasonx.router):
+          execution.router, defects.router, misc.router, simulation.router, intelligence_report.router, reasonx.router,
+          settings_usage.router):
     api.include_router(r)
 app.include_router(api)
 

@@ -36,6 +36,8 @@
 | **Phase 5 Redesign** | Enterprise Traceability Intelligence & Coverage Governance | Critical | `TRACE-INTEL-01`, `COVER-GAP-01`, `CHANGE-IMP-01`, `AUDIT-01` | **COMPLETE** | 100% (10 Pytest + 23 Vitest + Build + 9 Screenshots) |
 | **Phase 6 Redesign** | Final Product Hardening, Project Cleanup, Evaluation Environment & Delivery Archive | Critical | `CLEANUP-01`, `ISOLATE-01`, `DEDUPE-01`, `DELIVERY-01` | **COMPLETE** | 100% (38 Pytest + 23 Vitest + Build + 19 Final Screenshots) |
 | **Phase 7 Evaluation** | Amazon AWS Independent Real-World Document Evaluation & Workspace Reconciliation | Critical | `AWS-BENCH-01`, `SWITCH-RECON-01`, `DASH-REDESIGN-01` | **COMPLETE** | 100% (26 Pytest + 23 Vitest + 32 Assertions Passed + 22 Screenshots) |
+| **Phase 8 ReasonX** | ReasonX AI Enterprise Autonomous Quality Engineering Agent | Critical | `REASONX-01`, `REASONX-02`, `REASONX-03`, `REASONX-04` | **COMPLETE** | 100% (11 Pytest + 29 Vitest + 10/10 AWS Benchmark + 10 Screenshots) |
+| **Settings Redesign** | Settings Redesign, LLM Token Usage, AI Cost Transparency & Provider Governance | High | `SETTINGS-AI-01`, `SETTINGS-COST-01`, `SETTINGS-PROV-01`, `SETTINGS-EXP-01` | **COMPLETE** | 100% (8 Pytest + 35 Vitest + Build + 10 Screenshots) |
 
 ---
 
@@ -695,6 +697,46 @@ Transformed the core requirements workspace (`/requirements`, `/requirements/:id
    - 10 authentic high-resolution Playwright screenshots captured under `docs/screenshots/reasonx-agent/`.
    - Updated `screenshots.zip` and `docs/screenshots.zip` (verified with `unzip -t`, 0 errors).
    - Comprehensive implementation report delivered at `docs/reports/enterprise-evaluation/REASONX_AI_AGENT_IMPLEMENTATION_REPORT.md`.
+
+---
+
+## 12. Settings Redesign, LLM Token Usage, AI Cost Transparency & Provider Governance
+
+### A. Objectives & Implementation Scope
+- Redesigned the developer-centric Settings page into an enterprise-grade AI Cost Transparency and Provider Governance Hub.
+- Removed internal key slot numbers, slot counts, per-key metrics, and masked API secrets from the user interface while preserving backend multi-key rotation and circuit breakers.
+- Standardized strictly on **Google Gemini (Primary)** and **Groq Cloud (Secondary Fallback)**; completely eliminated references to Ollama and legacy local models.
+- Replaced static key tables with real-time connectivity probes (`POST /api/v1/settings/llm/health-check`) measuring round-trip latency, status (`healthy`, `degraded`, `unreachable`), and verified timestamps.
+- Implemented a versioned rate card catalog (`MODEL_PRICING_REGISTRY`, version `2026.1`) in `backend/app/llm/pricing.py` matching published rates per 1,000,000 tokens.
+- Applied database migration `0009_ai_usage_and_cost.py` extending `provider_traces` with cost accounting and backfilled all 723 historical database records ($0.2364 total cost, 763,197 total tokens).
+- Built interactive frontend with 6 KPI cards, token grounding verification progress bar, Recharts consumption over time area chart, 4 breakdown tabs (models, agents, features, projects), and streaming CSV/JSON export.
+- Sanitized Execution Sandbox and Database Integrity panels to eliminate raw internal filesystem paths (e.g. `/home/Sohan/...`).
+
+### B. Automated Test Suite Results
+1. **Backend Pytest Suite (`backend/tests/test_settings_ai_usage.py`):**
+   - 8/8 passed in 5.26s.
+   - Tested pricing catalog integrity, mathematical cost precision, aggregated analytics, time/project filtering, CSV/JSON export, live health probes, clean provider listing, and filesystem path sanitization.
+2. **Frontend Vitest Suite (`frontend/tests/settings_ai_usage.test.tsx`):**
+   - 6/6 passed (total 35/35 passing across all 7 frontend suites).
+   - Tested page rendering, provider clean summary, KPI cards, breakdown tab switching, live probe interaction, and filesystem path absence.
+3. **Frontend TypeScript Check (`npm run typecheck` & `npm run build`):**
+   - TypeScript compilation passed with 0 errors.
+   - Production Vite build succeeded in 5.36s (`dist/assets/`).
+
+### C. Authentic Visual Evidence & Delivery Archive
+- 10 authentic high-resolution Playwright screenshots captured under `docs/screenshots/settings-ai-usage/`:
+  - `01_settings_overview.png`: Full-page overview of Settings & AI Intelligence
+  - `02_ai_providers_verified_health.png`: Provider Configuration table with live probe verification
+  - `03_ai_usage_kpi_metrics.png`: 6 KPI metric cards
+  - `04_token_breakdown_card.png`: Token Telemetry Grounding & Verification card
+  - `05_cost_over_time_chart.png`: Cost & Token Consumption Over Time area chart
+  - `06_provider_model_cost_table.png`: Provider & Model Breakdown table with unit rates
+  - `07_cost_by_agent_attribution.png`: Cost by Agent Attribution tab
+  - `08_cost_by_project_breakdown.png`: Cost by Project Breakdown tab
+  - `09_export_modal_or_action.png`: Controls bar with filters and export buttons
+  - `10_execution_and_db_health.png`: Execution Sandbox and Database Health panels
+- Updated `screenshots.zip` and `docs/screenshots.zip` verified with `unzip -t` (0 errors).
+- Comprehensive implementation report delivered at `docs/reports/enterprise-evaluation/SETTINGS_AI_USAGE_COST_IMPLEMENTATION_REPORT.md`.
 
 
 

@@ -17,6 +17,7 @@ interface ReasonXTaskTimelineProps {
   steps?: TaskStepItem[];
   taskType?: string;
   currentStatus?: string;
+  currentStep?: number;
 }
 
 export function ReasonXTaskTimeline({

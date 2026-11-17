@@ -130,7 +130,7 @@ def provider_chain() -> list[LLMProvider]:
 def provider_status() -> dict:
     s = get_settings()
     out: dict[str, Any] = {"mode": s.llm_mode, "providers": []}
-    for p in (GeminiProvider(s), GroqProvider(s), OllamaProvider(s)):
+    for p in (GeminiProvider(s), GroqProvider(s)):
         p_info: dict[str, Any] = {
             "name": p.name,
             "model": getattr(p, "model", ""),
@@ -160,19 +160,104 @@ def _extract_json(text: str) -> object:
     return json.loads(text[start:end + 1])
 
 
-def _trace(run_id, provider, model, task, phash, status, latency, attempt, comp: Completion | None, error=None):
+def _infer_agent_and_feature(task: str) -> tuple[str, str]:
+    t = (task or "").lower()
+    if "reasonx" in t:
+        return "reasonx", "reasonx_conversations"
+    elif "requirement" in t:
+        return "requirement_analyst", "requirement_generation"
+    elif "acceptance" in t:
+        return "ac_designer", "acceptance_criteria_generation"
+    elif "test" in t or "edge_case" in t:
+        return "test_generator", "test_case_generation"
+    elif "failure" in t or "investig" in t:
+        return "execution_investigator", "execution_analysis"
+    elif "onboarding" in t:
+        return "project_onboarding", "document_intake"
+    elif "policy" in t:
+        return "policy_auditor", "policy_validation"
+    elif "judge" in t:
+        return "judge_evaluator", "solution_scoring"
+    elif "health" in t or "ping" in t or "probe" in t:
+        return "system_health", "connection_probe"
+    return "general_assistant", task or "general_task"
+
+
+def _trace(
+    run_id: int | None,
+    provider: str,
+    model: str,
+    task: str,
+    phash: str,
+    status: str,
+    latency: int,
+    attempt: int,
+    comp: Completion | None,
+    error: str | None = None,
+    project_id: int | None = None,
+    user_id: int | None = None,
+    agent_name: str | None = None,
+    feature_name: str | None = None,
+    parent_workflow_id: str | None = None,
+):
     try:
         from app.db.base import session_scope
         from app.db.models import ProviderTrace
+        from app.llm.pricing import calculate_cost
+
+        default_agent, default_feature = _infer_agent_and_feature(task)
+        final_agent = agent_name or default_agent
+        final_feature = feature_name or default_feature
+
+        inp = comp.input_tokens if comp else None
+        out = comp.output_tokens if comp else None
+        cached = getattr(comp, "cached_input_tokens", 0) or 0 if comp else 0
+        reasoning = getattr(comp, "reasoning_tokens", 0) or 0 if comp else 0
+        tot = getattr(comp, "total_tokens", None) if comp else None
+        if tot is None and (inp is not None or out is not None):
+            tot = (inp or 0) + (out or 0)
+
+        cost_usd, pricing_version = calculate_cost(
+            provider=provider,
+            model=model,
+            input_tokens=inp,
+            output_tokens=out,
+            cached_input_tokens=cached,
+            reasoning_tokens=reasoning,
+        )
+
         with session_scope() as db:
-            db.add(ProviderTrace(run_id=run_id, provider=provider, model=model,
-                                 slot_id=comp.slot_id if comp else None,
-                                 task=task, prompt_hash=phash,
-                                 status=status, latency_ms=latency, attempt=attempt,
-                                 input_tokens=comp.input_tokens if comp else None,
-                                 output_tokens=comp.output_tokens if comp else None,
-                                 error=(error or "")[:2000] or None,
-                                 response_text=(comp.text[:4000] if comp else None)))
+            if project_id is None and run_id:
+                from app.db.models import Execution
+                run_obj = db.get(Execution, run_id)
+                if run_obj:
+                    project_id = run_obj.project_id
+
+            db.add(ProviderTrace(
+                run_id=run_id,
+                project_id=project_id,
+                user_id=user_id,
+                parent_workflow_id=parent_workflow_id,
+                agent_name=final_agent,
+                feature_name=final_feature,
+                provider=provider,
+                model=model,
+                slot_id=comp.slot_id if comp else None,
+                task=task,
+                prompt_hash=phash,
+                status=status,
+                latency_ms=latency,
+                attempt=attempt,
+                input_tokens=inp,
+                output_tokens=out,
+                cached_input_tokens=cached,
+                reasoning_tokens=reasoning,
+                total_tokens=tot,
+                pricing_version=pricing_version,
+                cost_usd=cost_usd,
+                error=(error or "")[:2000] or None,
+                response_text=(comp.text[:4000] if comp else None),
+            ))
     except Exception:
         pass
 
@@ -197,8 +282,20 @@ def _cache_put(phash, task, provider, model, response: dict) -> None:
         pass
 
 
-def generate(task: str, system: str, user: str, schema: type[T], run_id: int | None = None,
-             use_cache: bool = True, chain: list[LLMProvider] | None = None) -> LLMResult:
+def generate(
+    task: str,
+    system: str,
+    user: str,
+    schema: type[T],
+    run_id: int | None = None,
+    project_id: int | None = None,
+    user_id: int | None = None,
+    agent_name: str | None = None,
+    feature_name: str | None = None,
+    parent_workflow_id: str | None = None,
+    use_cache: bool = True,
+    chain: list[LLMProvider] | None = None,
+) -> LLMResult:
     system = redact_secrets(system)
     user = redact_secrets(user)
     settings = get_settings()
@@ -211,7 +308,9 @@ def generate(task: str, system: str, user: str, schema: type[T], run_id: int | N
         hit = _cache_get(phash, task)
         if hit:
             resp, prov, model = hit
-            _trace(run_id, prov, model, task, phash, "cached", 0, 0, None)
+            _trace(run_id, prov, model, task, phash, "cached", 0, 0, None,
+                   project_id=project_id, user_id=user_id, agent_name=agent_name,
+                   feature_name=feature_name, parent_workflow_id=parent_workflow_id)
             return LLMResult(schema.model_validate(resp), prov, model, 0, True)
 
     errors: list[str] = []
@@ -229,7 +328,9 @@ def generate(task: str, system: str, user: str, schema: type[T], run_id: int | N
                 comp = provider.complete_json(system, prompt, settings.llm_timeout_seconds)
             except ProviderError as exc:
                 latency = int((time.monotonic() - t0) * 1000)
-                _trace(run_id, provider.name, provider.model, task, phash, "error", latency, attempt, None, str(exc))
+                _trace(run_id, provider.name, provider.model, task, phash, "error", latency, attempt, None, str(exc),
+                       project_id=project_id, user_id=user_id, agent_name=agent_name,
+                       feature_name=feature_name, parent_workflow_id=parent_workflow_id)
                 BREAKER.record(provider.name, False)
                 if exc.retryable and attempt <= settings.llm_max_retries:
                     base = 2.0 if exc.status == 429 else 0.5
@@ -243,7 +344,8 @@ def generate(task: str, system: str, user: str, schema: type[T], run_id: int | N
                 parsed = schema.model_validate(_extract_json(comp.text))
             except (ValueError, ValidationError) as exc:
                 _trace(run_id, comp.provider, comp.model, task, phash, "invalid_output", latency, attempt, comp,
-                       str(exc))
+                       str(exc), project_id=project_id, user_id=user_id, agent_name=agent_name,
+                       feature_name=feature_name, parent_workflow_id=parent_workflow_id)
                 if repairs >= MAX_REPAIRS:
                     raise StructuredOutputError(
                         f"{comp.provider} returned output that failed schema validation after {MAX_REPAIRS} "
@@ -251,7 +353,9 @@ def generate(task: str, system: str, user: str, schema: type[T], run_id: int | N
                 repairs += 1
                 prompt = repair_prompt(user, comp.text, str(exc))
                 continue
-            _trace(run_id, comp.provider, comp.model, task, phash, "ok", latency, attempt, comp)
+            _trace(run_id, comp.provider, comp.model, task, phash, "ok", latency, attempt, comp,
+                   project_id=project_id, user_id=user_id, agent_name=agent_name,
+                   feature_name=feature_name, parent_workflow_id=parent_workflow_id)
             if not explicit and settings.llm_mode != "mock":
                 _cache_put(phash, task, comp.provider, comp.model, parsed.model_dump())
             return LLMResult(parsed, comp.provider, comp.model, repairs, False)

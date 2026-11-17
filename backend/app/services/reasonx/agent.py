@@ -430,6 +430,11 @@ def run_reasonx_agent(
         system=system_prompt,
         user=user_prompt,
         schema=ReasonXResponse,
+        project_id=project.id,
+        user_id=user_id,
+        agent_name="reasonx",
+        feature_name="reasonx_conversations",
+        parent_workflow_id=f"reasonx_task_{task.id}",
         use_cache=False,
     )
 

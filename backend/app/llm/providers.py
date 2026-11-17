@@ -275,14 +275,22 @@ class GroqProvider(LLMProvider):
 
                 data = r.json()
                 usage = data.get("usage") or {}
+                prompt_details = usage.get("prompt_tokens_details") or {}
+                completion_details = usage.get("completion_tokens_details") or {}
                 self.pool.record_success(slot)
+                inp = usage.get("prompt_tokens")
+                out = usage.get("completion_tokens")
+                tot = usage.get("total_tokens") or ((inp or 0) + (out or 0) if (inp or out) else None)
                 return Completion(
                     text=data["choices"][0]["message"]["content"] or "",
                     provider=self.name,
                     model=model,
-                    input_tokens=usage.get("prompt_tokens"),
-                    output_tokens=usage.get("completion_tokens"),
+                    input_tokens=inp,
+                    output_tokens=out,
                     slot_id=slot.slot_id,
+                    cached_input_tokens=prompt_details.get("cached_tokens", 0),
+                    reasoning_tokens=completion_details.get("reasoning_tokens", 0),
+                    total_tokens=tot,
                 )
 
         raise ProviderError(f"Groq failover failed: {' | '.join(errors)}", True, 429)
@@ -348,13 +356,20 @@ class GeminiProvider(LLMProvider):
                         )
                         usage = getattr(resp, "usage_metadata", None)
                         self.pool.record_success(slot)
+                        inp = getattr(usage, "prompt_token_count", None)
+                        out = getattr(usage, "candidates_token_count", None)
+                        cached = getattr(usage, "cached_content_token_count", 0)
+                        tot = getattr(usage, "total_token_count", None) or ((inp or 0) + (out or 0) if (inp or out) else None)
                         return Completion(
                             text=resp.text or "",
                             provider=self.name,
                             model=model,
-                            input_tokens=getattr(usage, "prompt_token_count", None),
-                            output_tokens=getattr(usage, "candidates_token_count", None),
+                            input_tokens=inp,
+                            output_tokens=out,
                             slot_id=slot.slot_id,
+                            cached_input_tokens=cached,
+                            reasoning_tokens=0,
+                            total_tokens=tot,
                         )
                 except ProviderError as exc:
                     errors.append(f"Slot {slot.slot_id} {exc}")
@@ -421,4 +436,15 @@ class MockProvider(LLMProvider):
         return True
 
     def complete_json(self, system: str, user: str, timeout: float) -> Completion:
-        return Completion(json.dumps(self.responder(system, user)), self.name, self.model, slot_id=1)
+        resp_str = json.dumps(self.responder(system, user))
+        inp = max(10, len(system + user) // 4)
+        out = max(10, len(resp_str) // 4)
+        return Completion(
+            resp_str,
+            self.name,
+            self.model,
+            slot_id=1,
+            input_tokens=inp,
+            output_tokens=out,
+            total_tokens=inp + out,
+        )

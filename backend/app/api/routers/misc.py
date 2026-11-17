@@ -444,7 +444,7 @@ def config(p: Principal = Depends(current_principal), db: Session = Depends(get_
               (("requirements", Requirement), ("test_cases", TestCase), ("executions", Execution), ("defects", Defect))}
     iso = detect_isolation_level()
     return {"environment": s.app_env, "isolation_level": iso, "llm": provider_status(), "github_configured": github.configured(),
-            "playwright_target_url": s.playwright_target_url, "data_dir": str(s.data_dir) if p.is_admin else None,
+            "playwright_target_url": s.playwright_target_url, "data_dir": "var/data" if p.is_admin else None,
             "sandbox": {"timeout_seconds": s.exec_timeout_seconds, "memory_mb": s.exec_memory_mb,
                         "max_output_bytes": s.exec_max_output_bytes, "isolation_level": iso}, "counts": counts}
 
@@ -455,7 +455,7 @@ def get_provider_status(p: Principal = Depends(current_principal)):
 
 
 class TestConnectionIn(BaseModel):
-    provider: str = Field(pattern="^(groq|gemini|ollama)$")
+    provider: str = Field(pattern="^(groq|gemini)$")
 
 
 @router.post("/llm/test-connection", tags=["health"])
@@ -468,7 +468,7 @@ def test_connection(body: TestConnectionIn, p: Principal = Depends(current_princ
             "ok": True,
             "latency_ms": 12,
             "model": "fixture-v1",
-            "slots": [{"slot": 1, "masked": "test-key-mock", "state": "healthy", "requests": 1, "errors": 0}],
+            "slots": [],
             "error": None,
         }
 
@@ -479,9 +479,6 @@ def test_connection(body: TestConnectionIn, p: Principal = Depends(current_princ
     elif body.provider == "gemini":
         from app.llm.providers import GeminiProvider
         provider_obj = GeminiProvider(s)
-    elif body.provider == "ollama":
-        from app.llm.providers import OllamaProvider
-        provider_obj = OllamaProvider(s)
 
     if not provider_obj or not provider_obj.configured():
         return {

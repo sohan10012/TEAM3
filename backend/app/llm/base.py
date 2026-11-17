@@ -18,6 +18,9 @@ class Completion:
     input_tokens: int | None = None
     output_tokens: int | None = None
     slot_id: int | None = None
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    total_tokens: int | None = None
 
 
 class LLMProvider:
