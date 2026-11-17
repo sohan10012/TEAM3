@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowUpDown,
   BookOpen,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Copy,
   ExternalLink,
@@ -17,16 +20,18 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Split,
   Trash2,
   Upload,
   UploadCloud,
+  X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
-import { Badge, Button, Dialog, Field, Input, Key, Select, Textarea } from "@/components/ui";
+import { Badge, Button, Dialog, Field, Input, Key, ResponsiveDetailDrawer, Select, Textarea } from "@/components/ui";
 import { EmbeddedDocumentViewer } from "@/components/documents/EmbeddedDocumentViewer";
 import { api } from "@/services/api";
 import type { Page, Project, Requirement } from "@/types/models";
@@ -105,7 +110,16 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
   const [reqSearch, setReqSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
+  const [selectedReviewStatus, setSelectedReviewStatus] = useState("all");
+  const [selectedCoverageFilter, setSelectedCoverageFilter] = useState("all");
+  const [reqSortBy, setReqSortBy] = useState<"key" | "priority" | "confidence" | "tests">("key");
+  const [reqSortOrder, setReqSortOrder] = useState<"asc" | "desc">("asc");
+  const [reqPage, setReqPage] = useState<number>(1);
+  const [reqPageSize, setReqPageSize] = useState<number>(25);
+  const [expandedReqIds, setExpandedReqIds] = useState<Set<number>>(new Set());
+  const [quickPeekReq, setQuickPeekReq] = useState<Requirement | null>(null);
   const [traceSearch, setTraceSearch] = useState("");
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Dialog states
   const [isAddReqOpen, setIsAddReqOpen] = useState(false);
@@ -345,14 +359,59 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
     return { fn, nf, br, total: docReqs.length };
   }, [docReqs]);
 
+  // Lookup map from requirement key to traceability row (ACs, tests, execution status, defects)
+  const traceByReqKey = useMemo(() => {
+    const map = new Map<string, any>();
+    trace.forEach((row: any) => {
+      if (row.requirement_key) {
+        map.set(row.requirement_key, row);
+      }
+    });
+    return map;
+  }, [trace]);
+
+  const toggleReqExpand = (id: number) => {
+    setExpandedReqIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllReqExpand = () => {
+    if (expandedReqIds.size === pagedReqs.length && pagedReqs.length > 0) {
+      setExpandedReqIds(new Set());
+    } else {
+      setExpandedReqIds(new Set(pagedReqs.map((r) => r.id)));
+    }
+  };
+
+  const approveReqM = useMutation({
+    mutationFn: (id: number) => api.post(`/requirements/${id}/approve`),
+    onSuccess: () => {
+      toast.ok("Requirement approved successfully.");
+      qc.invalidateQueries({ queryKey: ["requirements"] });
+      qc.invalidateQueries({ queryKey: ["project-traceability", projectId] });
+      qc.invalidateQueries({ queryKey: ["project-requirements-dashboard", projectId] });
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to approve requirement"),
+  });
+
   // Filtered requirements for tab 2
   const filteredReqs = useMemo(() => {
-    return reqs.filter((r) => {
+    const priorityWeight: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+    const list = reqs.filter((r) => {
       const matchQ =
         !reqSearch ||
         r.title.toLowerCase().includes(reqSearch.toLowerCase()) ||
         r.key.toLowerCase().includes(reqSearch.toLowerCase()) ||
-        (r.evidence_excerpt && r.evidence_excerpt.toLowerCase().includes(reqSearch.toLowerCase()));
+        (r.evidence_excerpt && r.evidence_excerpt.toLowerCase().includes(reqSearch.toLowerCase())) ||
+        (r.description && r.description.toLowerCase().includes(reqSearch.toLowerCase()));
 
       const matchCat =
         selectedCategory === "all" ||
@@ -363,9 +422,53 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
           ["business_rule", "validation_rule", "compliance"].includes(r.category));
 
       const matchPrio = selectedPriority === "all" || r.priority === selectedPriority;
-      return matchQ && matchCat && matchPrio;
+      const matchStatus =
+        selectedReviewStatus === "all" ||
+        r.review_status === selectedReviewStatus ||
+        r.status === selectedReviewStatus;
+
+      const traceRow = traceByReqKey.get(r.key);
+      const testCount = traceRow?.tests?.length ?? 0;
+      const matchCoverage =
+        selectedCoverageFilter === "all" ||
+        (selectedCoverageFilter === "covered" && testCount > 0) ||
+        (selectedCoverageFilter === "uncovered" && testCount === 0);
+
+      return matchQ && matchCat && matchPrio && matchStatus && matchCoverage;
     });
-  }, [reqs, reqSearch, selectedCategory, selectedPriority]);
+
+    return list.sort((a, b) => {
+      let cmp = 0;
+      if (reqSortBy === "key") {
+        cmp = a.key.localeCompare(b.key, undefined, { numeric: true });
+      } else if (reqSortBy === "priority") {
+        cmp = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+      } else if (reqSortBy === "confidence") {
+        cmp = (b.confidence || 0) - (a.confidence || 0);
+      } else if (reqSortBy === "tests") {
+        const countA = traceByReqKey.get(a.key)?.tests?.length ?? 0;
+        const countB = traceByReqKey.get(b.key)?.tests?.length ?? 0;
+        cmp = countB - countA;
+      }
+      return reqSortOrder === "asc" ? cmp : -cmp;
+    });
+  }, [
+    reqs,
+    reqSearch,
+    selectedCategory,
+    selectedPriority,
+    selectedReviewStatus,
+    selectedCoverageFilter,
+    reqSortBy,
+    reqSortOrder,
+    traceByReqKey,
+  ]);
+
+  const totalReqPages = Math.ceil(filteredReqs.length / reqPageSize) || 1;
+  const pagedReqs = useMemo(() => {
+    const start = (reqPage - 1) * reqPageSize;
+    return filteredReqs.slice(start, start + reqPageSize);
+  }, [filteredReqs, reqPage, reqPageSize]);
 
   // Traceability rows filtered
   const filteredTraceRows = useMemo(() => {
@@ -1370,122 +1473,770 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
         </div>
       )}
 
-      {/* Tab 2: Extracted Requirements (with category filters & source navigation) */}
+      {/* Tab 2: Extracted Requirements (with expandable rows, filters, drawer & pagination) */}
       {activeTab === "extracted" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search requirements (key, title, excerpt...)"
-                className="pl-8 text-xs h-9"
-                value={reqSearch}
-                onChange={(e) => setReqSearch(e.target.value)}
-              />
+          {/* Top Filter & Control Toolbar */}
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="relative flex-1 min-w-[260px] max-w-md">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search requirements (key, title, excerpt, description...)"
+                  className="pl-8 text-xs h-9"
+                  value={reqSearch}
+                  onChange={(e) => {
+                    setReqSearch(e.target.value);
+                    setReqPage(1);
+                  }}
+                />
+                {reqSearch && (
+                  <button
+                    onClick={() => {
+                      setReqSearch("");
+                      setReqPage(1);
+                    }}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  className="text-xs h-9 w-40"
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setReqPage(1);
+                  }}
+                >
+                  <option value="all">All Categories</option>
+                  <option value="functional">Functional</option>
+                  <option value="non_functional">Non-Functional</option>
+                  <option value="business_rule">Business Rule</option>
+                  <option value="security">Security</option>
+                  <option value="compliance">Compliance</option>
+                  <option value="performance_constraint">Performance</option>
+                  <option value="validation_rule">Validation</option>
+                  <option value="permission_role">Permission & Role</option>
+                  <option value="integration_requirement">Integration</option>
+                </Select>
+
+                <Select
+                  className="text-xs h-9 w-32"
+                  value={selectedPriority}
+                  onChange={(e) => {
+                    setSelectedPriority(e.target.value);
+                    setReqPage(1);
+                  }}
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </Select>
+
+                <Select
+                  className="text-xs h-9 w-36"
+                  value={selectedReviewStatus}
+                  onChange={(e) => {
+                    setSelectedReviewStatus(e.target.value);
+                    setReqPage(1);
+                  }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="approved">Approved</option>
+                  <option value="pending_review">Pending Review</option>
+                  <option value="draft">Draft</option>
+                  <option value="rejected">Rejected</option>
+                </Select>
+
+                <Select
+                  className="text-xs h-9 w-36"
+                  value={selectedCoverageFilter}
+                  onChange={(e) => {
+                    setSelectedCoverageFilter(e.target.value);
+                    setReqPage(1);
+                  }}
+                >
+                  <option value="all">All Coverage</option>
+                  <option value="covered">Covered by Tests</option>
+                  <option value="uncovered">Untested / Uncovered</option>
+                </Select>
+
+                <div className="flex items-center gap-1 rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+                  <Select
+                    className="text-xs h-8 border-0 bg-transparent shadow-none w-32"
+                    value={reqSortBy}
+                    onChange={(e: any) => setReqSortBy(e.target.value)}
+                  >
+                    <option value="key">Sort: Key</option>
+                    <option value="priority">Sort: Priority</option>
+                    <option value="confidence">Sort: Confidence</option>
+                    <option value="tests">Sort: Test Count</option>
+                  </Select>
+
+                  <button
+                    type="button"
+                    onClick={() => setReqSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
+                    className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200 transition-colors"
+                    title={`Sort ${reqSortOrder === "asc" ? "Descending" : "Ascending"}`}
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleAllReqExpand}
+                  className="text-xs h-9 border-slate-200 text-slate-700 hover:bg-slate-50 shrink-0"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5 mr-1" />
+                  <span>
+                    {expandedReqIds.size === pagedReqs.length && pagedReqs.length > 0
+                      ? "Collapse All"
+                      : "Expand All"}
+                  </span>
+                </Button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select
-                className="text-xs h-9 w-44"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="all">All Categories</option>
-                <option value="functional">Functional</option>
-                <option value="non_functional">Non-Functional</option>
-                <option value="business_rule">Business Rule</option>
-                <option value="security">Security</option>
-                <option value="compliance">Compliance</option>
-                <option value="performance_constraint">Performance</option>
-                <option value="validation_rule">Validation</option>
-                <option value="permission_role">Permission & Role</option>
-                <option value="integration_requirement">Integration</option>
-              </Select>
-
-              <Select
-                className="text-xs h-9 w-32"
-                value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value)}
-              >
-                <option value="all">All Priorities</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </Select>
+            {/* Active Filters Bar / Results Count */}
+            <div className="flex flex-wrap items-center justify-between text-2xs text-slate-500 pt-1 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <span>
+                  Showing <strong className="text-slate-800">{filteredReqs.length}</strong> of{" "}
+                  <strong className="text-slate-800">{reqs.length}</strong> requirements
+                </span>
+                {(reqSearch ||
+                  selectedCategory !== "all" ||
+                  selectedPriority !== "all" ||
+                  selectedReviewStatus !== "all" ||
+                  selectedCoverageFilter !== "all") && (
+                  <button
+                    onClick={() => {
+                      setReqSearch("");
+                      setSelectedCategory("all");
+                      setSelectedPriority("all");
+                      setSelectedReviewStatus("all");
+                      setSelectedCoverageFilter("all");
+                      setReqPage(1);
+                    }}
+                    className="inline-flex items-center gap-1 text-[#3067DB] hover:underline font-medium"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Reset filters</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span>Approved: {reqs.filter((r) => r.status === "approved" || r.review_status === "approved").length}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  <span>Pending: {reqs.filter((r) => r.review_status === "pending_review").length}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span>Total Clauses: {reqs.reduce((acc, r) => acc + ((r as any).clauses_count || 1), 0)}</span>
+                </span>
+              </div>
             </div>
           </div>
 
+          {/* Expandable Enterprise Requirements Table */}
           <div
+            ref={tableContainerRef}
             tabIndex={0}
             role="region"
             aria-label="Extracted Requirements Table"
-            className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
-            <table className="w-full text-left text-xs min-w-[750px]">
+            <table className="w-full text-left text-xs min-w-[900px] border-collapse">
               <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
                 <tr>
-                  <th className="px-4 py-2.5 w-32">ID</th>
-                  <th className="px-4 py-2.5">Title & Obligation</th>
-                  <th className="px-4 py-2.5 w-32">Category</th>
-                  <th className="px-4 py-2.5 w-24">Priority</th>
-                  <th className="px-4 py-2.5 w-28">Status</th>
-                  <th className="px-4 py-2.5 w-40 text-right">Actions</th>
+                  <th className="px-3 py-3 w-10 text-center"></th>
+                  <th className="px-3 py-3 w-36">Requirement Key</th>
+                  <th className="px-4 py-3 min-w-[280px]">Title & Obligation Excerpt</th>
+                  <th className="px-3 py-3 w-32">Category</th>
+                  <th className="px-3 py-3 w-24">Priority</th>
+                  <th className="px-3 py-3 w-24 text-center">Criteria</th>
+                  <th className="px-3 py-3 w-28 text-center">Test Coverage</th>
+                  <th className="px-3 py-3 w-28">Review Status</th>
+                  <th className="px-4 py-3 w-48 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredReqs.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="hover:bg-slate-50 cursor-pointer"
-                    onClick={() => nav(`/requirements/${r.id}`)}
-                  >
-                    <td className="px-4 py-2.5 font-mono text-slate-600 font-medium">
-                      <Key>{r.key}</Key>
-                    </td>
-                    <td className="px-4 py-2.5 font-medium text-slate-900">
-                      <div>{r.title}</div>
-                      <div className="text-[11px] text-slate-500 font-normal line-clamp-1">
-                        {r.description || r.evidence_excerpt}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Badge value={r.category} />
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Badge value={r.priority} />
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Badge value={r.status || "approved"} />
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {r.document_id && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDocId(r.document_id ?? null);
-                              setViewerTargetPage(parsePageNum(r.source_page));
-                              setViewerTargetExcerpt(r.evidence_excerpt || null);
-                              setActiveTab("intake");
-                              setDocSubTab("original");
-                            }}
-                            className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-2xs font-medium text-[#3067DB] hover:bg-blue-100 transition-colors"
-                            title="Jump to original PDF source passage"
-                          >
-                            <FileText className="h-3 w-3" />
-                            <span>{r.source_page || "PDF"}</span>
-                          </button>
-                        )}
-                        <span className="text-[#3067DB] hover:underline font-medium">View</span>
-                      </div>
+                {pagedReqs.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-500 text-xs">
+                      No requirements match the selected filter criteria.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  pagedReqs.map((r) => {
+                    const isExpanded = expandedReqIds.has(r.id);
+                    const traceRow = traceByReqKey.get(r.key);
+                    const acList = traceRow?.acceptance_criteria || [];
+                    const testList = traceRow?.tests || [];
+                    const acCount = acList.length;
+                    const testCount = testList.length;
+                    const latestStatus = traceRow?.latest_execution_status;
+                    const confidencePct = r.confidence ? Math.round(r.confidence * 100) : 95;
+
+                    return (
+                      <Fragment key={r.id}>
+                        <tr
+                          className={cn(
+                            "transition-colors cursor-pointer select-none",
+                            isExpanded ? "bg-blue-50/30" : "hover:bg-slate-50/80"
+                          )}
+                          onClick={() => toggleReqExpand(r.id)}
+                        >
+                          {/* Chevron Expand/Collapse Toggle */}
+                          <td className="px-3 py-3 text-center text-slate-400 hover:text-slate-700">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReqExpand(r.id);
+                              }}
+                              className="p-1 rounded hover:bg-slate-200 transition-colors"
+                              title={isExpanded ? "Collapse details" : "Expand details"}
+                              aria-expanded={isExpanded}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-[#3067DB]" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              )}
+                            </button>
+                          </td>
+
+                          {/* Monospaced Key */}
+                          <td className="px-3 py-3 font-mono text-slate-700 font-semibold whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 rounded bg-slate-100 px-2 py-0.5 text-2xs font-mono text-slate-800 border border-slate-200">
+                              {r.key}
+                            </span>
+                          </td>
+
+                          {/* Title & 1-line Excerpt */}
+                          <td className="px-4 py-3 font-medium text-slate-900">
+                            <div className="line-clamp-1 font-semibold text-slate-900">{r.title}</div>
+                            <div className="text-[11px] text-slate-500 font-normal line-clamp-1 mt-0.5">
+                              {r.evidence_excerpt || r.description}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              {r.source_page && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                                  <FileText className="h-2.5 w-2.5 text-slate-400" />
+                                  <span>{r.source_page}</span>
+                                </span>
+                              )}
+                              {r.source_section && (
+                                <span className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                                  § {r.source_section}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Category Badge */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <Badge value={r.category} />
+                          </td>
+
+                          {/* Priority Badge */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <Badge value={r.priority} />
+                          </td>
+
+                          {/* AC Count Badge */}
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold border",
+                                acCount > 0
+                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  : "bg-slate-100 text-slate-500 border-slate-200"
+                              )}
+                              title={`${acCount} acceptance criteria linked`}
+                            >
+                              <span>{acCount} ACs</span>
+                            </span>
+                          </td>
+
+                          {/* Test Count Badge */}
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-semibold border",
+                                testCount > 0
+                                  ? "bg-blue-50 text-[#3067DB] border-blue-200"
+                                  : "bg-amber-50 text-amber-800 border-amber-200"
+                              )}
+                              title={`${testCount} test cases covering this requirement`}
+                            >
+                              {testCount > 0 && (
+                                <span
+                                  className={cn(
+                                    "h-1.5 w-1.5 rounded-full",
+                                    latestStatus === "Passed"
+                                      ? "bg-emerald-500"
+                                      : latestStatus === "Failed"
+                                      ? "bg-rose-500"
+                                      : "bg-blue-500"
+                                  )}
+                                />
+                              )}
+                              <span>{testCount} Tests</span>
+                            </span>
+                          </td>
+
+                          {/* Status Badge */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <Badge value={r.review_status || r.status || "approved"} />
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              {/* Quick Approve button if not yet approved */}
+                              {(r.review_status === "pending_review" || r.status === "draft") && (
+                                <button
+                                  type="button"
+                                  onClick={() => approveReqM.mutate(r.id)}
+                                  disabled={approveReqM.isPending}
+                                  className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-2xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+                                  title="Approve this requirement"
+                                >
+                                  <Check className="h-3 w-3" />
+                                  <span>Approve</span>
+                                </button>
+                              )}
+
+                              {/* Jump to PDF source */}
+                              {r.document_id && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDocId(r.document_id ?? null);
+                                    setViewerTargetPage(parsePageNum(r.source_page));
+                                    setViewerTargetExcerpt(r.evidence_excerpt || null);
+                                    setActiveTab("intake");
+                                    setDocSubTab("original");
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-2xs font-medium text-[#3067DB] hover:bg-blue-100 transition-colors"
+                                  title="Open PDF source passage"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  <span>{r.source_page || "PDF"}</span>
+                                </button>
+                              )}
+
+                              {/* Inspect Drawer Button */}
+                              <button
+                                type="button"
+                                onClick={() => setQuickPeekReq(r)}
+                                className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-2xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                title="Inspect requirement in detail drawer"
+                              >
+                                <Eye className="h-3 w-3 text-slate-500" />
+                                <span>Inspect</span>
+                              </button>
+
+                              {/* Navigate to full requirement page */}
+                              <button
+                                type="button"
+                                onClick={() => nav(`/requirements/${r.id}`)}
+                                className="inline-flex items-center gap-1 rounded p-1 text-slate-400 hover:text-[#3067DB] hover:bg-slate-100 transition-colors"
+                                title="Open full requirement page"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Inline Expandable Detail Drawer / Sub-panel */}
+                        {isExpanded && (
+                          <tr className="bg-slate-50/70 border-b border-slate-200">
+                            <td colSpan={9} className="p-4 sm:p-5">
+                              <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+                                {/* Top Bar: Key, Confidence & Provenance */}
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs font-bold text-[#3067DB]">{r.key}</span>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="text-xs font-semibold text-slate-800">{r.title}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-2xs font-medium text-indigo-700 border border-indigo-100">
+                                      <ShieldCheck className="h-3 w-3" />
+                                      <span>Provenance: {(r as any).extraction_provenance || "explicit_documented"}</span>
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-100">
+                                      <span>{confidencePct}% Confidence</span>
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Full Obligation & Verbatim Evidence Blockquote */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">
+                                      Full Obligation Statement
+                                    </h4>
+                                    <p className="text-xs text-slate-800 leading-relaxed font-normal bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                      {r.description || r.title}
+                                    </p>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">
+                                        Verbatim Source Passage & Citation
+                                      </h4>
+                                      {r.source_page && (
+                                        <span className="text-2xs font-mono text-[#3067DB]">
+                                          {r.source_page} · § {r.source_section || "General"}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <blockquote className="text-xs text-slate-700 italic leading-relaxed bg-amber-50/40 border-l-3 border-amber-400 p-3 rounded-r-lg">
+                                      "{r.evidence_excerpt || "No explicit verbatim excerpt recorded."}"
+                                    </blockquote>
+                                  </div>
+                                </div>
+
+                                {/* Acceptance Criteria Sub-Section */}
+                                <div className="space-y-2 pt-2 border-t border-slate-100">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                                      <Layers className="h-3.5 w-3.5 text-purple-600" />
+                                      <span>Linked Acceptance Criteria ({acCount})</span>
+                                    </h4>
+                                  </div>
+
+                                  {acCount > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                      {acList.map((ac: any, acIdx: number) => (
+                                        <div
+                                          key={acIdx}
+                                          className="rounded-lg border border-purple-100 bg-purple-50/30 p-2.5 text-xs space-y-1"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-mono text-2xs font-bold text-purple-700">
+                                              {ac.key}
+                                            </span>
+                                            <span className="rounded bg-purple-100 text-purple-800 px-1.5 py-0.2 text-[9px] font-semibold">
+                                              Gherkin Validated
+                                            </span>
+                                          </div>
+                                          <p className="text-slate-700 text-[11px] leading-relaxed">
+                                            {ac.description}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-2xs text-slate-500">
+                                      No acceptance criteria generated yet for this requirement.
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Linked Test Cases Sub-Section */}
+                                <div className="space-y-2 pt-2 border-t border-slate-100">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                                      <FileCheck className="h-3.5 w-3.5 text-[#3067DB]" />
+                                      <span>Linked Test Scenarios ({testCount})</span>
+                                    </h4>
+                                  </div>
+
+                                  {testCount > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {testList.map((t: any, tIdx: number) => (
+                                        <div
+                                          key={tIdx}
+                                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                          <span className="font-mono text-2xs font-semibold text-[#3067DB]">
+                                            {t.key}
+                                          </span>
+                                          <span className="text-[11px] text-slate-800 truncate max-w-[220px]">
+                                            {t.title}
+                                          </span>
+                                          <span className="rounded bg-blue-100 text-[#3067DB] px-1 py-0.2 text-[9px] font-medium uppercase">
+                                            {t.category || "test"}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/50 p-3 text-center text-2xs text-amber-800">
+                                      No test cases currently linked. Generate coverage from the Coverage Explorer or Test Cases view.
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Bottom Quick Actions Bar */}
+                                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+                                  <div className="flex items-center gap-2">
+                                    {r.document_id && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedDocId(r.document_id ?? null);
+                                          setViewerTargetPage(parsePageNum(r.source_page));
+                                          setViewerTargetExcerpt(r.evidence_excerpt || null);
+                                          setActiveTab("intake");
+                                          setDocSubTab("original");
+                                        }}
+                                        className="h-8 text-xs border-slate-200"
+                                      >
+                                        <FileText className="h-3.5 w-3.5 mr-1 text-[#3067DB]" />
+                                        <span>View in PDF Viewer</span>
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => nav(`/requirements/${r.id}`)}
+                                      className="h-8 text-xs border-slate-200 text-slate-700"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                                      <span>Full Workspace</span>
+                                    </Button>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    {(r.review_status === "pending_review" || r.status === "draft") && (
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => approveReqM.mutate(r.id)}
+                                        loading={approveReqM.isPending}
+                                        className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                                      >
+                                        <Check className="h-3.5 w-3.5 mr-1" />
+                                        <span>Approve Requirement</span>
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Clean Enterprise Pagination Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span>
+                Showing{" "}
+                <strong className="text-slate-800">
+                  {filteredReqs.length === 0 ? 0 : (reqPage - 1) * reqPageSize + 1}
+                </strong>{" "}
+                –{" "}
+                <strong className="text-slate-800">
+                  {Math.min(reqPage * reqPageSize, filteredReqs.length)}
+                </strong>{" "}
+                of <strong className="text-slate-800">{filteredReqs.length}</strong> requirements
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-2xs text-slate-500">
+                <span>Per page:</span>
+                <select
+                  value={reqPageSize}
+                  onChange={(e) => {
+                    setReqPageSize(Number(e.target.value));
+                    setReqPage(1);
+                  }}
+                  className="rounded border border-slate-200 bg-white px-2 py-1 text-2xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <span className="text-2xs text-slate-400">|</span>
+
+              <div className="flex items-center gap-1">
+                <span className="text-2xs text-slate-500 mr-1">
+                  Page {reqPage} of {totalReqPages}
+                </span>
+                <button
+                  onClick={() => setReqPage((p) => Math.max(1, p - 1))}
+                  disabled={reqPage === 1}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setReqPage((p) => Math.min(totalReqPages, p + 1))}
+                  disabled={reqPage >= totalReqPages}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Next page"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-Peek Slide-Over Detail Drawer */}
+          {quickPeekReq && (
+            <ResponsiveDetailDrawer
+              open={!!quickPeekReq}
+              onOpenChange={(open) => !open && setQuickPeekReq(null)}
+              title={`Requirement Details: ${quickPeekReq.key}`}
+              anchorRef={tableContainerRef}
+            >
+              <div className="p-5 space-y-5 text-xs">
+                {/* Header Info */}
+                <div className="space-y-2 border-b border-slate-200 pb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm font-bold text-[#3067DB]">{quickPeekReq.key}</span>
+                    <Badge value={quickPeekReq.review_status || quickPeekReq.status || "approved"} />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 leading-snug">{quickPeekReq.title}</h3>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Badge value={quickPeekReq.category} />
+                    <Badge value={quickPeekReq.priority} />
+                    <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-2xs font-semibold border border-emerald-100">
+                      {quickPeekReq.confidence ? Math.round(quickPeekReq.confidence * 100) : 95}% Confidence
+                    </span>
+                  </div>
+                </div>
+
+                {/* Obligation Statement */}
+                <div className="space-y-1.5">
+                  <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">Obligation Statement</h4>
+                  <p className="text-xs text-slate-800 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    {quickPeekReq.description || quickPeekReq.title}
+                  </p>
+                </div>
+
+                {/* Verbatim Source Quote */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">Verbatim Passage</h4>
+                    <span className="text-2xs font-mono text-[#3067DB]">
+                      {quickPeekReq.source_page || "PDF"} · § {quickPeekReq.source_section || "General"}
+                    </span>
+                  </div>
+                  <blockquote className="text-xs text-slate-700 italic leading-relaxed bg-amber-50/40 border-l-3 border-amber-400 p-3 rounded-r-lg">
+                    "{quickPeekReq.evidence_excerpt || "No explicit verbatim excerpt recorded."}"
+                  </blockquote>
+                </div>
+
+                {/* Traceability Info */}
+                {(() => {
+                  const traceRow = traceByReqKey.get(quickPeekReq.key);
+                  const acs = traceRow?.acceptance_criteria || [];
+                  const testCases = traceRow?.tests || [];
+                  return (
+                    <div className="space-y-4 pt-2 border-t border-slate-200">
+                      {/* ACs */}
+                      <div className="space-y-2">
+                        <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600">
+                          Acceptance Criteria ({acs.length})
+                        </h4>
+                        {acs.length > 0 ? (
+                          <div className="space-y-2">
+                            {acs.map((ac: any, idx: number) => (
+                              <div key={idx} className="rounded-lg border border-purple-100 bg-purple-50/40 p-2.5 text-xs">
+                                <div className="font-mono text-2xs font-bold text-purple-700 mb-1">{ac.key}</div>
+                                <div className="text-slate-700 text-[11px] leading-relaxed">{ac.description}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 text-2xs">No acceptance criteria registered.</p>
+                        )}
+                      </div>
+
+                      {/* Tests */}
+                      <div className="space-y-2">
+                        <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600">
+                          Linked Tests ({testCases.length})
+                        </h4>
+                        {testCases.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {testCases.map((tc: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 p-2 text-xs">
+                                <div>
+                                  <span className="font-mono text-2xs font-semibold text-[#3067DB] mr-2">{tc.key}</span>
+                                  <span className="text-slate-800 text-[11px]">{tc.title}</span>
+                                </div>
+                                <Badge value={tc.category || "test"} />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 text-2xs">No test cases linked.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Drawer Footer Actions */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedDocId(quickPeekReq.document_id ?? null);
+                      setViewerTargetPage(parsePageNum(quickPeekReq.source_page));
+                      setViewerTargetExcerpt(quickPeekReq.evidence_excerpt || null);
+                      setActiveTab("intake");
+                      setDocSubTab("original");
+                      setQuickPeekReq(null);
+                    }}
+                  >
+                    <FileText className="h-3.5 w-3.5 mr-1 text-[#3067DB]" />
+                    <span>View in PDF</span>
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      nav(`/requirements/${quickPeekReq.id}`);
+                      setQuickPeekReq(null);
+                    }}
+                    className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                    <span>Open Full Page</span>
+                  </Button>
+                </div>
+              </div>
+            </ResponsiveDetailDrawer>
+          )}
         </div>
       )}
 

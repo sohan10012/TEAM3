@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Brain,
   Check,
   CheckCircle2,
+  Clock,
   FileCode,
   FileSpreadsheet,
   FileText,
   Layers,
   Loader2,
   Quote,
+  RefreshCw,
   Scale,
   ShieldCheck,
   Sparkles,
@@ -136,6 +139,16 @@ export function AiAssistedOnboardingView({
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStageText, setAnalysisStageText] = useState("");
   const [analysisActiveStageIndex, setAnalysisActiveStageIndex] = useState(0);
+  const [analysisElapsedSeconds, setAnalysisElapsedSeconds] = useState(0);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisCompletedSummary, setAnalysisCompletedSummary] = useState<{
+    rulesCount: number;
+    verifiedCount: number;
+    rolesCount: number;
+    scenariosCount: number;
+    durationMs: number;
+  } | null>(null);
+  const analysisTimerRef = useRef<any>(null);
 
   // Step 4: Human Review & Approval State
   const [reviewConfig, setReviewConfig] = useState<any | null>(null);
@@ -259,70 +272,111 @@ export function AiAssistedOnboardingView({
   // Trigger AI Document Analysis
   const handleRunAnalysis = async () => {
     if (stagedDocs.length === 0) {
-      toast.error("Please stage at least one business specification or preload the UPI circulars.");
+      toast.error("Please stage at least one business specification before running analysis.");
       return;
+    }
+
+    if (analysisTimerRef.current) {
+      clearInterval(analysisTimerRef.current);
     }
 
     setCurrentStep(3);
     setIsAnalyzing(true);
+    setAnalysisError(null);
+    setAnalysisCompletedSummary(null);
     setAnalysisProgress(15);
     setAnalysisActiveStageIndex(0);
-    setAnalysisStageText("Parsing document text and normalizing regulatory clauses...");
 
-    const t1 = setTimeout(() => {
-      setAnalysisProgress(35);
+    const docCount = stagedDocs.length;
+    const firstDocName = stagedDocs[0]?.filename || stagedDocs[0]?.display_name || "specification";
+    setAnalysisStageText(
+      docCount === 1
+        ? `Ingesting text and structure from ${firstDocName}...`
+        : `Ingesting text and structure from ${docCount} staged documents (${firstDocName} + ${docCount - 1} more)...`
+    );
+
+    const startTime = Date.now();
+    setAnalysisElapsedSeconds(0);
+    analysisTimerRef.current = setInterval(() => {
+      setAnalysisElapsedSeconds(Math.floor((Date.now() - startTime) / 100) / 10);
+    }, 100);
+
+    const timerStage1 = setTimeout(() => {
+      setAnalysisProgress(40);
       setAnalysisActiveStageIndex(1);
-      setAnalysisStageText("Extracting regulatory invariants, TAT mandates, and ₹100/day compensation formulas...");
-    }, 500);
+      setAnalysisStageText("Executing context intelligence model: synthesizing domain invariants, rules, and acceptance criteria...");
+    }, 600);
 
-    const t2 = setTimeout(() => {
-      setAnalysisProgress(65);
+    const timerStage2 = setTimeout(() => {
+      setAnalysisProgress(68);
       setAnalysisActiveStageIndex(2);
-      setAnalysisStageText("Synthesizing actor personas, operational roles, and end-to-end business scenarios...");
-    }, 1100);
+      setAnalysisStageText("Verifying supporting quotes verbatim against raw document text for tamper-evident provenance...");
+    }, 1200);
 
-    const t3 = setTimeout(() => {
+    const timerStage3 = setTimeout(() => {
       setAnalysisProgress(88);
       setAnalysisActiveStageIndex(3);
-      setAnalysisStageText("Reconciling cross-document relationships & Internal Ombudsman governance gates...");
-    }, 1700);
+      setAnalysisStageText("Reconciling actor personas, operational roles, permissions, and multi-scenario workflows...");
+    }, 1800);
 
     try {
       const payload = {
         document_ids: stagedDocs.map((d) => d.id),
-        project_name: name.trim() || "UPI Dispute & Customer Protection Platform",
-        project_key: key.trim().toUpperCase() || "UPI_DISP",
+        project_name: name.trim() || stagedDocs[0]?.display_name || stagedDocs[0]?.filename?.replace(/\.[^/.]+$/, "") || "Project Specification",
+        project_key: key.trim().toUpperCase() || "PROJ_SPEC",
         business_domain: businessDomain,
         description: description.trim(),
       };
 
       const result = await api.post<any>("/projects/onboarding/analyze", payload);
+      const totalElapsedMs = Date.now() - startTime;
 
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearTimeout(timerStage1);
+      clearTimeout(timerStage2);
+      clearTimeout(timerStage3);
+      if (analysisTimerRef.current) {
+        clearInterval(analysisTimerRef.current);
+      }
 
       setAnalysisProgress(100);
       setAnalysisActiveStageIndex(4);
-      setAnalysisStageText("Analysis complete! Assembling structured configuration for review.");
+      setAnalysisStageText(`Analysis completed in ${(totalElapsedMs / 1000).toFixed(1)}s! Assembling evidence-backed project configuration.`);
+
+      const rules = result.business_rules || [];
+      const roles = result.roles || result.roles_and_responsibilities || [];
+      const scenarios = result.scenarios || result.business_scenarios || [];
+      const insights = result.cross_document_insights || [];
+      const verified = rules.filter((r: any) => !r.is_inferred).length;
+
+      setAnalysisCompletedSummary({
+        rulesCount: rules.length,
+        verifiedCount: verified,
+        rolesCount: roles.length,
+        scenariosCount: scenarios.length,
+        durationMs: totalElapsedMs,
+      });
 
       setReviewConfig(result);
-      setRulesList(result.business_rules || []);
-      setRolesList(result.roles || result.roles_and_responsibilities || []);
-      setScenariosList(result.scenarios || result.business_scenarios || []);
-      setInsightsList(result.cross_document_insights || []);
+      setRulesList(rules);
+      setRolesList(roles);
+      setScenariosList(scenarios);
+      setInsightsList(insights);
 
       setTimeout(() => {
         setIsAnalyzing(false);
         setCurrentStep(4);
-      }, 700);
+      }, 800);
     } catch (err: any) {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearTimeout(timerStage1);
+      clearTimeout(timerStage2);
+      clearTimeout(timerStage3);
+      if (analysisTimerRef.current) {
+        clearInterval(analysisTimerRef.current);
+      }
       setIsAnalyzing(false);
-      toast.error(`AI analysis failed: ${err?.message || "Analysis error"}`);
-      setCurrentStep(2);
+      const errorMsg = err?.message || "AI Analysis failed to process documents.";
+      setAnalysisError(errorMsg);
+      toast.error(`AI analysis failed: ${errorMsg}`);
     }
   };
 
@@ -746,51 +800,160 @@ export function AiAssistedOnboardingView({
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 3: LIVE ANALYSIS PIPELINE */}
+        {/* STEP 3: LIVE REAL-TIME ANALYSIS PIPELINE */}
         {/* ========================================================================= */}
         {currentStep === 3 && (
           <div className="space-y-6 max-w-2xl mx-auto py-8 text-center">
+            {/* Header with live brain pulse or error icon */}
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-[#3067DB] shadow-md">
-                <Brain className="h-8 w-8 text-[#3067DB] animate-pulse" />
-                <div className="absolute -inset-1 rounded-2xl border-2 border-[#3067DB]/40 animate-ping" />
+              <div
+                className={cn(
+                  "relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-md transition-all",
+                  analysisError
+                    ? "bg-rose-100 text-rose-600"
+                    : analysisProgress === 100
+                    ? "bg-emerald-100 text-emerald-600"
+                    : "bg-blue-100 text-[#3067DB]"
+                )}
+              >
+                {analysisError ? (
+                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                ) : analysisProgress === 100 ? (
+                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                ) : (
+                  <>
+                    <Brain className="h-8 w-8 text-[#3067DB] animate-pulse" />
+                    <div className="absolute -inset-1 rounded-2xl border-2 border-[#3067DB]/40 animate-ping" />
+                  </>
+                )}
               </div>
-              <h3 className="text-base font-bold text-slate-900">TraceTest Context Intelligence Engine</h3>
-              <p className="text-xs text-slate-600 max-w-md">{analysisStageText}</p>
+
+              <div>
+                <h3 className="text-base font-bold text-slate-900">TraceTest Context Intelligence Engine</h3>
+                <p className="text-xs text-slate-600 max-w-lg mt-1">{analysisStageText}</p>
+              </div>
+
+              {/* Live Elapsed Time Pill */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-2xs font-mono text-slate-600 shadow-2xs">
+                <Clock className="h-3.5 w-3.5 text-slate-400" />
+                <span>
+                  {isAnalyzing ? (
+                    <>
+                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-ping mr-1.5" />
+                      Elapsed: <strong className="text-slate-800">{analysisElapsedSeconds.toFixed(1)}s</strong>
+                    </>
+                  ) : analysisError ? (
+                    <span>Failed after {analysisElapsedSeconds.toFixed(1)}s</span>
+                  ) : (
+                    <span className="text-emerald-700 font-semibold">Completed in {analysisElapsedSeconds.toFixed(1)}s</span>
+                  )}
+                </span>
+              </div>
             </div>
+
+            {/* Error Recovery Card */}
+            {analysisError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-left max-w-md mx-auto space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold text-rose-900">Analysis Encountered An Error</h4>
+                    <p className="text-2xs text-rose-700 mt-0.5 leading-relaxed font-mono break-all">{analysisError}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t border-rose-200/60">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleRunAnalysis}
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs h-8"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    <span>Retry Analysis</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setAnalysisError(null);
+                      setCurrentStep(2);
+                    }}
+                    className="border-slate-300 text-slate-700 text-xs h-8"
+                  >
+                    <span>Change Documents</span>
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Progress Bar */}
-            <div className="space-y-2 max-w-md mx-auto">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <span>Document Extraction Pipeline</span>
-                <span>{analysisProgress}%</span>
+            {!analysisError && (
+              <div className="space-y-2 max-w-md mx-auto">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <span>Document Extraction Pipeline</span>
+                  <span>{analysisProgress}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden shadow-inner">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-300 rounded-full",
+                      analysisProgress === 100 ? "bg-emerald-600" : "bg-[#3067DB]"
+                    )}
+                    style={{ width: `${analysisProgress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden shadow-inner">
-                <div
-                  className="h-full bg-[#3067DB] transition-all duration-300 rounded-full"
-                  style={{ width: `${analysisProgress}%` }}
-                />
-              </div>
-            </div>
+            )}
 
-            {/* Stepper of Stages */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs text-left max-w-md mx-auto space-y-2.5">
+            {/* Completed Summary Banner */}
+            {analysisCompletedSummary && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900 max-w-md mx-auto flex flex-wrap items-center justify-between gap-2 animate-fadeIn">
+                <span className="font-semibold text-emerald-950">Extraction Results:</span>
+                <span className="font-medium">{analysisCompletedSummary.rulesCount} Rules ({analysisCompletedSummary.verifiedCount} verified)</span>
+                <span className="text-emerald-400">·</span>
+                <span className="font-medium">{analysisCompletedSummary.rolesCount} Roles</span>
+                <span className="text-emerald-400">·</span>
+                <span className="font-medium">{analysisCompletedSummary.scenariosCount} Scenarios</span>
+              </div>
+            )}
+
+            {/* Dynamic Multi-Document Pipeline Stages */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs text-left max-w-md mx-auto space-y-3">
               {[
-                { label: "Document Ingestion & AST Parsing", desc: "Extracting normalized text and structure" },
-                { label: "Regulatory Invariant Extraction", desc: "TAT mandates, compensation formulas & liability limits" },
-                { label: "Operational Role & Responsibility Synthesis", desc: "User personas, permissions & restrictions" },
-                { label: "End-to-End Business Scenario Generation", desc: "Preconditions, expected outcomes & rule linkages" },
-                { label: "Cross-Document Reconciliation & Governance Gate", desc: "Harmonizing DPSS 629, BC.78 & RB-IOS 2026" },
+                {
+                  label: "Document Text Ingestion & Clause Normalization",
+                  desc: `Parsing normalized clauses from ${stagedDocs.length} staged document(s)`,
+                },
+                {
+                  label: "Domain Rule & Regulatory Invariant Synthesis",
+                  desc: "Calling context model to extract structured obligations, TATs, and rules",
+                },
+                {
+                  label: "Verbatim Source Quote Verification & Provenance Mapping",
+                  desc: "Validating supporting quotes against source text for tamper-evident provenance",
+                },
+                {
+                  label: "Operational Role & Responsibility Synthesis",
+                  desc: "Deriving actor personas, role permissions, and governance gates",
+                },
+                {
+                  label: "Multi-Document Workflow Scenario Reconciliation",
+                  desc: "Connecting end-to-end business scenarios and cross-document dependencies",
+                },
               ].map((stg, idx) => {
-                const isComplete = idx < analysisActiveStageIndex;
-                const isCurrent = idx === analysisActiveStageIndex;
+                const isComplete = idx < analysisActiveStageIndex || analysisProgress === 100;
+                const isCurrent = idx === analysisActiveStageIndex && !analysisError && analysisProgress < 100;
+                const isFailed = idx === analysisActiveStageIndex && !!analysisError;
+
                 return (
                   <div key={stg.label} className="flex items-start gap-2.5">
                     <div
                       className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-full text-2xs font-bold mt-0.5 shrink-0",
+                        "flex h-5 w-5 items-center justify-center rounded-full text-2xs font-bold mt-0.5 shrink-0 transition-colors",
                         isComplete
                           ? "bg-emerald-600 text-white"
+                          : isFailed
+                          ? "bg-rose-600 text-white"
                           : isCurrent
                           ? "bg-[#3067DB] text-white animate-pulse"
                           : "bg-slate-200 text-slate-500"
@@ -802,7 +965,13 @@ export function AiAssistedOnboardingView({
                       <div
                         className={cn(
                           "text-xs font-semibold",
-                          isCurrent ? "text-[#3067DB]" : isComplete ? "text-slate-800" : "text-slate-400"
+                          isFailed
+                            ? "text-rose-700"
+                            : isCurrent
+                            ? "text-[#3067DB]"
+                            : isComplete
+                            ? "text-slate-800"
+                            : "text-slate-400"
                         )}
                       >
                         {stg.label}
@@ -812,6 +981,20 @@ export function AiAssistedOnboardingView({
                   </div>
                 );
               })}
+            </div>
+
+            {/* Staged Document Badges */}
+            <div className="max-w-md mx-auto flex flex-wrap items-center justify-center gap-1.5 pt-1">
+              <span className="text-[11px] text-slate-400 mr-1">Staged for analysis:</span>
+              {stagedDocs.map((d) => (
+                <span
+                  key={d.id}
+                  className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-2xs font-medium text-slate-700 border border-slate-200"
+                >
+                  <FileText className="h-3 w-3 text-slate-400" />
+                  <span className="truncate max-w-[150px]">{d.filename || d.display_name}</span>
+                </span>
+              ))}
             </div>
           </div>
         )}

@@ -11,7 +11,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 15
+        "nodes_count": 13
       },
       {
         "id": "heading-order",
@@ -41,7 +41,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 20
+        "nodes_count": 18
       },
       {
         "id": "heading-order",
@@ -71,14 +71,14 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 5
+        "nodes_count": 4
       },
       {
         "id": "label",
         "impact": "critical",
         "description": "Ensures every form element has a label",
         "help": "Form elements must have labels",
-        "nodes_count": 11
+        "nodes_count": 16
       },
       {
         "id": "landmark-unique",
@@ -92,7 +92,7 @@
         "impact": "critical",
         "description": "Ensures select element has an accessible name",
         "help": "Select element must have an accessible name",
-        "nodes_count": 3
+        "nodes_count": 4
       }
     ]
   },
@@ -108,7 +108,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 5
+        "nodes_count": 3
       }
     ]
   },
@@ -124,7 +124,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 5
+        "nodes_count": 3
       }
     ]
   },
@@ -140,7 +140,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 5
+        "nodes_count": 3
       },
       {
         "id": "landmark-unique",
@@ -177,7 +177,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 8
+        "nodes_count": 6
       }
     ]
   },
@@ -193,7 +193,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 26
+        "nodes_count": 30
       },
       {
         "id": "scrollable-region-focusable",
@@ -223,7 +223,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 5
+        "nodes_count": 3
       },
       {
         "id": "scrollable-region-focusable",
@@ -246,7 +246,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 10
+        "nodes_count": 8
       },
       {
         "id": "scrollable-region-focusable",
@@ -258,10 +258,10 @@
     ]
   },
   "11-intelligence-report": {
-    "total_violations": 2,
+    "total_violations": 1,
     "critical": 0,
     "serious": 1,
-    "moderate": 1,
+    "moderate": 0,
     "minor": 0,
     "violations": [
       {
@@ -269,14 +269,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 15
-      },
-      {
-        "id": "heading-order",
-        "impact": "moderate",
-        "description": "Ensures the order of headings is semantically correct",
-        "help": "Heading levels should only increase by one",
-        "nodes_count": 1
+        "nodes_count": 13
       }
     ]
   },
@@ -292,7 +285,7 @@
         "impact": "serious",
         "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
         "help": "Elements must have sufficient color contrast",
-        "nodes_count": 43
+        "nodes_count": 41
       },
       {
         "id": "heading-order",

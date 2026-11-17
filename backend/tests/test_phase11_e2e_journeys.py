@@ -170,7 +170,7 @@ def test_journey_e_project_intelligence_action_center(browser: Browser):
 
         # Verify Executive Readiness Report headers
         assert page.locator("text=Intelligence Report").first.is_visible()
-        assert page.locator("text=CRITICAL GAPS").first.is_visible()
+        assert page.locator("text=Critical Quality Gaps").first.is_visible()
 
         # Capture multi-viewport screenshots
         capture_viewports(browser, "/intelligence-report", "05_journey_e_intelligence_report")

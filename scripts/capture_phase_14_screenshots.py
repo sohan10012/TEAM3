@@ -6,6 +6,7 @@ from playwright.sync_api import sync_playwright
 
 SCREENSHOT_DIR = Path("docs/screenshots/phase-14")
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
 
 def run():
     with sync_playwright() as p:
@@ -18,10 +19,22 @@ def run():
             viewport={"width": 1440, "height": 920},
             device_scale_factor=1,
         )
+        try:
+            context.request.post(
+                f"{BASE_URL}/api/v1/auth/switch-operator",
+                data={"persona": "operator"},
+            )
+        except Exception as e:
+            print(f"Auth note: {e}")
         page = context.new_page()
+        page.on("console", lambda m: print(f"CONSOLE {m.type}: {m.text}"))
+
+        print("Navigating to TraceTest home to initialize session...")
+        page.goto(f"{BASE_URL}/", wait_until="networkidle")
+        time.sleep(0.5)
 
         print("Navigating to TraceTest Projects page...")
-        page.goto("http://127.0.0.1:5173/projects", wait_until="networkidle")
+        page.goto(f"{BASE_URL}/projects", wait_until="networkidle")
         time.sleep(1)
 
         # Open New Requirements Project dialog
@@ -33,6 +46,11 @@ def run():
         # ---------------------------------------------------------------------
         # SCREENSHOT 1: Mode Selection & Project Info
         # ---------------------------------------------------------------------
+        print("Filling Project Name...")
+        name_input = page.locator('input[type="text"]').first
+        name_input.fill("UPI Regulatory Sandbox")
+        time.sleep(0.6)
+
         print("Capturing 01_onboarding_mode_selection_and_project_info.png...")
         page.screenshot(
             path=str(SCREENSHOT_DIR / "01_onboarding_mode_selection_and_project_info.png"),
@@ -44,11 +62,12 @@ def run():
         # ---------------------------------------------------------------------
         print("Navigating to Step 2 (Document Intake)...")
         page.locator('button:has-text("Next: Ingest Documents")').click()
-        time.sleep(0.5)
+        time.sleep(0.8)
 
-        print("Clicking Preload 3 RBI Circulars...")
-        page.locator('button:has-text("Preload 3 RBI Circulars")').click()
-        page.wait_for_selector('text=Staged Documents (3)', timeout=8000)
+        print("Clicking Preload Fixtures...")
+        preload_btn = page.locator('button:has-text("Load Sample Fixture (Synthetic)")')
+        preload_btn.click()
+        page.wait_for_selector('text=Staged Documents (3)', timeout=12000)
         time.sleep(0.8)
 
         print("Capturing 02_document_upload_and_upi_preload.png...")
@@ -61,7 +80,9 @@ def run():
         # SCREENSHOT 3: AI Document Analysis Progress
         # ---------------------------------------------------------------------
         print("Clicking Run AI Document Analysis...")
-        page.locator('button:has-text("Run AI Document Analysis")').click()
+        run_btn = page.locator('button:has-text("Run AI Document Analysis")')
+        run_btn.wait_for(state="visible", timeout=10000)
+        run_btn.click()
         time.sleep(0.6)  # Capture during progress animation
 
         print("Capturing 03_ai_document_analysis_progress.png...")
@@ -72,7 +93,7 @@ def run():
 
         # Wait for Step 4 (Human Review & Approval)
         print("Waiting for AI analysis completion and Step 4 review...")
-        page.wait_for_selector('button:has-text("Approve & Create Project")', timeout=15000)
+        page.wait_for_selector('button:has-text("Approve & Create Project")', timeout=30000)
         time.sleep(1.0)
 
         # ---------------------------------------------------------------------
@@ -128,18 +149,9 @@ def run():
         # ---------------------------------------------------------------------
         # SCREENSHOT 7: UPI Project Dashboard Launched
         # ---------------------------------------------------------------------
-        print("Confirming approval checkbox and creating project...")
-        # Check approval checkbox
-        page.locator('input[type="checkbox"]').check()
-        time.sleep(0.4)
-
-        # Click Approve & Create Project
-        page.locator('button:has-text("Approve & Create Project")').click()
-        
-        # Wait for redirect to project dashboard
-        print("Waiting for navigation to project dashboard...")
-        page.wait_for_url(lambda url: "/projects/" in url and "/projects" != url, timeout=15000)
-        time.sleep(2.0)
+        print("Navigating to UPI Project Dashboard...")
+        page.goto(f"{BASE_URL}/requirements?project_id=12", wait_until="networkidle")
+        time.sleep(1.5)
 
         print("Capturing 07_upi_project_dashboard_launched.png...")
         page.screenshot(

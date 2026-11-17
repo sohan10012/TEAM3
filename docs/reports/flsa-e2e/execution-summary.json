@@ -1,0 +1,73 @@
+{
+  "evaluation_target": {
+    "source_document": "Digital Reference Guide to the Fair Labor Standards Act (FLSA), July 2025 revision",
+    "publisher": "U.S. Department of Labor Wage and Hour Division",
+    "source_url": "https://www.dol.gov/SITES/DOLGOV/FILES/WHD/LEGACY/FILES/DIGITAL_REFERENCE_GUIDE_FLSA.PDF",
+    "file_path": "/home/Sohan/PROJECTS/tracetest-ai/data/DIGITAL_REFERENCE_GUIDE_FLSA.pdf",
+    "file_size_bytes": 1189455,
+    "sha256_hash": "38a3daf8e2d3762eb4baf9dd69057886a27b0319e2c4a3937be7b31248194143",
+    "pages_count": 30
+  },
+  "project": {
+    "id": 13,
+    "key": "FLSA_PAY",
+    "name": "FLSA Payroll Compliance Evaluation",
+    "domain": "HR, Benefits & Payroll",
+    "created_at": "2026-11-11 15:07:06.049016"
+  },
+  "ai_execution_metrics": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "task": "onboarding_analysis",
+    "input_tokens": 8514,
+    "output_tokens": 1049,
+    "latency_ms": 4984,
+    "status": "ok",
+    "fallback_providers_configured": [
+      "groq (openai/gpt-oss-120b)"
+    ]
+  },
+  "pipeline_statistics": {
+    "documents_ingested": 1,
+    "requirements_extracted": 36,
+    "acceptance_criteria_generated": 72,
+    "test_cases_generated": 360,
+    "test_categories_covered": 10,
+    "validation_runs_executed": 0,
+    "simulation_runs_executed": 2,
+    "defects_logged": 1,
+    "traceability_coverage_pct": 100.0
+  },
+  "operation_classification_summary": {
+    "A_real_llm": [
+      "Document onboarding semantic extraction (analyze_uploaded_documents_for_onboarding)",
+      "ReasonX statutory justification & Q&A (reasonx.py)",
+      "LLM-as-a-judge AST / test evaluation (judge.py)"
+    ],
+    "B_deterministic": [
+      "PDF parsing with pypdf (parser.py)",
+      "Verbatim quote alignment & SHA-256 validation (guardrails.py)",
+      "Requirement regex extraction & clause decomposition (pipeline.py)",
+      "Given/When/Then acceptance criteria synthesis",
+      "10-category test case generation matrix (generator.py)",
+      "Specification validation engine (validator.py)",
+      "Behaviour simulation test runner (simulation_engine.py)"
+    ],
+    "C_static_config": [
+      "Domain regulatory frameworks dropdown",
+      "10 test scenario categories definition",
+      "Predefined role taxonomy"
+    ],
+    "D_seeded_mock": [
+      "Preserved legacy demo projects (ECHO, DAYFORCE, CUREON, WFMQ, UPI_DISP)",
+      "Synthetic UPI circulars in sample fixtures"
+    ],
+    "E_cached": [
+      "Identical prompt hash dedup cache in ProviderTrace"
+    ],
+    "F_failed_unavailable": [
+      "None for FLSA end-to-end evaluation flow"
+    ]
+  },
+  "evaluation_timestamp": "2026-11-11T16:02:00.859086Z"
+}

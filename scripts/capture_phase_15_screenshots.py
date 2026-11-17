@@ -9,6 +9,7 @@ from playwright.sync_api import sync_playwright
 
 OUTPUT_DIR = Path("docs/screenshots/phase-15")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
 
 def capture_all():
     with sync_playwright() as p:
@@ -35,9 +36,9 @@ def capture_all():
             page = context.new_page()
 
             # Pre-set active project to Dayforce (id=9)
-            page.goto("http://127.0.0.1:5173/")
+            page.goto(f"{BASE_URL}/")
             page.evaluate("() => { localStorage.setItem('tracetest.project', '9'); }")
-            page.goto("http://127.0.0.1:5173/", wait_until="networkidle")
+            page.goto(f"{BASE_URL}/", wait_until="networkidle")
             time.sleep(1.2)
 
             # Wait for visible project heading
@@ -56,9 +57,9 @@ def capture_all():
         print("Capturing 06_project_switcher_open.png...")
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
-        page.goto("http://127.0.0.1:5173/")
+        page.goto(f"{BASE_URL}/")
         page.evaluate("() => { localStorage.setItem('tracetest.project', '9'); }")
-        page.goto("http://127.0.0.1:5173/", wait_until="networkidle")
+        page.goto(f"{BASE_URL}/", wait_until="networkidle")
         time.sleep(1.2)
 
         page.wait_for_selector('h1:has-text("Dayforce")', state="visible", timeout=10000)
@@ -81,9 +82,9 @@ def capture_all():
         print("Capturing 07_sidebar_brand_identity.png...")
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
-        page.goto("http://127.0.0.1:5173/")
+        page.goto(f"{BASE_URL}/")
         page.evaluate("() => { localStorage.setItem('tracetest.project', '9'); }")
-        page.goto("http://127.0.0.1:5173/", wait_until="networkidle")
+        page.goto(f"{BASE_URL}/", wait_until="networkidle")
         time.sleep(1.2)
 
         page.wait_for_selector('h1:has-text("Dayforce")', state="visible", timeout=10000)

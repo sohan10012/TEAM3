@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 
 
-app = FastAPI(title="TraceTest AI", version="1.0.0", lifespan=lifespan,
+app = FastAPI(title="TraceTest", version="1.0.0", lifespan=lifespan,
               description="Enterprise QA lifecycle and test intelligence platform API.",
               openapi_url="/api/v1/openapi.json", docs_url="/api/docs", redoc_url=None)
 install_handlers(app)

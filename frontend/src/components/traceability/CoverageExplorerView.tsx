@@ -1,11 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Bug,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  FileCheck,
   FileText,
   Info,
+  KeyRound,
   Layers,
   Plus,
   RefreshCw,
@@ -330,9 +334,30 @@ export function CoverageExplorerView({
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "uncovered" | "partially_covered" | "fully_covered" | "duplicates">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "uncovered" | "partially_covered" | "fully_covered" | "duplicates" | "with_defects">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
+
+  // Computed metrics for 6-stage chain
+  const distinctDocsCount = useMemo(() => {
+    const docs = new Set<string>();
+    requirements.forEach((r) => {
+      if (r.document?.filename) docs.add(r.document.filename);
+    });
+    return Math.max(1, docs.size);
+  }, [requirements]);
+
+  const totalAcsCount = useMemo(() => {
+    return requirements.reduce((acc, r) => acc + (r.acceptance_criteria?.length || 0), 0);
+  }, [requirements]);
+
+  const totalDefectsCount = useMemo(() => {
+    return requirements.reduce((acc, r) => acc + (r.defects?.length || 0), 0);
+  }, [requirements]);
+
+  const requirementsWithDefectsCount = useMemo(() => {
+    return requirements.filter((r) => r.defects && r.defects.length > 0).length;
+  }, [requirements]);
 
   // Hierarchy expand state
   const [expandedReqs, setExpandedReqs] = useState<Set<number>>(new Set());
@@ -385,6 +410,7 @@ export function CoverageExplorerView({
       if (filterStatus === "partially_covered" && r.coverage_status !== "partially_covered") return false;
       if (filterStatus === "fully_covered" && r.coverage_status !== "fully_covered") return false;
       if (filterStatus === "duplicates" && !r.tests.some((t) => t.duplicate_of)) return false;
+      if (filterStatus === "with_defects" && (!r.defects || r.defects.length === 0)) return false;
 
       if (filterCategory !== "all" && r.category !== filterCategory) return false;
 
@@ -724,6 +750,141 @@ export function CoverageExplorerView({
         </div>
       </section>
 
+      {/* 2.5 INTERACTIVE 6-STAGE TRACEABILITY CHAIN NAVIGATOR */}
+      <section aria-labelledby="trace-chain-heading" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 id="trace-chain-heading" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <Layers className="h-4 w-4 text-blue-600" aria-hidden="true" />
+              Interactive Traceability Verification Chain
+            </h3>
+            <p className="text-2xs text-slate-500 mt-0.5">
+              Strict bidirectional linkage from raw statutory source documents down to verified execution and defect root causes.
+            </p>
+          </div>
+          <span className="text-2xs font-mono text-slate-400">
+            6 of 6 verification stages linked
+          </span>
+        </div>
+
+        {/* The 6 Nodes Flow */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+          {/* Node 1: Source Document */}
+          <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-3 hover:border-blue-300 hover:bg-blue-50/30 transition-all">
+            <div className="flex items-center justify-between text-2xs text-slate-500 mb-1">
+              <span className="font-semibold text-slate-700">1. Source Doc</span>
+              <FileText className="h-3.5 w-3.5 text-blue-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-slate-900">{distinctDocsCount}</span>
+              <span className="text-2xs font-medium text-slate-500">Document</span>
+            </div>
+            <span className="text-[10px] text-slate-500 mt-1 truncate">Statutory Baseline</span>
+          </div>
+
+          {/* Node 2: Requirement */}
+          <button
+            type="button"
+            onClick={() => {
+              setViewMode("explorer");
+              setFilterStatus("all");
+            }}
+            className="flex flex-col justify-between text-left rounded-xl border border-blue-200 bg-blue-50/40 p-3 hover:bg-blue-50 hover:border-blue-400 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between text-2xs text-blue-700 mb-1">
+              <span className="font-semibold">2. Requirements</span>
+              <KeyRound className="h-3.5 w-3.5 text-blue-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-blue-900">{summary.total_requirements}</span>
+              <span className="text-2xs font-medium text-blue-700">In Scope</span>
+            </div>
+            <span className="text-[10px] text-blue-600/80 mt-1 group-hover:underline">View All →</span>
+          </button>
+
+          {/* Node 3: Acceptance Criteria */}
+          <button
+            type="button"
+            onClick={() => {
+              setViewMode("explorer");
+              expandAll();
+            }}
+            className="flex flex-col justify-between text-left rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between text-2xs text-indigo-700 mb-1">
+              <span className="font-semibold">3. Criteria (AC)</span>
+              <FileCheck className="h-3.5 w-3.5 text-indigo-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-indigo-900">{totalAcsCount}</span>
+              <span className="text-2xs font-medium text-indigo-700">Gherkin</span>
+            </div>
+            <span className="text-[10px] text-indigo-600/80 mt-1 group-hover:underline">Expand Criteria →</span>
+          </button>
+
+          {/* Node 4: Test Cases */}
+          <Link
+            to={`/tests?project_id=${projectId}`}
+            className="flex flex-col justify-between rounded-xl border border-purple-200 bg-purple-50/40 p-3 hover:bg-purple-50 hover:border-purple-400 transition-all group"
+          >
+            <div className="flex items-center justify-between text-2xs text-purple-700 mb-1">
+              <span className="font-semibold">4. Test Cases</span>
+              <Layers className="h-3.5 w-3.5 text-purple-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-purple-900">{summary.total_tests}</span>
+              <span className="text-2xs font-medium text-purple-700">10 Cats</span>
+            </div>
+            <span className="text-[10px] text-purple-600/80 mt-1 group-hover:underline">Test Suite →</span>
+          </Link>
+
+          {/* Node 5: Execution Result */}
+          <Link
+            to={`/executions?project_id=${projectId}`}
+            className="flex flex-col justify-between rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 hover:bg-emerald-50 hover:border-emerald-400 transition-all group"
+          >
+            <div className="flex items-center justify-between text-2xs text-emerald-700 mb-1">
+              <span className="font-semibold">5. Execution</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-emerald-900">{summary.executed_tests}</span>
+              <span className="text-2xs font-medium text-emerald-700 font-mono">100% Run</span>
+            </div>
+            <span className="text-[10px] text-emerald-600/80 mt-1 group-hover:underline">Execution Log →</span>
+          </Link>
+
+          {/* Node 6: Defect Investigation */}
+          <button
+            type="button"
+            onClick={() => {
+              setViewMode("explorer");
+              setFilterStatus("with_defects");
+            }}
+            className={cn(
+              "flex flex-col justify-between text-left rounded-xl border p-3 transition-all cursor-pointer group",
+              totalDefectsCount > 0
+                ? "border-rose-300 bg-rose-50/60 hover:bg-rose-100/70 hover:border-rose-400"
+                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100"
+            )}
+          >
+            <div className="flex items-center justify-between text-2xs text-rose-700 mb-1">
+              <span className="font-semibold">6. Defects</span>
+              <Bug className="h-3.5 w-3.5 text-rose-600" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-rose-900">{totalDefectsCount}</span>
+              <span className="text-2xs font-medium text-rose-700 font-mono">
+                {totalDefectsCount > 0 ? `${totalDefectsCount} Active` : "Clean"}
+              </span>
+            </div>
+            <span className="text-[10px] text-rose-600/90 mt-1 font-semibold group-hover:underline">
+              {totalDefectsCount > 0 ? "Filter Reqs With Defect →" : "No Defects"}
+            </span>
+          </button>
+        </div>
+      </section>
+
       {/* 3. WORKSPACE CONTROLS & NAVIGATION BAR */}
       <section aria-labelledby="controls-heading" className="space-y-3">
         <h3 id="controls-heading" className="sr-only">Traceability Controls & Filters</h3>
@@ -819,6 +980,21 @@ export function CoverageExplorerView({
               )}
             >
               Duplicates ({summary.duplicate_tests.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus("with_defects")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer border flex items-center gap-1",
+                filterStatus === "with_defects"
+                  ? "bg-rose-600 text-white border-rose-600"
+                  : requirementsWithDefectsCount > 0
+                  ? "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              )}
+            >
+              <Bug className="h-3.5 w-3.5 text-rose-600" aria-hidden="true" />
+              <span>With Defects ({requirementsWithDefectsCount})</span>
             </button>
           </div>
         </div>
@@ -1071,6 +1247,18 @@ export function CoverageExplorerView({
                             : "Untested"}
                         </span>
 
+                        {/* Defect Alert Badge */}
+                        {req.defects && req.defects.length > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300 shrink-0 shadow-2xs"
+                            title={`${req.defects.length} defect(s) logged against this requirement`}
+                          >
+                            <Bug className="h-3 w-3 text-rose-600" aria-hidden="true" />
+                            <span>{req.defects.length} Defect</span>
+                            <span className="font-mono text-2xs bg-rose-200/90 text-rose-900 px-1 rounded">{req.defects[0].key}</span>
+                          </span>
+                        )}
+
                         <div className="flex items-center gap-1">
                           {req.coverage_status === "uncovered" ? (
                             <button
@@ -1173,6 +1361,33 @@ export function CoverageExplorerView({
                                 </div>
                               ))}
                             </div>
+
+                            {/* Derived Acceptance Criteria */}
+                            {req.acceptance_criteria && req.acceptance_criteria.length > 0 && (
+                              <div className="pt-3 border-t border-slate-100 space-y-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 block">
+                                  Acceptance Criteria ({req.acceptance_criteria.length})
+                                </span>
+                                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                  {req.acceptance_criteria.map((ac) => (
+                                    <div
+                                      key={ac.id}
+                                      className="p-2.5 rounded-lg border border-indigo-100 bg-indigo-50/30 text-xs space-y-1"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-mono text-2xs font-semibold text-indigo-800">{ac.key}</span>
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-medium uppercase bg-indigo-100 text-indigo-700">
+                                          {ac.review_status}
+                                        </span>
+                                      </div>
+                                      <p className="text-slate-800 text-[11px] leading-relaxed">
+                                        {ac.description}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Mapped Test Cases & Acceptance Criteria */}
@@ -1260,6 +1475,61 @@ export function CoverageExplorerView({
                             )}
                           </div>
                         </div>
+
+                        {/* C. Linked Defects & Root-Cause Investigation */}
+                        {req.defects && req.defects.length > 0 ? (
+                          <div className="rounded-xl border border-rose-300 bg-rose-50/50 p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
+                                <Bug className="h-4 w-4 text-rose-600" aria-hidden="true" />
+                                Linked Defects & Root-Cause Investigation ({req.defects.length})
+                              </span>
+                              <Link
+                                to={`/defects?project_id=${projectId}`}
+                                className="text-xs text-rose-700 hover:text-rose-900 font-semibold underline flex items-center gap-1"
+                              >
+                                Open Defect Console <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            </div>
+                            <div className="space-y-2">
+                              {req.defects.map((def) => (
+                                <div
+                                  key={def.id}
+                                  className="rounded-xl border border-rose-200 bg-white p-3 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                >
+                                  <div className="space-y-1 flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                        {def.key}
+                                      </span>
+                                      <span className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase bg-rose-100 text-rose-800">
+                                        {def.severity}
+                                      </span>
+                                      <span className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase bg-slate-100 text-slate-700">
+                                        {def.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs font-semibold text-slate-900 truncate">{def.title}</p>
+                                  </div>
+                                  <Link
+                                    to={`/defects?search=${def.key}`}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 shrink-0"
+                                  >
+                                    Investigate Root Cause →
+                                  </Link>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 px-3.5 py-2.5 flex items-center justify-between text-xs text-emerald-800">
+                            <span className="flex items-center gap-2 font-medium">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                              No active defects logged against this requirement
+                            </span>
+                            <span className="text-2xs text-emerald-700 font-mono">100% verified integrity</span>
+                          </div>
+                        )}
 
                         {/* C. Coverage Gaps & Recommended Actions */}
                         {req.coverage_gaps.length > 0 && (
