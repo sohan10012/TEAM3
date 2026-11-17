@@ -91,7 +91,8 @@ async def platform_middleware(request: Request, call_next):
             s = get_settings()
             allowed = {h.strip().lower() for h in s.allowed_hosts.split(",") if h.strip()}
             allowed |= {"localhost", "127.0.0.1", "[::1]", "::1", "testserver"}
-            if host_name.lower() not in allowed:
+            is_ngrok = host_name.lower().endswith((".ngrok-free.app", ".ngrok.app", ".ngrok.io"))
+            if host_name.lower() not in allowed and not is_ngrok:
                 return JSONResponse(
                     status_code=400,
                     content={"error": {
@@ -116,7 +117,8 @@ async def platform_middleware(request: Request, call_next):
                     "http://localhost:8000", "http://127.0.0.1:8000",
                     "http://testserver", "https://testserver"
                 }
-                if clean_origin not in allowed_origins:
+                is_ngrok_origin = clean_origin.endswith((".ngrok-free.app", ".ngrok.app", ".ngrok.io"))
+                if clean_origin not in allowed_origins and not is_ngrok_origin:
                     return JSONResponse(
                         status_code=403,
                         content={"error": {

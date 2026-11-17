@@ -25,15 +25,20 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: true,
   });
   const [projectId, setPid] = useState<number | null>(() => {
-    try { const v = localStorage.getItem(KEY); return v ? Number(v) : null; } catch { return null; }
+    try {
+      const v = localStorage.getItem(KEY);
+      if (v === "all") return null;
+      return v ? Number(v) : null;
+    } catch { return null; }
   });
   const projects = useMemo(() => q.data?.items ?? [], [q.data]);
   useEffect(() => {
     if (projectId && projects.length && !projects.some((p) => p.id === projectId)) {
       setPid(null);
-      try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+      try { localStorage.setItem(KEY, "all"); } catch { /* ignore */ }
     }
-    if (!projectId && projects.length) {
+    const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+    if (saved === null && !projectId && projects.length) {
       const defaultProj = projects.find((p) => p.key === "ECHO");
       if (defaultProj) {
         setPid(defaultProj.id);
@@ -43,7 +48,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, [projects, projectId]);
   const setProjectId = (id: number | null) => {
     setPid(id);
-    try { if (id) localStorage.setItem(KEY, String(id)); else localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+    try {
+      if (id !== null) localStorage.setItem(KEY, String(id));
+      else localStorage.setItem(KEY, "all");
+    } catch { /* storage unavailable */ }
   };
   return <Ctx.Provider value={{ projects, projectId, setProjectId, current: projects.find((p) => p.id === projectId) ?? null,
     byId: (id) => projects.find((p) => p.id === id) }}>{children}</Ctx.Provider>;

@@ -7,11 +7,13 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   server: {
+    host: "0.0.0.0",
     port: 5173,
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: process.env.TRACETEST_API_URL || `http://127.0.0.1:${process.env.TRACETEST_PORT || "8000"}`,
-        changeOrigin: false,
+        changeOrigin: true,
       },
     },
   },
