@@ -364,8 +364,8 @@ export function CoverageExplorerView({
   const [selectedReqs, setSelectedReqs] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    if (requirements.length > 0 && expandedReqs.size === 0) {
-      setExpandedReqs(new Set([requirements[0].id]));
+    if (requirements.length > 0) {
+      setExpandedReqs((prev) => (prev.size === 0 ? new Set([requirements[0].id]) : prev));
     }
   }, [requirements]);
 

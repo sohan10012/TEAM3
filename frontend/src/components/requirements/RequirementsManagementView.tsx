@@ -11,8 +11,6 @@ import {
   Copy,
   ExternalLink,
   Eye,
-  FileCheck,
-  FileCode,
   FileText,
   Layers,
   ListFilter,
@@ -31,8 +29,11 @@ import {
 import { Fragment, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/Toast";
-import { Badge, Button, Dialog, Field, Input, Key, ResponsiveDetailDrawer, Select, Textarea } from "@/components/ui";
+import { Badge, Button, Dialog, Field, Input, Key, Select, Textarea } from "@/components/ui";
 import { EmbeddedDocumentViewer } from "@/components/documents/EmbeddedDocumentViewer";
+import { RequirementsOverviewMetrics } from "./RequirementsOverviewMetrics";
+import { RequirementRowExpanded } from "./RequirementRowExpanded";
+import { RequirementDetailDrawer } from "./RequirementDetailDrawer";
 import { api } from "@/services/api";
 import type { Page, Project, Requirement } from "@/types/models";
 import { cn, fmtDate } from "@/utils/format";
@@ -421,7 +422,10 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
         (selectedCategory === "business_rule" &&
           ["business_rule", "validation_rule", "compliance"].includes(r.category));
 
-      const matchPrio = selectedPriority === "all" || r.priority === selectedPriority;
+      const matchPrio =
+        selectedPriority === "all" ||
+        r.priority === selectedPriority ||
+        (selectedPriority === "critical_or_high" && (r.priority === "critical" || r.priority === "high"));
       const matchStatus =
         selectedReviewStatus === "all" ||
         r.review_status === selectedReviewStatus ||
@@ -706,102 +710,43 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
         )}
       </div>
 
-      {/* 7 Summary Metric Cards — Guaranteed real numerical counts from database */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {/* Card 1: Documents */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#3067DB]">
-              <FileText className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Documents</span>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-slate-900">{totalDocumentsCount}</span>
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
-              {processedDocumentsCount} processed
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Extracted Requirements */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-purple-50 text-purple-600">
-              <Layers className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Extracted Requirements</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{requirementsTotal}</span>
-          </div>
-        </div>
-
-        {/* Card 3: Functional */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#3067DB]">
-              <FileCheck className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Functional</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{functionalCount}</span>
-          </div>
-        </div>
-
-        {/* Card 4: Non-Functional */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-cyan-50 text-cyan-600">
-              <FileCode className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Non-Functional</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{nonFunctionalCount}</span>
-          </div>
-        </div>
-
-        {/* Card 5: Business Rules */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-50 text-indigo-600">
-              <ListFilter className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Business Rules</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-slate-900">{businessRulesCount}</span>
-          </div>
-        </div>
-
-        {/* Card 6: Ambiguities */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-50 text-amber-600">
-              <AlertTriangle className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ambiguities</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-amber-600">{ambiguitiesCount}</span>
-          </div>
-        </div>
-
-        {/* Card 7: Contradictions */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-red-50 text-red-600">
-              <Split className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Contradictions</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold text-emerald-600">{contradictionsCount}</span>
-          </div>
-        </div>
-      </div>
+      {/* 5-Metric Executive Quality Governance Overview Bar */}
+      <RequirementsOverviewMetrics
+        totalCount={reqs.length || requirementsTotal}
+        approvedCount={reqs.filter((r) => r.status === "approved" || r.review_status === "approved").length}
+        pendingCount={reqs.filter((r) => r.review_status === "pending_review" || r.status === "draft").length}
+        needsClarificationCount={reqs.filter((r) => r.review_status === "needs_clarification").length || clars.length}
+        criticalHighCount={reqs.filter((r) => r.priority === "critical" || r.priority === "high").length}
+        documentCount={totalDocumentsCount}
+        processedCount={processedDocumentsCount}
+        activeFilter={(() => {
+          if (selectedPriority === "critical_or_high") return "critical_high";
+          if (selectedReviewStatus === "approved") return "approved";
+          if (selectedReviewStatus === "pending_review") return "pending_review";
+          if (selectedReviewStatus === "needs_clarification") return "needs_clarification";
+          return "all";
+        })()}
+        onFilterChange={(filterType) => {
+          setActiveTab("extracted");
+          setReqPage(1);
+          if (filterType === "all") {
+            setSelectedReviewStatus("all");
+            setSelectedPriority("all");
+          } else if (filterType === "approved") {
+            setSelectedReviewStatus("approved");
+            setSelectedPriority("all");
+          } else if (filterType === "pending_review") {
+            setSelectedReviewStatus("pending_review");
+            setSelectedPriority("all");
+          } else if (filterType === "needs_clarification") {
+            setSelectedReviewStatus("needs_clarification");
+            setSelectedPriority("all");
+          } else if (filterType === "critical_high") {
+            setSelectedPriority("critical_or_high");
+            setSelectedReviewStatus("all");
+          }
+        }}
+      />
 
       {/* Tabs matching Screenshot 2 */}
       <div className="border-b border-slate-200">
@@ -1526,7 +1471,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                 </Select>
 
                 <Select
-                  className="text-xs h-9 w-32"
+                  className="text-xs h-9 w-36"
                   value={selectedPriority}
                   onChange={(e) => {
                     setSelectedPriority(e.target.value);
@@ -1534,6 +1479,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                   }}
                 >
                   <option value="all">All Priorities</option>
+                  <option value="critical_or_high">Critical & High</option>
                   <option value="critical">Critical</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
@@ -1541,7 +1487,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                 </Select>
 
                 <Select
-                  className="text-xs h-9 w-36"
+                  className="text-xs h-9 w-40"
                   value={selectedReviewStatus}
                   onChange={(e) => {
                     setSelectedReviewStatus(e.target.value);
@@ -1551,6 +1497,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                   <option value="all">All Statuses</option>
                   <option value="approved">Approved</option>
                   <option value="pending_review">Pending Review</option>
+                  <option value="needs_clarification">Needs Clarification</option>
                   <option value="draft">Draft</option>
                   <option value="rejected">Rejected</option>
                 </Select>
@@ -1689,7 +1636,6 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                     const acCount = acList.length;
                     const testCount = testList.length;
                     const latestStatus = traceRow?.latest_execution_status;
-                    const confidencePct = r.confidence ? Math.round(r.confidence * 100) : 95;
 
                     return (
                       <Fragment key={r.id}>
@@ -1698,7 +1644,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                             "transition-colors cursor-pointer select-none",
                             isExpanded ? "bg-blue-50/30" : "hover:bg-slate-50/80"
                           )}
-                          onClick={() => toggleReqExpand(r.id)}
+                          onClick={() => setQuickPeekReq(r)}
                         >
                           {/* Chevron Expand/Collapse Toggle */}
                           <td className="px-3 py-3 text-center text-slate-400 hover:text-slate-700">
@@ -1865,176 +1811,27 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                           </td>
                         </tr>
 
-                        {/* Inline Expandable Detail Drawer / Sub-panel */}
+                        {/* Inline Expandable Enterprise Quality Deep-Dive Section */}
                         {isExpanded && (
                           <tr className="bg-slate-50/70 border-b border-slate-200">
-                            <td colSpan={9} className="p-4 sm:p-5">
-                              <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-                                {/* Top Bar: Key, Confidence & Provenance */}
-                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xs font-bold text-[#3067DB]">{r.key}</span>
-                                    <span className="text-slate-300">|</span>
-                                    <span className="text-xs font-semibold text-slate-800">{r.title}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-2xs font-medium text-indigo-700 border border-indigo-100">
-                                      <ShieldCheck className="h-3 w-3" />
-                                      <span>Provenance: {(r as any).extraction_provenance || "explicit_documented"}</span>
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700 border border-emerald-100">
-                                      <span>{confidencePct}% Confidence</span>
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Full Obligation & Verbatim Evidence Blockquote */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">
-                                      Full Obligation Statement
-                                    </h4>
-                                    <p className="text-xs text-slate-800 leading-relaxed font-normal bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                      {r.description || r.title}
-                                    </p>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">
-                                        Verbatim Source Passage & Citation
-                                      </h4>
-                                      {r.source_page && (
-                                        <span className="text-2xs font-mono text-[#3067DB]">
-                                          {r.source_page} · § {r.source_section || "General"}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <blockquote className="text-xs text-slate-700 italic leading-relaxed bg-amber-50/40 border-l-3 border-amber-400 p-3 rounded-r-lg">
-                                      "{r.evidence_excerpt || "No explicit verbatim excerpt recorded."}"
-                                    </blockquote>
-                                  </div>
-                                </div>
-
-                                {/* Acceptance Criteria Sub-Section */}
-                                <div className="space-y-2 pt-2 border-t border-slate-100">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                                      <Layers className="h-3.5 w-3.5 text-purple-600" />
-                                      <span>Linked Acceptance Criteria ({acCount})</span>
-                                    </h4>
-                                  </div>
-
-                                  {acCount > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                                      {acList.map((ac: any, acIdx: number) => (
-                                        <div
-                                          key={acIdx}
-                                          className="rounded-lg border border-purple-100 bg-purple-50/30 p-2.5 text-xs space-y-1"
-                                        >
-                                          <div className="flex items-center justify-between">
-                                            <span className="font-mono text-2xs font-bold text-purple-700">
-                                              {ac.key}
-                                            </span>
-                                            <span className="rounded bg-purple-100 text-purple-800 px-1.5 py-0.2 text-[9px] font-semibold">
-                                              Gherkin Validated
-                                            </span>
-                                          </div>
-                                          <p className="text-slate-700 text-[11px] leading-relaxed">
-                                            {ac.description}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-2xs text-slate-500">
-                                      No acceptance criteria generated yet for this requirement.
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Linked Test Cases Sub-Section */}
-                                <div className="space-y-2 pt-2 border-t border-slate-100">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                                      <FileCheck className="h-3.5 w-3.5 text-[#3067DB]" />
-                                      <span>Linked Test Scenarios ({testCount})</span>
-                                    </h4>
-                                  </div>
-
-                                  {testCount > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                      {testList.map((t: any, tIdx: number) => (
-                                        <div
-                                          key={tIdx}
-                                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-100 transition-colors"
-                                        >
-                                          <span className="font-mono text-2xs font-semibold text-[#3067DB]">
-                                            {t.key}
-                                          </span>
-                                          <span className="text-[11px] text-slate-800 truncate max-w-[220px]">
-                                            {t.title}
-                                          </span>
-                                          <span className="rounded bg-blue-100 text-[#3067DB] px-1 py-0.2 text-[9px] font-medium uppercase">
-                                            {t.category || "test"}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/50 p-3 text-center text-2xs text-amber-800">
-                                      No test cases currently linked. Generate coverage from the Coverage Explorer or Test Cases view.
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Bottom Quick Actions Bar */}
-                                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-                                  <div className="flex items-center gap-2">
-                                    {r.document_id && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedDocId(r.document_id ?? null);
-                                          setViewerTargetPage(parsePageNum(r.source_page));
-                                          setViewerTargetExcerpt(r.evidence_excerpt || null);
-                                          setActiveTab("intake");
-                                          setDocSubTab("original");
-                                        }}
-                                        className="h-8 text-xs border-slate-200"
-                                      >
-                                        <FileText className="h-3.5 w-3.5 mr-1 text-[#3067DB]" />
-                                        <span>View in PDF Viewer</span>
-                                      </Button>
-                                    )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => nav(`/requirements/${r.id}`)}
-                                      className="h-8 text-xs border-slate-200 text-slate-700"
-                                    >
-                                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                                      <span>Full Workspace</span>
-                                    </Button>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    {(r.review_status === "pending_review" || r.status === "draft") && (
-                                      <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => approveReqM.mutate(r.id)}
-                                        loading={approveReqM.isPending}
-                                        className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                                      >
-                                        <Check className="h-3.5 w-3.5 mr-1" />
-                                        <span>Approve Requirement</span>
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                            <td colSpan={9} className="p-3 sm:p-4">
+                              <RequirementRowExpanded
+                                requirement={r}
+                                projectId={projectId}
+                                traceRow={traceRow}
+                                onOpenDrawer={(req) => setQuickPeekReq(req)}
+                                onOpenDocument={(docId, page, excerpt) => {
+                                  setSelectedDocId(docId);
+                                  setViewerTargetPage(page);
+                                  setViewerTargetExcerpt(excerpt || null);
+                                  setActiveTab("intake");
+                                  setDocSubTab("original");
+                                }}
+                                onRequirementUpdated={() => {
+                                  reqsQ.refetch();
+                                  traceQ.refetch();
+                                }}
+                              />
                             </td>
                           </tr>
                         )}
@@ -2106,137 +1903,24 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             </div>
           </div>
 
-          {/* Quick-Peek Slide-Over Detail Drawer */}
-          {quickPeekReq && (
-            <ResponsiveDetailDrawer
-              open={!!quickPeekReq}
-              onOpenChange={(open) => !open && setQuickPeekReq(null)}
-              title={`Requirement Details: ${quickPeekReq.key}`}
-              anchorRef={tableContainerRef}
-            >
-              <div className="p-5 space-y-5 text-xs">
-                {/* Header Info */}
-                <div className="space-y-2 border-b border-slate-200 pb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-bold text-[#3067DB]">{quickPeekReq.key}</span>
-                    <Badge value={quickPeekReq.review_status || quickPeekReq.status || "approved"} />
-                  </div>
-                  <h3 className="text-base font-semibold text-slate-900 leading-snug">{quickPeekReq.title}</h3>
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <Badge value={quickPeekReq.category} />
-                    <Badge value={quickPeekReq.priority} />
-                    <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-2xs font-semibold border border-emerald-100">
-                      {quickPeekReq.confidence ? Math.round(quickPeekReq.confidence * 100) : 95}% Confidence
-                    </span>
-                  </div>
-                </div>
-
-                {/* Obligation Statement */}
-                <div className="space-y-1.5">
-                  <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">Obligation Statement</h4>
-                  <p className="text-xs text-slate-800 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    {quickPeekReq.description || quickPeekReq.title}
-                  </p>
-                </div>
-
-                {/* Verbatim Source Quote */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-500">Verbatim Passage</h4>
-                    <span className="text-2xs font-mono text-[#3067DB]">
-                      {quickPeekReq.source_page || "PDF"} · § {quickPeekReq.source_section || "General"}
-                    </span>
-                  </div>
-                  <blockquote className="text-xs text-slate-700 italic leading-relaxed bg-amber-50/40 border-l-3 border-amber-400 p-3 rounded-r-lg">
-                    "{quickPeekReq.evidence_excerpt || "No explicit verbatim excerpt recorded."}"
-                  </blockquote>
-                </div>
-
-                {/* Traceability Info */}
-                {(() => {
-                  const traceRow = traceByReqKey.get(quickPeekReq.key);
-                  const acs = traceRow?.acceptance_criteria || [];
-                  const testCases = traceRow?.tests || [];
-                  return (
-                    <div className="space-y-4 pt-2 border-t border-slate-200">
-                      {/* ACs */}
-                      <div className="space-y-2">
-                        <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600">
-                          Acceptance Criteria ({acs.length})
-                        </h4>
-                        {acs.length > 0 ? (
-                          <div className="space-y-2">
-                            {acs.map((ac: any, idx: number) => (
-                              <div key={idx} className="rounded-lg border border-purple-100 bg-purple-50/40 p-2.5 text-xs">
-                                <div className="font-mono text-2xs font-bold text-purple-700 mb-1">{ac.key}</div>
-                                <div className="text-slate-700 text-[11px] leading-relaxed">{ac.description}</div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-slate-400 text-2xs">No acceptance criteria registered.</p>
-                        )}
-                      </div>
-
-                      {/* Tests */}
-                      <div className="space-y-2">
-                        <h4 className="text-2xs font-bold uppercase tracking-wider text-slate-600">
-                          Linked Tests ({testCases.length})
-                        </h4>
-                        {testCases.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {testCases.map((tc: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 p-2 text-xs">
-                                <div>
-                                  <span className="font-mono text-2xs font-semibold text-[#3067DB] mr-2">{tc.key}</span>
-                                  <span className="text-slate-800 text-[11px]">{tc.title}</span>
-                                </div>
-                                <Badge value={tc.category || "test"} />
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-slate-400 text-2xs">No test cases linked.</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Drawer Footer Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDocId(quickPeekReq.document_id ?? null);
-                      setViewerTargetPage(parsePageNum(quickPeekReq.source_page));
-                      setViewerTargetExcerpt(quickPeekReq.evidence_excerpt || null);
-                      setActiveTab("intake");
-                      setDocSubTab("original");
-                      setQuickPeekReq(null);
-                    }}
-                  >
-                    <FileText className="h-3.5 w-3.5 mr-1 text-[#3067DB]" />
-                    <span>View in PDF</span>
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      nav(`/requirements/${quickPeekReq.id}`);
-                      setQuickPeekReq(null);
-                    }}
-                    className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                    <span>Open Full Page</span>
-                  </Button>
-                </div>
-              </div>
-            </ResponsiveDetailDrawer>
-          )}
+          {/* Polished Enterprise Right-Side Requirement Detail Drawer */}
+          <RequirementDetailDrawer
+            requirementId={quickPeekReq?.id ?? null}
+            projectId={projectId}
+            open={!!quickPeekReq}
+            onClose={() => setQuickPeekReq(null)}
+            onOpenDocument={(docId, page, excerpt) => {
+              setSelectedDocId(docId);
+              setViewerTargetPage(page);
+              setViewerTargetExcerpt(excerpt || null);
+              setActiveTab("intake");
+              setDocSubTab("original");
+            }}
+            onRequirementUpdated={() => {
+              reqsQ.refetch();
+              traceQ.refetch();
+            }}
+          />
         </div>
       )}
 

@@ -159,6 +159,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/onboarding/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Onboarding Document
+         * @description Upload and stage a document for AI project onboarding.
+         */
+        post: operations["upload_onboarding_document_api_v1_projects_onboarding_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/onboarding/preload-upi-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preload Upi Regulatory Documents
+         * @description Stage authentic UPI & Customer Protection regulatory documents into staging storage.
+         */
+        post: operations["preload_upi_regulatory_documents_api_v1_projects_onboarding_preload_upi_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/onboarding/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analyze Onboarding Documents
+         * @description Analyze uploaded documents and extract structured, evidence-backed project configuration.
+         */
+        post: operations["analyze_onboarding_documents_api_v1_projects_onboarding_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/onboarding/reasonx-explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reasonx Explain Onboarding
+         * @description Provide grounded ReasonX answers regarding extracted onboarding configuration, rules, and cross-document reconciliation.
+         */
+        post: operations["reasonx_explain_onboarding_api_v1_projects_onboarding_reasonx_explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/onboarding/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Project From Onboarding Flow
+         * @description Persist human-approved onboarding configuration and trigger initial requirements extraction.
+         */
+        post: operations["create_project_from_onboarding_flow_api_v1_projects_onboarding_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/context": {
         parameters: {
             query?: never;
@@ -1749,6 +1849,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/traceability/generate-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Coverage */
+        post: operations["generate_coverage_api_v1_traceability_generate_coverage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analytics/dashboard": {
         parameters: {
             query?: never;
@@ -2189,6 +2306,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/simulation/pipeline-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Pipeline Progress
+         * @description Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases.
+         */
+        get: operations["get_pipeline_progress_api_v1_simulation_pipeline_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/simulation/run-pipeline-step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Pipeline Step
+         * @description Execute operational simulation or validation step against persisted project models, updating execution state.
+         */
+        post: operations["run_pipeline_step_api_v1_simulation_run_pipeline_step_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/intelligence-report": {
         parameters: {
             query?: never;
@@ -2556,6 +2713,21 @@ export interface components {
              */
             auto_process: boolean;
         };
+        /** Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post */
+        Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post: {
+            /** File */
+            file: string;
+            /**
+             * Purpose
+             * @default prd
+             */
+            purpose: string;
+            /**
+             * Display Name
+             * @default
+             */
+            display_name: string;
+        };
         /** BulkReviewIn */
         BulkReviewIn: {
             /** Test Ids */
@@ -2622,6 +2794,25 @@ export interface components {
         CommentIn: {
             /** Body */
             body: string;
+        };
+        /** CoverageGenerationRequest */
+        CoverageGenerationRequest: {
+            /** Project Id */
+            project_id: number;
+            /** Requirement Ids */
+            requirement_ids?: number[];
+            /** Categories */
+            categories?: string[];
+            /**
+             * Preview
+             * @default true
+             */
+            preview: boolean;
+            /**
+             * Auto Approve
+             * @default false
+             */
+            auto_approve: boolean;
         };
         /** CriterionReview */
         CriterionReview: {
@@ -2856,6 +3047,31 @@ export interface components {
              * @default
              */
             description: string;
+        };
+        /** OnboardingAnalysisIn */
+        OnboardingAnalysisIn: {
+            /** Document Ids */
+            document_ids: number[];
+            /** Project Name */
+            project_name: string;
+            /** Project Key */
+            project_key: string;
+            /** Business Domain */
+            business_domain?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** OnboardingCreateIn */
+        OnboardingCreateIn: {
+            /** Approved Configuration */
+            approved_configuration: Record<string, never>;
+        };
+        /** OnboardingReasonXIn */
+        OnboardingReasonXIn: {
+            /** Configuration */
+            configuration: Record<string, never>;
+            /** Query */
+            query: string;
         };
         /** ProjectContextIn */
         ProjectContextIn: {
@@ -3683,6 +3899,158 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_onboarding_document_api_v1_projects_onboarding_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_onboarding_document_api_v1_projects_onboarding_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preload_upi_regulatory_documents_api_v1_projects_onboarding_preload_upi_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    analyze_onboarding_documents_api_v1_projects_onboarding_analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingAnalysisIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reasonx_explain_onboarding_api_v1_projects_onboarding_reasonx_explain_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingReasonXIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_project_from_onboarding_flow_api_v1_projects_onboarding_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7279,6 +7647,39 @@ export interface operations {
             };
         };
     };
+    generate_coverage_api_v1_traceability_generate_coverage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoverageGenerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dashboard_api_v1_analytics_dashboard_get: {
         parameters: {
             query?: {
@@ -7981,6 +8382,72 @@ export interface operations {
         parameters: {
             query?: {
                 policy_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pipeline_progress_api_v1_simulation_pipeline_progress_get: {
+        parameters: {
+            query?: {
+                /** @description Target Project ID */
+                project_id?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_pipeline_step_api_v1_simulation_run_pipeline_step_post: {
+        parameters: {
+            query?: {
+                /** @description Target Project ID */
+                project_id?: number;
+                /** @description Optional step identifier */
+                step_id?: string | null;
             };
             header?: never;
             path?: never;

@@ -43,6 +43,7 @@ from app.db.models import (
     User,
 )
 from app.services.document_processor import process_document, validate_file_upload
+from app.services.requirements import _insert_clauses
 
 log = logging.getLogger("tracetest.seed.dayforce")
 
@@ -468,6 +469,8 @@ def ensure_dayforce_project(db: Session, force_reseed: bool = False) -> Project:
                 created_at=datetime(2026, 11, 7, 10, 50, 0),
             )
             db.add(rv)
+            db.flush()
+            _insert_clauses(db, req, rv, desc, None)
             created_reqs.append(req)
 
         db.commit()

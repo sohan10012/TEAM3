@@ -29,6 +29,7 @@
 | **Phase 14** | AI-Powered Project Onboarding, Automatic Context Generation & Real-Data Integrity Audit | Critical | Dual-mode onboarding (Mode A AI-Assisted vs Mode B Manual), RBI circular intake, staged uploads, 8 rules, 5 roles, 6 scenarios, 3 cross-doc insights, ReasonX grounding, domain-adaptive pipeline | **COMPLETE** | 100% (7 Pytest + 23 Vitest + 7 PNGs) |
 | **Phase 14.2** | Authentic Document Ingestion, Anti-Fixture Audit & Independent AI Accuracy Benchmark | Critical | Anti-fixture audit, synthetic demo labeling, dynamic router.generate, verbatim quote guardrails, SHA-256 hashes, unseen domain benchmarks (HMRC Tax, ISO 27001 Security, Clinical Trials) | **COMPLETE** | 100% (27 Pytest + 23 Vitest + Build) |
 | **Phase 15** | Advanced Design Engineering, Apple-Inspired UI & Motion System | Critical | Geometric vector brand mark, unified 56px top bar, far-right project switcher popover with search, dynamic 5-stage pipeline stepper, 4-row header, zero-overlap metadata (`min-w-0`), clarified telemetry, ReasonX translucent launcher, DESIGN.md tokens | **COMPLETE** | 100% (27 Pytest + 23 Vitest + Build + 7 PNGs) |
+| **Phase 1 Redesign** | Enterprise Requirements Management UX Transformation | Critical | `REQ-UX-01`, `REQ-UX-02`, `REQ-UX-03`, `REQ-CLAUSE-01` | **COMPLETE** | 100% (31 Pytest + 23 Vitest + Build + 7 Screenshots) |
 
 ---
 
@@ -398,4 +399,38 @@
     - Detailed delivery reports published at:
       - [`docs/reports/enterprise-evaluation/PHASE_15_ADVANCED_DESIGN_ENGINEERING_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_15_ADVANCED_DESIGN_ENGINEERING_REPORT.md)
       - [`docs/reports/enterprise-evaluation/PHASE_15_BRAND_AND_DASHBOARD_UX_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_15_BRAND_AND_DASHBOARD_UX_REPORT.md)
+
+---
+
+## 17. Phase 1 Redesign: Enterprise Requirements Management UX Transformation
+
+### Overview
+Transformed the core requirements workspace (`/requirements`, `/requirements/:id`, `RequirementsManagementView.tsx`) into an Apple-inspired enterprise-grade quality intelligence workspace.
+
+### Key Capabilities Delivered
+1. **Executive 5-Metric Governance Bar (`RequirementsOverviewMetrics.tsx`)**:
+   - Displays real database-grounded counts: Total Extracted (56 for Dayforce), Approved Requirements, Pending Review, Requires Clarification, and Critical/High Priority.
+   - Direct interactive filtering: clicking any tile toggles table filters.
+2. **Expandable Requirement Rows (`RequirementRowExpanded.tsx`)**:
+   - Reveals all 9 quality dimensions: full description, verbatim excerpt, source doc/page link, extracted atomic clauses list (`DAY-REQ-001.C1`), linked acceptance criteria (Gherkin Given-When-Then), linked test cases with categories, validation & grounding provenance, AI confidence gauge (96%), and version history.
+3. **Contextual Right-Side Requirement Detail Drawer (`RequirementDetailDrawer.tsx`)**:
+   - 6 organized sections: Overview, Source Evidence with 1-click citation copy, AI Analysis & Grounding, Acceptance Criteria, Test Coverage, and Live Actions Toolbar (`/approve`, `/reject`, `/request-clarification`, `/patch`).
+4. **Data Inconsistency Resolution**:
+   - Resolved root cause where requirement detail pages showed 0 clauses while ACs cited `.C1` clauses.
+   - Generated and persisted 56 atomic clauses for Project 9 in SQLite.
+   - Updated `backend/app/seed/dayforce_seed.py` with deterministic clause ingestion.
+5. **Design Engineering & Usability**:
+   - High-contrast text meeting WCAG AA standards (≥ 4.5:1).
+   - Layout stability via `min-h-[100dvh]` and `overflow-x: clip`.
+   - Keyboard accessibility: Escape dismissal, focus rings, ARIA roles (`role="dialog"`).
+   - Touch targets ≥ 44×44px.
+6. **Verification Evidence**:
+   - TypeScript: 0 errors (`npm run typecheck`).
+   - ESLint: 0 warnings, 0 errors (`npm run lint`).
+   - Vitest: 23/23 tests passing (`npm test`).
+   - Pytest: 31/31 phase 1 tests passing; 13/13 security tests passing.
+   - Production Build: Succeeded in 4.30s (`npm run build`).
+   - 7 High-Resolution Screenshots captured across 1920x1080, 1440x900, 1024x768, and 390x844 viewports.
+   - Report: [`docs/reports/enterprise-evaluation/PHASE_1_REQUIREMENTS_UX_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_1_REQUIREMENTS_UX_REPORT.md).
+
 
