@@ -114,6 +114,27 @@ def test_reasonx_chat_autonomous_flow(admin):
     assert "steps" in structured and isinstance(structured["steps"], list)
 
 
+def test_reasonx_chat_stream_sse_flow(admin):
+    """Verify Server-Sent Events progressive token and task streaming via /reasonx/chat/stream."""
+    r_projs = admin.get("/projects")
+    proj_id = r_projs.json()["items"][0]["id"]
+
+    payload = {
+        "query": "Review the quality health of our test cases and coverage.",
+        "project_id": proj_id,
+        "page": "tests",
+    }
+    res = admin.post("/reasonx/chat/stream", json=payload)
+    assert res.status_code == 200
+    assert "text/event-stream" in res.headers.get("content-type", "")
+
+    body = res.text
+    assert "event: thinking" in body
+    assert "event: task_plan" in body
+    assert "event: token" in body
+    assert "event: done" in body
+
+
 def test_reasonx_approval_lifecycle_and_cancellation(admin):
     """Verify creation of Level 3 task requiring approval, task inspection, and rejection."""
     r_projs = admin.get("/projects")

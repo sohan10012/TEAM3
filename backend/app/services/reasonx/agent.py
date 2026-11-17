@@ -206,7 +206,7 @@ def classify_and_plan(
     }
 
 
-def run_reasonx_agent(
+def iter_reasonx_agent_events(
     db: Session,
     project_id: int,
     query: str,
@@ -215,8 +215,11 @@ def run_reasonx_agent(
     selected_id: Any | None = None,
     conversation_id: int | None = None,
     user_id: int | None = None,
-) -> dict[str, Any]:
-    """Execute the full autonomous Plan-Act-Verify quality engineering agent loop."""
+    skip_token_delay: bool = False,
+):
+    """Yield progressive Server-Sent Events (SSE) across the Plan-Act-Verify agent cycle."""
+    yield ("thinking", {"stage": "context_resolution", "detail": "Resolving active project records and permissions"})
+
     project = db.get(Project, project_id)
     if not project:
         raise ValueError(f"Project #{project_id} not found")
@@ -245,6 +248,8 @@ def run_reasonx_agent(
     db.add(user_msg)
     db.commit()
 
+    yield ("thinking", {"stage": "task_planning", "detail": f"Classifying intent and formulating execution plan for {project.key}"})
+
     # 3. Intent Classification & Task Planning
     intent = classify_and_plan(
         query=query,
@@ -256,7 +261,6 @@ def run_reasonx_agent(
     )
     task_type = intent.get("task_type", "general_query")
     raw_plan = intent.get("plan", [])
-    requires_complex = intent.get("requires_complex_reasoning", False)
 
     # Model selection: Primary gemini-3.8-flash, fallback to gemini-3.1-pro-preview via provider chain
     target_model = settings.gemini_model
@@ -276,6 +280,13 @@ def run_reasonx_agent(
         plan=plan_entries,
         risk_level=3 if any(TOOL_REGISTRY.get(p.get("tool", ""), None) and TOOL_REGISTRY[p["tool"]].risk_level >= 3 for p in raw_plan) else 1,
     )
+
+    yield ("task_plan", {
+        "task_id": task.id,
+        "conversation_id": conv.id,
+        "plan": plan_entries,
+        "task_type": task_type,
+    })
 
     # 5. Execute Allowlisted Tools & Collect Evidence
     step_traces = []
@@ -297,6 +308,12 @@ def run_reasonx_agent(
 
         # Update step status to running
         record_step(db, task.id, step_num, step_title, "running", tool_name)
+        yield ("step_start", {
+            "step_number": step_num,
+            "title": step_title,
+            "tool": tool_name,
+            "task_id": task.id,
+        })
 
         try:
             # Check if this tool requires interactive Level 3/4 human approval
@@ -315,6 +332,13 @@ def run_reasonx_agent(
                     "status": "awaiting_approval",
                     "tool": tool_name,
                     "elapsed_ms": int((time.monotonic() - t0) * 1000),
+                })
+                yield ("step_complete", {
+                    "step_number": step_num,
+                    "title": step_title,
+                    "status": "awaiting_approval",
+                    "tool": tool_name,
+                    "task_id": task.id,
                 })
                 break
 
@@ -337,6 +361,15 @@ def run_reasonx_agent(
                 "status": "completed",
                 "tool": tool_name,
                 "elapsed_ms": elapsed,
+            })
+
+            yield ("step_complete", {
+                "step_number": step_num,
+                "title": step_title,
+                "status": "completed",
+                "tool": tool_name,
+                "elapsed_ms": elapsed,
+                "task_id": task.id,
             })
 
             # Harvest real evidence from tool results
@@ -369,6 +402,15 @@ def run_reasonx_agent(
                 "elapsed_ms": elapsed,
                 "error": str(exc),
             })
+            yield ("step_complete", {
+                "step_number": step_num,
+                "title": step_title,
+                "status": "failed",
+                "tool": tool_name,
+                "elapsed_ms": elapsed,
+                "error": str(exc),
+                "task_id": task.id,
+            })
 
     # If evidence_collected is empty, add baseline authentic evidence from active project
     if not evidence_collected:
@@ -390,6 +432,8 @@ def run_reasonx_agent(
     task.evidence = [e.model_dump() for e in evidence_collected]
     task.result_summary = tool_results
     db.commit()
+
+    yield ("thinking", {"stage": "synthesizing", "detail": "Synthesizing verified findings and grounded recommendations..."})
 
     # 7. Synthesize Response via LLM with Grounded Project Evidence
     system_prompt = (
@@ -466,7 +510,7 @@ def run_reasonx_agent(
     db.commit()
     db.refresh(asst_msg)
 
-    return {
+    final_result = {
         "conversation_id": conv.id,
         "message_id": asst_msg.id,
         "task_id": task.id,
@@ -478,3 +522,54 @@ def run_reasonx_agent(
         "provider": llm_res.provider,
         "model": target_model,
     }
+
+    # 9. Stream progressive tokens across the wire
+    words = full_content.split(" ")
+    chunk_size = 2
+    for i in range(0, len(words), chunk_size):
+        chunk = " ".join(words[i:i + chunk_size])
+        if i + chunk_size < len(words):
+            chunk += " "
+        yield ("token", {
+            "content": chunk,
+            "conversation_id": conv.id,
+            "task_id": task.id,
+        })
+        if not skip_token_delay:
+            time.sleep(0.015)
+
+    if pending_approval_card:
+        yield ("awaiting_approval", pending_approval_card)
+
+    yield ("done", final_result)
+
+
+def run_reasonx_agent(
+    db: Session,
+    project_id: int,
+    query: str,
+    page: str = "workspace",
+    active_tab: str | None = None,
+    selected_id: Any | None = None,
+    conversation_id: int | None = None,
+    user_id: int | None = None,
+) -> dict[str, Any]:
+    """Execute the full autonomous Plan-Act-Verify quality engineering agent loop."""
+    final_res = None
+    for event_type, payload in iter_reasonx_agent_events(
+        db=db,
+        project_id=project_id,
+        query=query,
+        page=page,
+        active_tab=active_tab,
+        selected_id=selected_id,
+        conversation_id=conversation_id,
+        user_id=user_id,
+        skip_token_delay=True,
+    ):
+        if event_type == "done":
+            final_res = payload
+
+    if not final_res:
+        raise RuntimeError("ReasonX agent failed to complete execution")
+    return final_res

@@ -68,6 +68,11 @@ function getPageName(pathname: string): string {
   return "workspace";
 }
 
+function getCsrfToken(): string {
+  const m = document.cookie.match(/(?:^|; )tt_csrf=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
 export function ReasonXAssistant() {
   const qc = useQueryClient();
   const location = useLocation();
@@ -93,8 +98,18 @@ export function ReasonXAssistant() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [isResizing, setIsResizing] = useState(false);
 
+  // Streaming State
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [optimisticUserQuery, setOptimisticUserQuery] = useState<string | null>(null);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [streamingStage, setStreamingStage] = useState<string | null>(null);
+  const [streamingPlan, setStreamingPlan] = useState<Array<{ step: number; title: string; tool?: string; status?: string }>>([]);
+  const [streamingSteps, setStreamingSteps] = useState<TaskStepItem[]>([]);
+  const [streamingApproval, setStreamingApproval] = useState<ApprovalRequestPayload | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Resize handler for desktop drawer
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -155,9 +170,9 @@ export function ReasonXAssistant() {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [msgsQ.data, isOpen]);
+  }, [msgsQ.data, isOpen, streamingContent, streamingStage]);
 
-  // Mutation: Send chat query
+  // Mutation: Fallback non-streaming chat query
   const sendM = useMutation({
     mutationFn: (queryText: string) =>
       api.post<any>("/reasonx/chat", {
@@ -208,15 +223,170 @@ export function ReasonXAssistant() {
     },
   });
 
+  // Primary: SSE Streaming Chat Handler
+  const executeStreamingChat = async (queryText: string) => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setIsStreaming(true);
+    setOptimisticUserQuery(queryText);
+    setStreamingContent("");
+    setStreamingStage("Initializing ReasonX...");
+    setStreamingPlan([]);
+    setStreamingSteps([]);
+    setStreamingApproval(null);
+
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const csrf = getCsrfToken();
+      if (csrf) headers["X-CSRF-Token"] = csrf;
+
+      const res = await fetch("/api/v1/reasonx/chat/stream", {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({
+          project_id: effectiveProjectId,
+          query: queryText,
+          page: pageContext,
+          conversation_id: activeConvId,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Streaming failed with status ${res.status}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No readable stream available");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          const lines = part.split("\n");
+          let eventType = "message";
+          let eventData = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              eventData += line.slice(6);
+            }
+          }
+
+          if (eventData) {
+            try {
+              const data = JSON.parse(eventData);
+
+              if (eventType === "thinking") {
+                setStreamingStage(data.detail || data.stage);
+              } else if (eventType === "task_plan") {
+                setStreamingPlan(data.plan || []);
+                if (!activeConvId && data.conversation_id) {
+                  setActiveConvId(data.conversation_id);
+                }
+              } else if (eventType === "step_start") {
+                setStreamingPlan((prev) =>
+                  prev.map((p) =>
+                    p.step === data.step_number ? { ...p, status: "running" } : p
+                  )
+                );
+                setStreamingStage(`Executing step: ${data.title}`);
+              } else if (eventType === "step_complete") {
+                setStreamingPlan((prev) =>
+                  prev.map((p) =>
+                    p.step === data.step_number ? { ...p, status: data.status || "completed" } : p
+                  )
+                );
+                setStreamingSteps((prev) => [
+                  ...prev,
+                  {
+                    step_number: data.step_number,
+                    title: data.title,
+                    status: data.status || "completed",
+                    tool: data.tool,
+                    elapsed_ms: data.elapsed_ms,
+                    error: data.error,
+                  },
+                ]);
+              } else if (eventType === "token") {
+                setStreamingContent((prev) => prev + (data.content || ""));
+              } else if (eventType === "awaiting_approval") {
+                setStreamingApproval(data);
+              } else if (eventType === "done") {
+                if (!activeConvId && data.conversation_id) {
+                  setActiveConvId(data.conversation_id);
+                }
+                qc.invalidateQueries({ queryKey: ["reasonx_conversations", effectiveProjectId] });
+                qc.invalidateQueries({
+                  queryKey: ["reasonx_messages", data.conversation_id || activeConvId],
+                });
+                qc.invalidateQueries({ queryKey: ["reasonx_tasks", effectiveProjectId] });
+                setIsStreaming(false);
+                setOptimisticUserQuery(null);
+                setStreamingContent("");
+                setStreamingStage(null);
+                return;
+              } else if (eventType === "error") {
+                throw new Error(data.error || "Streaming agent error");
+              }
+            } catch (err: any) {
+              if (err.name === "AbortError") return;
+              console.warn("SSE JSON parse error:", err);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        setIsStreaming(false);
+        setStreamingStage(null);
+        return;
+      }
+      console.warn("Streaming connection dropped, falling back to standard API:", err);
+      // Fallback to standard HTTP post if SSE stream encounters error
+      sendM.mutate(queryText);
+    } finally {
+      setIsStreaming(false);
+      setStreamingStage(null);
+      abortControllerRef.current = null;
+    }
+  };
+
   const handleSend = (overrideQuery?: string) => {
     const q = (overrideQuery || inputVal).trim();
-    if (!q || sendM.isPending) return;
+    if (!q || isStreaming || sendM.isPending) return;
     setInputVal("");
     if (mode === "compact") {
       setMode("drawer");
     }
     setIsOpen(true);
-    sendM.mutate(q);
+    executeStreamingChat(q);
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+    setStreamingStage(null);
+    qc.invalidateQueries({ queryKey: ["reasonx_conversations", effectiveProjectId] });
+    qc.invalidateQueries({ queryKey: ["reasonx_messages", activeConvId] });
   };
 
   const handleCopy = (id: number, text: string) => {
@@ -250,6 +420,7 @@ export function ReasonXAssistant() {
 
   const messages: ChatMessage[] = msgsQ.data?.messages || [];
   const conversations: ConversationSummary[] = convsQ.data?.conversations || [];
+  const isAgentWorking = isStreaming || sendM.isPending;
 
   return (
     <>
@@ -263,7 +434,7 @@ export function ReasonXAssistant() {
             setIsOpen(!isOpen);
           }
         }}
-        isRunning={sendM.isPending}
+        isRunning={isAgentWorking}
       />
 
       {/* 2. Compact Single-Input Bar Mode */}
@@ -273,7 +444,7 @@ export function ReasonXAssistant() {
           onExpand={() => setMode("drawer")}
           onDismiss={() => setIsOpen(false)}
           projectName={activeProject?.name}
-          isPending={sendM.isPending}
+          isPending={isAgentWorking}
         />
       )}
 
@@ -404,7 +575,7 @@ export function ReasonXAssistant() {
 
             {/* Conversation Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-              {messages.length === 0 ? (
+              {messages.length === 0 && !isStreaming ? (
                 <div className="py-2">
                   <ReasonXTemplateGallery onSelect={(q) => handleSend(q)} />
                 </div>
@@ -519,8 +690,62 @@ export function ReasonXAssistant() {
                 ))
               )}
 
-              {/* Live Task Processing Indicator */}
-              {sendM.isPending && (
+              {/* Live Streaming Message Display */}
+              {isStreaming && (
+                <>
+                  {/* Optimistic User Query Bubble */}
+                  {optimisticUserQuery && (
+                    <div className="flex flex-col space-y-1.5 items-end animate-in fade-in duration-150">
+                      <div className="rounded-2xl p-4 text-xs leading-relaxed shadow-2xs bg-slate-900 text-white rounded-br-xs max-w-[85%]">
+                        <p className="whitespace-pre-wrap">{optimisticUserQuery}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Active Streaming Assistant Response Card */}
+                  <div className="flex flex-col space-y-1.5 items-start animate-in fade-in duration-200">
+                    <div className="rounded-2xl p-4 text-xs leading-relaxed shadow-2xs bg-white border border-slate-200 text-slate-800 rounded-bl-xs w-full max-w-full space-y-3">
+                      {/* Live Stage Status Progress Pill */}
+                      {streamingStage && !streamingContent && (
+                        <div className="flex items-center gap-2 text-xs text-slate-700 font-medium py-1">
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                          <span>{streamingStage}</span>
+                        </div>
+                      )}
+
+                      {/* Progressive Plan Timeline */}
+                      {streamingPlan.length > 0 && (
+                        <ReasonXTaskTimeline
+                          plan={streamingPlan}
+                          steps={streamingSteps}
+                          currentStatus={streamingContent ? "completed" : "running"}
+                        />
+                      )}
+
+                      {/* Live Token Stream with High-Craft Markdown Formatting */}
+                      {streamingContent && (
+                        <ReasonXMarkdown content={streamingContent} isStreaming={true} />
+                      )}
+
+                      {/* Progressive Approval Card */}
+                      {streamingApproval && (
+                        <ReasonXApprovalCard
+                          request={streamingApproval}
+                          onApprove={async (tId) => {
+                            await approveM.mutateAsync(tId);
+                          }}
+                          onReject={async (tId) => {
+                            await cancelM.mutateAsync({ taskId: tId });
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Fallback Non-Streaming Live Task Processing Indicator */}
+              {sendM.isPending && !isStreaming && (
                 <div className="flex items-start gap-2.5 animate-in fade-in duration-200">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                     <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
@@ -564,15 +789,15 @@ export function ReasonXAssistant() {
                     }
                   }}
                   placeholder="Ask ReasonX a question..."
-                  disabled={sendM.isPending}
+                  disabled={isAgentWorking}
                   className="flex-1 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed"
                 />
 
                 <div className="flex items-center gap-1 shrink-0">
-                  {sendM.isPending ? (
+                  {isAgentWorking ? (
                     <button
                       type="button"
-                      onClick={() => qc.cancelQueries({ queryKey: ["reasonx_chat"] })}
+                      onClick={handleStop}
                       title="Stop generation"
                       className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer"
                     >
@@ -581,7 +806,7 @@ export function ReasonXAssistant() {
                   ) : (
                     <button
                       type="submit"
-                      disabled={!inputVal.trim() || sendM.isPending}
+                      disabled={!inputVal.trim() || isAgentWorking}
                       title="Send query"
                       aria-label="Send query"
                       className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-2xs transition-colors hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 cursor-pointer"

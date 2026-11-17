@@ -17,6 +17,7 @@ from app.services.reasonx import (
     get_conversation_messages,
     get_quick_prompts,
     get_task_details,
+    iter_reasonx_agent_events,
     list_conversations,
     list_project_tasks,
     process_reasonx_chat,
@@ -74,11 +75,8 @@ def reasonx_chat_stream(
     scoped_project_ids(db, p, body.project_id)
 
     def event_generator():
-        yield f"event: thinking\ndata: {json.dumps({'stage': 'context_resolution', 'detail': 'Resolving active project records and permissions'})}\n\n"
-        yield f"event: thinking\ndata: {json.dumps({'stage': 'task_planning', 'detail': 'Formulating autonomous execution plan'})}\n\n"
-
         try:
-            res = process_reasonx_chat(
+            for event_type, payload in iter_reasonx_agent_events(
                 db=db,
                 project_id=body.project_id,
                 query=body.query,
@@ -87,31 +85,21 @@ def reasonx_chat_stream(
                 selected_id=body.selected_id,
                 conversation_id=body.conversation_id,
                 user_id=p.id if hasattr(p, "id") else None,
-            )
-
-            structured = res.get("structured_payload", {})
-            plan = structured.get("plan", [])
-            steps = structured.get("steps", [])
-
-            yield f"event: task_plan\ndata: {json.dumps({'task_id': res.get('task_id'), 'plan': plan, 'steps': steps})}\n\n"
-
-            # Stream response content chunks
-            content = res.get("content", "")
-            words = content.split(" ")
-            chunk_size = 6
-            for i in range(0, len(words), chunk_size):
-                chunk = " ".join(words[i:i + chunk_size]) + " "
-                yield f"event: token\ndata: {json.dumps({'content': chunk})}\n\n"
-
-            if "approval_request" in structured and structured["approval_request"]:
-                yield f"event: awaiting_approval\ndata: {json.dumps(structured['approval_request'])}\n\n"
-
-            yield f"event: done\ndata: {json.dumps(res)}\n\n"
-
+                skip_token_delay=False,
+            ):
+                yield f"event: {event_type}\ndata: {json.dumps(payload)}\n\n"
         except Exception as exc:
             yield f"event: error\ndata: {json.dumps({'error': str(exc)})}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/tasks/{task_id}")

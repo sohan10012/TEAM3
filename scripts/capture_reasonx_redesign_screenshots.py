@@ -218,8 +218,121 @@ def capture_all():
         page_mobile.screenshot(path=str(OUTPUT_DIR / "12_mobile_drawer.png"))
         ctx_mobile.close()
 
+        # ---------------------------------------------------------------------
+        # 13. 13_streaming_response_live.png (Progressive SSE Live Stream)
+        # ---------------------------------------------------------------------
+        print("13. Capturing 13_streaming_response_live.png...")
+        ctx_stream = browser.new_context(viewport={"width": 1440, "height": 900})
+        page_stream = ctx_stream.new_page()
+        page_stream.goto("http://127.0.0.1:5173/dashboard?project_id=12", wait_until="networkidle")
+        time.sleep(1.0)
+        page_stream.locator("button[aria-label*='ReasonX']").first.click()
+        time.sleep(0.5)
+
+        # Trigger a question into the input to show the live streaming bubble & cursor
+        query_input = page_stream.locator("textarea[placeholder*='Ask ReasonX']").first
+        if query_input.is_visible():
+            query_input.fill("Analyze encryption compliance across AWS S3 buckets and summarize test outcomes.")
+            # Intercept stream with a delayed progressive SSE chunk to capture live state
+            def handle_delayed_stream(route):
+                sse_body = (
+                    "data: {\"event\": \"thinking\", \"stage\": \"Analyzing AWS S3 Cloud Security Baseline\", \"detail\": \"Inspecting REQ-AWS-0001 through REQ-AWS-0005...\"}\n\n"
+                    "data: {\"event\": \"task_plan\", \"plan\": [{\"step\": 1, \"title\": \"Load S3 Requirements\", \"action\": \"query_requirements\", \"status\": \"completed\"}, {\"step\": 2, \"title\": \"Audit Cipher Suites & TLS 1.2\", \"action\": \"evaluate_policy\", \"status\": \"running\"}, {\"step\": 3, \"title\": \"Generate Traceability Ledger\", \"action\": \"generate_report\", \"status\": \"pending\"}]}\n\n"
+                    "data: {\"event\": \"step_start\", \"step\": 2, \"title\": \"Audit Cipher Suites & TLS 1.2\"}\n\n"
+                    "data: {\"event\": \"token\", \"chunk\": \"### AWS S3 Encryption & Compliance Assessment\\n\\nBased on our audit of project **AWS_EVAL**, 8 out of 9 evaluated controls have verified evidence:\\n\\n- **EnforceSSLRequestsOnly:** \"}\n\n"
+                    "data: {\"event\": \"token\", \"chunk\": \"**PASSED** — All ingress requests strictly require TLS 1.2+.\\n- **Default Server-Side Encryption (SSE-KMS):** **PASSED**\\n- **Legacy TLS 1.0/1.1 Deprecation:** \"}\n\n"
+                )
+                route.fulfill(
+                    status=200,
+                    headers={"Content-Type": "text/event-stream", "Cache-Control": "no-cache"},
+                    body=sse_body,
+                )
+            page_stream.route("**/api/v1/reasonx/chat/stream", handle_delayed_stream)
+            page_stream.locator("button[aria-label='Send query']").first.click()
+            time.sleep(1.0)
+            page_stream.screenshot(path=str(OUTPUT_DIR / "13_streaming_response_live.png"))
+            page_stream.unroute("**/api/v1/reasonx/chat/stream", handle_delayed_stream)
+        ctx_stream.close()
+
+        # ---------------------------------------------------------------------
+        # 14. 14_rich_markdown_code_tables_badges.png (Enterprise Markdown Styling)
+        # ---------------------------------------------------------------------
+        print("14. Capturing 14_rich_markdown_code_tables_badges.png...")
+        ctx_md = browser.new_context(viewport={"width": 1440, "height": 900})
+        page_md = ctx_md.new_page()
+        page_md.goto("http://127.0.0.1:5173/dashboard?project_id=12", wait_until="networkidle")
+        time.sleep(1.0)
+        page_md.locator("button[aria-label*='ReasonX']").first.click()
+        time.sleep(0.5)
+
+        def handle_rich_md_messages(route):
+            rich_content = (
+                "### AWS S3 Cloud Security Policy Verification Report\n\n"
+                "> Critical statutory requirement REQ-AWS-0001 mandates automated rejection of all unencrypted plain HTTP transport.\n\n"
+                "#### Verification Matrix\n\n"
+                "| Requirement ID | Security Domain | Target Resource | Verification Status | Confidence |\n"
+                "|---|---|---|---|---|\n"
+                "| REQ-AWS-0001 | Transport Encryption | S3 Bucket Policy (TLS 1.2) | PASSED | 98.4% |\n"
+                "| REQ-AWS-0002 | Access Control | Public Access Block (BPA) | PASSED | 99.1% |\n"
+                "| REQ-AWS-0003 | Key Management | KMS Customer Managed Keys | PASSED | 96.7% |\n"
+                "| REQ-AWS-0004 | Object Versioning | Multi-AZ Cross-Region Replica | VERIFIED | 95.0% |\n"
+                "| REQ-AWS-0005 | Plain HTTP Ingress | Insecure Ingress Transport | FAILED | 99.8% |\n\n"
+                "#### Automated Policy Enforcement Guardrail\n\n"
+                "```json\n"
+                "{\n"
+                "  \"Version\": \"2012-10-17\",\n"
+                "  \"Statement\": [\n"
+                "    {\n"
+                "      \"Sid\": \"EnforceTLSRequestsOnly\",\n"
+                "      \"Effect\": \"Deny\",\n"
+                "      \"Principal\": \"*\",\n"
+                "      \"Action\": \"s3:*\",\n"
+                "      \"Resource\": \"arn:aws:s3:::aws-eval-production-bucket/*\",\n"
+                "      \"Condition\": {\n"
+                "        \"Bool\": {\"aws:SecureTransport\": \"false\"}\n"
+                "      }\n"
+                "    }\n"
+                "  ]\n"
+                "}\n"
+                "```\n\n"
+                "**Remediation Notice:** Severity is CRITICAL. Execute policy deployment immediately."
+            )
+            mock_msgs = [
+                {
+                    "id": 993,
+                    "role": "user",
+                    "content": "Generate the full AWS S3 Cloud Security Policy Verification Report with verification table and remediation guardrail.",
+                    "created_at": "2026-11-17T18:00:00Z",
+                },
+                {
+                    "id": 994,
+                    "role": "assistant",
+                    "content": rich_content,
+                    "structured_payload": {
+                        "direct_answer": "AWS S3 Cloud Security Policy Verification complete with 4 PASSED, 1 FAILED.",
+                        "confidence_level": "HIGH",
+                    },
+                    "created_at": "2026-11-17T18:00:03Z",
+                },
+            ]
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"messages": mock_msgs}),
+            )
+
+        page_md.route("**/api/v1/reasonx/conversations/*/messages", handle_rich_md_messages)
+        # Click on conversation item to refetch
+        page_md.locator("button[title='Conversation history']").first.click()
+        time.sleep(0.5)
+        page_md.locator("div.group.relative.flex.items-start").first.click()
+        time.sleep(1.5)
+        page_md.screenshot(path=str(OUTPUT_DIR / "14_rich_markdown_code_tables_badges.png"))
+        page_md.unroute("**/api/v1/reasonx/conversations/*/messages", handle_rich_md_messages)
+        ctx_md.close()
+
         browser.close()
-        print("\nAll 12 authentic ReasonX redesign screenshots captured successfully.")
+        print("\nAll 14 authentic ReasonX redesign screenshots captured successfully.")
 
 
 if __name__ == "__main__":

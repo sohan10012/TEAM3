@@ -240,4 +240,26 @@ describe("ReasonX UI Components & Redesign", () => {
     expect(screen.getByText("Pass Rate")).toBeInTheDocument();
     expect(screen.getByText("100%")).toBeInTheDocument();
   });
+
+  test("ReasonXMarkdown renders code blocks with copy affordance and status badges", async () => {
+    const md = `
+\`\`\`yaml
+policy_id: POL-SEC-001
+tls_version: 1.2
+enforce: true
+\`\`\`
+
+- Overall Status: **PASSED**
+- Security Risk: **CRITICAL**
+`;
+
+    const { container } = render(<ReasonXMarkdown content={md} isStreaming={true} />);
+    expect(screen.getByText(/yaml/i)).toBeInTheDocument();
+    expect(screen.getByText("Copy")).toBeInTheDocument();
+    expect(screen.getByText("PASSED")).toBeInTheDocument();
+    expect(screen.getByText("CRITICAL")).toBeInTheDocument();
+
+    // Verify streaming cursor indicator is rendered
+    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+  });
 });
