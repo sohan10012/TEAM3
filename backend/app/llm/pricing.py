@@ -192,3 +192,4 @@ def calculate_cost(
 def list_pricing_catalog() -> list[dict[str, Any]]:
     """Return all active rate cards for Settings UI transparency."""
     return [asdict(p) for p in MODEL_PRICING_REGISTRY.values()]
+

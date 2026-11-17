@@ -214,3 +214,4 @@ def test_config_sanitization_no_filesystem_leak(admin):
     data_dir = data.get("data_dir")
     if data_dir:
         assert not data_dir.startswith("/home/"), "Raw user home path must never be exposed"
+

@@ -1,5 +1,6 @@
-import { ArrowUp, Sparkles, X } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { ReasonXMark } from "@/components/brand/ReasonXMark";
 import { cn } from "@/utils/format";
 
 interface ReasonXCompactInputProps {
@@ -29,16 +30,16 @@ export function ReasonXCompactInput({
   };
 
   return (
-    <div className="fixed bottom-6 right-24 z-40 w-[420px] max-w-[calc(100vw-7rem)] animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out">
-      <div className="relative flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-2xl backdrop-blur-md ring-1 ring-slate-900/5 transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+    <div className="fixed bottom-6 right-20 z-40 w-[420px] max-w-[calc(100vw-6rem)] animate-in fade-in slide-in-from-bottom-3 duration-200 ease-out">
+      <div className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-md ring-1 ring-slate-900/5 transition-all focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-blue-500/20">
         {/* Emblem Trigger */}
         <button
           type="button"
           onClick={onExpand}
-          title="Expand ReasonX Workspace"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#1D4ED8] transition-colors hover:bg-blue-100 focus:outline-none"
+          title="Open ReasonX workspace"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white transition-colors hover:bg-slate-800 focus:outline-none"
         >
-          <Sparkles className="h-4 w-4" />
+          <ReasonXMark size={20} className="bg-transparent border-none shadow-none" />
         </button>
 
         {/* Natural Language Input */}
@@ -51,7 +52,7 @@ export function ReasonXCompactInput({
             placeholder={
               projectName
                 ? `Ask ReasonX about ${projectName}...`
-                : "Ask ReasonX to investigate, plan, or execute..."
+                : "Ask ReasonX a question..."
             }
             disabled={isPending}
             className="w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
@@ -61,15 +62,15 @@ export function ReasonXCompactInput({
             type="submit"
             disabled={!val.trim() || isPending}
             aria-label="Send to ReasonX"
-            title="Execute query"
+            title="Send query"
             className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all",
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all cursor-pointer",
               val.trim()
-                ? "bg-[#1D4ED8] text-white shadow-xs hover:bg-blue-700 active:scale-95"
-                : "text-slate-300 hover:text-slate-500 disabled:cursor-not-allowed"
+                ? "bg-slate-900 text-white shadow-2xs hover:bg-slate-800 active:scale-95"
+                : "text-slate-300 disabled:cursor-not-allowed"
             )}
           >
-            <ArrowUp className="h-4 w-4" />
+            <ArrowUp className="h-3.5 w-3.5" />
           </button>
         </form>
 
@@ -77,17 +78,11 @@ export function ReasonXCompactInput({
         <button
           type="button"
           onClick={onDismiss}
-          title="Dismiss compact bar"
+          title="Dismiss bar"
           className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
-      </div>
-
-      {/* Scope Pill Footnote */}
-      <div className="mt-1 flex items-center justify-between px-2 text-[10px] text-slate-400">
-        <span className="truncate">Active Project Scope: <strong className="text-slate-600 font-medium">{projectName || "Global"}</strong></span>
-        <span>Enter to execute</span>
       </div>
     </div>
   );

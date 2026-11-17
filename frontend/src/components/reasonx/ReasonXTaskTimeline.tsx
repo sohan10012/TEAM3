@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronRight, Loader2, Sparkles, XCircle } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Loader2, PlayCircle, XCircle } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/utils/format";
 
@@ -20,6 +20,18 @@ interface ReasonXTaskTimelineProps {
   currentStep?: number;
 }
 
+const HUMAN_TOOL_LABELS: Record<string, string> = {
+  inspect_project_health: "Reviewing project health & metrics",
+  inspect_requirements: "Inspecting requirements and coverage",
+  inspect_test_cases: "Reviewing test suite and specifications",
+  inspect_executions: "Investigating execution run results",
+  inspect_defects: "Auditing open defects and severity",
+  inspect_policies: "Checking compliance and policy rules",
+  generate_test_cases: "Formulating test cases",
+  create_defect_record: "Drafting defect proposal",
+  evaluate_release_readiness: "Evaluating release readiness",
+};
+
 export function ReasonXTaskTimeline({
   plan = [],
   steps = [],
@@ -31,27 +43,25 @@ export function ReasonXTaskTimeline({
   if (plan.length === 0 && steps.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3 my-2 text-xs transition-all shadow-xs">
+    <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 my-2 text-xs transition-all shadow-2xs">
       {/* Header bar */}
       <div
         className="flex items-center justify-between cursor-pointer select-none text-slate-800"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#1D4ED8] text-white">
-            <Sparkles className="h-3 w-3" />
-          </div>
+          <PlayCircle className="h-4 w-4 text-slate-700 shrink-0" />
           <span className="font-semibold text-xs tracking-tight text-slate-900">
-            Autonomous Execution Plan {taskType ? `· ${taskType.replace(/_/g, " ").toUpperCase()}` : ""}
+            Execution Plan {taskType ? `· ${taskType.replace(/_/g, " ")}` : ""}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider",
+              "px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider",
               currentStatus === "completed" && "bg-emerald-100 text-emerald-800",
-              currentStatus === "awaiting_approval" && "bg-amber-100 text-amber-800 animate-pulse",
+              currentStatus === "awaiting_approval" && "bg-amber-100 text-amber-800",
               currentStatus === "running" && "bg-blue-100 text-blue-800",
               currentStatus === "failed" && "bg-rose-100 text-rose-800"
             )}
@@ -68,7 +78,7 @@ export function ReasonXTaskTimeline({
 
       {/* Expanded Step Timeline */}
       {expanded && (
-        <div className="mt-3 pt-2 border-t border-blue-100/80 space-y-2">
+        <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-2">
           {plan.map((p, idx) => {
             const executedStep = steps.find((s) => s.step_number === p.step || s.tool === p.tool);
             const isCompleted = executedStep?.status === "completed" || p.status === "completed";
@@ -76,22 +86,24 @@ export function ReasonXTaskTimeline({
             const isFailed = executedStep?.status === "failed";
             const isAwaiting = executedStep?.status === "awaiting_approval";
 
+            const toolLabel = p.tool ? HUMAN_TOOL_LABELS[p.tool] || p.tool.replace(/_/g, " ") : undefined;
+
             return (
               <div key={idx} className="flex items-start gap-2.5 text-2xs leading-relaxed">
                 {/* Step Marker */}
                 <div className="mt-0.5 shrink-0">
                   {isCompleted ? (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                    <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-600 text-white">
+                      <Check className="h-2 w-2 stroke-[3]" />
                     </div>
                   ) : isRunning ? (
-                    <Loader2 className="h-4 w-4 text-[#1D4ED8] animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 text-blue-600 animate-spin" />
                   ) : isFailed ? (
-                    <XCircle className="h-4 w-4 text-rose-500" />
+                    <XCircle className="h-3.5 w-3.5 text-rose-500" />
                   ) : isAwaiting ? (
-                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200 mt-1" />
+                    <div className="h-2 w-2 rounded-full bg-amber-500 ring-2 ring-amber-200 mt-0.5" />
                   ) : (
-                    <div className="h-2.5 w-2.5 rounded-full bg-slate-300 mt-1" />
+                    <div className="h-2 w-2 rounded-full bg-slate-300 mt-0.5" />
                   )}
                 </div>
 
@@ -113,9 +125,9 @@ export function ReasonXTaskTimeline({
                     )}
                   </div>
 
-                  {p.tool && (
-                    <span className="font-mono text-[9px] text-blue-600/80 block mt-0.5">
-                      Tool: {p.tool}
+                  {toolLabel && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">
+                      {toolLabel}
                     </span>
                   )}
 
