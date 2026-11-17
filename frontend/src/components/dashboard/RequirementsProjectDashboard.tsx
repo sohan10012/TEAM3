@@ -291,10 +291,8 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
     })),
   ].slice(0, 4);
 
-  const projectTitle = project.key === "DAYFORCE" ? "Dayforce" : (project.name?.includes(" — ") ? project.name.split(" — ")[0] : project.name);
-  const projectDesc = project.key === "DAYFORCE"
-    ? "Enterprise HR and workforce management platform for employee lifecycle, time, attendance and payroll."
-    : (project.description || "Product requirements quality engineering and deterministic test verification.");
+  const projectTitle = project.name?.includes(" — ") ? project.name.split(" — ")[0] : project.name;
+  const projectDesc = project.description || "Product requirements quality engineering and deterministic test verification.";
 
   return (
     <div className="space-y-6 pb-12">
@@ -527,11 +525,36 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
         </div>
       </div>
 
-      {/* Onboarding hint if project has no documents yet */}
+      {/* Onboarding guidance for fresh evaluation project */}
       {isBrandNew && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 text-xs text-blue-900 flex items-center justify-between">
-          <span>This requirements project is ready for document intake. Upload your first PRD, SRS, or policy document to begin.</span>
-          <Button size="sm" variant="primary" onClick={() => setUploadModalOpen(true)}>Upload Document</Button>
+        <div className="rounded-2xl border border-blue-200/90 bg-gradient-to-r from-blue-50/80 via-indigo-50/40 to-white p-5 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider bg-blue-600 text-white shadow-2xs">
+                  Evaluation Project
+                </span>
+                <span className="text-2xs font-semibold text-blue-800">
+                  Real-World Document Evaluation Ready
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                Fresh Project Workspace Ready for Document Intake
+              </h3>
+              <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                This project begins completely clean with zero pre-seeded requirements, test cases, or execution history. Upload genuine company business specifications (PDF, DOCX, XLSX, Markdown, or CSV) to initiate automated requirement extraction, clause decomposition, and verification.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setUploadModalOpen(true)}
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shrink-0 shadow-xs apple-press cursor-pointer"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Genuine Documents
+            </Button>
+          </div>
         </div>
       )}
 

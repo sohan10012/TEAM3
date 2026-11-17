@@ -1,5 +1,6 @@
 import {
   Filter,
+  Layers,
   Search,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -135,7 +136,17 @@ export const RequirementCoverageHierarchy: React.FC<RequirementCoverageHierarchy
 
       {/* 2. Hierarchy Tree Container */}
       <div className="space-y-2.5">
-        {filteredNodes.length === 0 ? (
+        {nodes.length === 0 ? (
+          <div className="py-16 text-center text-xs text-slate-500 bg-white rounded-xl border border-slate-200">
+            <div className="max-w-md mx-auto space-y-3">
+              <Layers className="h-10 w-10 text-slate-300 mx-auto" />
+              <h4 className="text-sm font-bold text-slate-800">No Traceability Tree Generated Yet</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                This project has no specifications or test cases yet. Upload documents in Requirements Management to construct the 7-level verification hierarchy.
+              </p>
+            </div>
+          </div>
+        ) : filteredNodes.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-500 bg-white rounded-xl border border-slate-200">
             No requirements match your current search or coverage filter.
           </div>

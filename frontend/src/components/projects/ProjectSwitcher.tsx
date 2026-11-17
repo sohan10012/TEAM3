@@ -21,10 +21,8 @@ export function ProjectSwitcher({ className }: ProjectSwitcherProps) {
   const displayName = current
     ? current.key === "ECHO"
       ? "EchoBox"
-      : current.key === "DAYFORCE"
-      ? "Dayforce"
-      : current.key === "CUREON"
-      ? "Cureonix"
+      : current.key === "EV_PAY"
+      ? "Enterprise Payroll"
       : current.name.includes(" — ")
       ? current.name.split(" — ")[0]
       : current.name

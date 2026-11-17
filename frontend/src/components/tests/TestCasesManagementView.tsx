@@ -853,7 +853,29 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pagedTests.length === 0 ? (
+                {tests.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-16 text-center text-slate-500 text-xs">
+                      <div className="max-w-md mx-auto space-y-3">
+                        <Layers className="h-10 w-10 text-slate-300 mx-auto" />
+                        <h4 className="text-sm font-bold text-slate-800">No Test Cases Generated Yet</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          This workspace has no test cases yet. Upload documents and extract requirements to generate comprehensive verification test suites across 10 functional categories.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => generateTestsM.mutate()}
+                          loading={generateTestsM.isPending}
+                          className="gap-1.5 shadow-2xs text-xs font-semibold h-8 px-3 mx-auto"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span>Generate Test Cases</span>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : pagedTests.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-slate-500 text-xs">
                       No test cases match the selected filter criteria.

@@ -30,7 +30,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (projectId && projects.length && !projects.some((p) => p.id === projectId)) setPid(null);
     if (!projectId && projects.length) {
-      const defaultProj = projects.find((p) => p.key === "DAYFORCE") || projects.find((p) => p.key === "ECHO");
+      const defaultProj = projects.find((p) => p.key === "ECHO");
       if (defaultProj) {
         setPid(defaultProj.id);
         try { localStorage.setItem(KEY, String(defaultProj.id)); } catch { /* ignore */ }

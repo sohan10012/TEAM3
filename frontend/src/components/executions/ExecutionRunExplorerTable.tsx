@@ -2,6 +2,7 @@ import {
   Download,
   Eye,
   GitCompare,
+  PlayCircle,
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -163,7 +164,19 @@ export function ExecutionRunExplorerTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {pagedRuns.length === 0 ? (
+            {executions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center text-slate-500">
+                  <div className="max-w-md mx-auto space-y-3">
+                    <PlayCircle className="h-10 w-10 text-slate-300 mx-auto" />
+                    <h4 className="text-sm font-bold text-slate-800">No Executions Recorded Yet</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      This project has not executed test runs yet. Run test specifications from the Test Management workspace to record deterministic results.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : pagedRuns.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-slate-500">
                   No execution runs match your search or filter criteria.

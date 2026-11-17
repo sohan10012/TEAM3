@@ -16,7 +16,7 @@ from app.api.deps import (
     get_project_checked,
     require,
 )
-from app.core.errors import NotFound
+from app.core.errors import Conflict, NotFound
 from app.db.base import get_db, utcnow
 from app.db.models import Document, DocumentProcessingJob, ExtractedContent, Requirement
 from app.services import audit
@@ -110,6 +110,18 @@ async def _do_upload_document(
     raw_bytes = await file.read()
     filename = file.filename or "uploaded_document"
     safe_name, file_type, size = validate_file_upload(filename, raw_bytes)
+    import hashlib
+    content_checksum = hashlib.sha256(raw_bytes).hexdigest()
+
+    if project_id is not None:
+        existing_doc = db.execute(
+            select(Document).where(Document.project_id == project_id, Document.checksum == content_checksum)
+        ).scalars().first()
+        if existing_doc:
+            raise Conflict(
+                f"Duplicate document detected: '{safe_name}' has identical content (SHA-256: {content_checksum[:12]}...) "
+                f"to existing Document #{existing_doc.id} ('{existing_doc.filename}') in this project."
+            )
 
     doc = Document(
         project_id=project_id,

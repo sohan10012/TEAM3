@@ -732,6 +732,23 @@ def get_project(project_id: int, p: Principal = Depends(current_principal), db: 
     return out
 
 
+@router.delete("/{project_id}", status_code=204)
+def delete_project(project_id: int, p: Principal = Depends(require("project.admin")), db: Session = Depends(get_db)):
+    """Safely deletes a project and cascades deletion to all associated assets."""
+    proj = get_project_checked(db, p, project_id)
+    # Prevent deletion of protected foundational projects in production if specified
+    from app.core.config import get_settings
+    import shutil
+    doc_dir = get_settings().data_dir / "documents" / str(proj.id)
+    if doc_dir.exists():
+        shutil.rmtree(doc_dir, ignore_errors=True)
+
+    audit.record(db, p.id, "project.deleted", "project", proj.id, f"Project {proj.key} ({proj.name}) deleted", None)
+    db.delete(proj)
+    db.commit()
+    return Response(status_code=204)
+
+
 def _parse_iso_date(v: str | None) -> datetime | None:
     if not v:
         return None

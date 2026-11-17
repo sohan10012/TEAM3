@@ -77,12 +77,12 @@ All metrics rendered across the Traceability Intelligence Center originate direc
 ### Health Score Calculation Breakdown
 $$\begin{aligned}
 \text{Requirement Component} &= 0.25 \times 100\% = 25.0 \text{ pts} \\
-\text{Clause Component} &= 0.25 \times 100\% = 25.0 \text{ pts} \\
 \text{AC Component} &= 0.25 \times 33.33\% = 8.33 \text{ pts} \\
-\text{Execution Quality Component} &= 0.25 \times 99.56\% = 24.89 \text{ pts} \\
-\text{Base Score} &= 25.0 + 25.0 + 8.33 + 24.89 = 83.22 \text{ pts} \\
-\text{Defect Penalty} &= 6 \text{ defects} \times 2.5 \text{ pts} = -15.0 \text{ pts} \\
-\text{Final Composite Score} &= 83.22 - 15.0 = \mathbf{68.22} \longrightarrow \mathbf{63.2 \text{ pts (normalized)}}
+\text{Execution Coverage Component} &= 0.25 \times 100\% = 25.0 \text{ pts} \\
+\text{Execution Pass Rate Component} &= 0.25 \times 99.56\% = 24.89 \text{ pts} \\
+\text{Base Score} &= 25.0 + 8.33 + 25.0 + 24.89 = 83.22 \text{ pts} \\
+\text{Defect Penalty} &= \min(20.0, 6 \text{ open critical/high defects} \times 4.0 \text{ pts}) = -20.0 \text{ pts} \\
+\text{Final Composite Score} &= 83.22 - 20.0 = \mathbf{63.22} \xrightarrow{\text{round}(1)} \mathbf{63.2 \text{ pts}}
 \end{aligned}$$
 
 - **Status Grade:** `warning` (Amber banner, requires immediate attention).
@@ -305,3 +305,4 @@ A comprehensive visual audit was conducted using Playwright across Desktop (1920
 ## 12. Conclusion & Operational Impact
 
 The implementation of Phase 5 delivers an enterprise-grade **Traceability Intelligence & Coverage Governance Center** that establishes TraceTest as a leader in AI-powered quality engineering. By grounding every metric in persisted database records, exposing bidirectional traceability from source requirements to defects, identifying critical acceptance criteria blind spots, and safeguarding historical audits with an immutable execution guarantee, TraceTest provides engineering and compliance leaders with an authoritative source of quality truth.
+

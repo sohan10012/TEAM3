@@ -79,6 +79,9 @@ class Client:
     def put(self, url, **kw):
         return self._send("PUT", url, **kw)
 
+    def delete(self, url, **kw):
+        return self._send("DELETE", url, **kw)
+
 
 @pytest.fixture(scope="session")
 def admin(app):

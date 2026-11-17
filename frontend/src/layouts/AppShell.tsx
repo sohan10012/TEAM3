@@ -79,7 +79,7 @@ function Breadcrumbs() {
   const nav = allItems.find((n) => n.to !== "/" && pathname.startsWith(n.to.split("?")[0]));
 
   const currentDisplayName = current
-    ? (current.key === "ECHO" ? "EchoBox" : current.key === "DAYFORCE" ? "Dayforce" : current.key === "CUREON" ? "Cureonix" : current.name.split(" — ")[0])
+    ? (current.key === "ECHO" ? "EchoBox" : current.key === "EV_PAY" ? "Enterprise Payroll" : current.name.split(" — ")[0])
     : null;
 
   if (!parts.length) {
@@ -114,7 +114,7 @@ function Breadcrumbs() {
         let text = p.replace(/-/g, " ");
         if (/^\d+$/.test(p)) {
           const found = projects.find((pr) => pr.id === Number(p));
-          if (found) text = found.key === "ECHO" ? "EchoBox" : found.key === "DAYFORCE" ? "Dayforce" : found.key === "CUREON" ? "Cureonix" : found.name.split(" — ")[0];
+          if (found) text = found.key === "ECHO" ? "EchoBox" : found.key === "EV_PAY" ? "Enterprise Payroll" : found.name.split(" — ")[0];
           else text = `#${p}`;
         }
         return (

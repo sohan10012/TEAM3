@@ -1621,7 +1621,27 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pagedReqs.length === 0 ? (
+                {reqs.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-16 text-center text-slate-500 text-xs">
+                      <div className="max-w-md mx-auto space-y-3">
+                        <FileText className="h-10 w-10 text-slate-300 mx-auto" />
+                        <h4 className="text-sm font-bold text-slate-800">No Requirements Extracted Yet</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          This evaluation workspace is completely clean. Upload genuine company business documents (PDF, DOCX, XLSX, Markdown, or CSV) in Document Intake to begin automated extraction.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("intake")}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold text-xs hover:bg-blue-700 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>Open Document Intake</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : pagedReqs.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-slate-500 text-xs">
                       No requirements match the selected filter criteria.
