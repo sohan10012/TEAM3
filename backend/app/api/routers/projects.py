@@ -995,3 +995,164 @@ def list_project_simulation_models(
         select(SimulationModel).where(SimulationModel.project_id == proj.id)
     ).scalars().all()
     return [S.simulation_model(m) for m in models]
+
+
+@router.get("/{project_id}/test-metrics")
+def get_project_test_metrics(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.db.models import AcceptanceCriterion, ExecutionResult, Requirement, TestCase
+
+    total = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id)) or 0
+    approved = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.status == "approved")) or 0
+    pending = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.status == "pending_review")) or 0
+    automated = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.automation != "manual")) or 0
+    manual = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.automation == "manual")) or 0
+
+    subq = (
+        select(ExecutionResult.test_case_id, func.max(ExecutionResult.id).label("max_id"))
+        .join(TestCase, TestCase.id == ExecutionResult.test_case_id)
+        .where(TestCase.project_id == proj.id)
+        .group_by(ExecutionResult.test_case_id)
+        .subquery()
+    )
+    latest_results = dict(db.execute(
+        select(ExecutionResult.status, func.count())
+        .join(subq, ExecutionResult.id == subq.c.max_id)
+        .group_by(ExecutionResult.status)
+    ).all())
+
+    executed = sum(latest_results.values())
+    unexecuted = max(0, total - executed)
+    passed = latest_results.get("passed", 0)
+    failed = latest_results.get("failed", 0) + latest_results.get("error", 0)
+    blocked = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.status.in_(["blocked", "failed"]))) or 0
+
+    without_req = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == proj.id, TestCase.requirement_id.is_(None))) or 0
+
+    all_tcs = db.scalars(select(TestCase).where(TestCase.project_id == proj.id)).all()
+    without_ac = 0
+    covered_ac_keys = set()
+    by_cat: dict[str, int] = {}
+    by_auto: dict[str, int] = {}
+    by_prio: dict[str, int] = {}
+    by_cap: dict[str, int] = {}
+
+    for tc in all_tcs:
+        if not tc.ac_keys or len(tc.ac_keys) == 0:
+            without_ac += 1
+        else:
+            for k in tc.ac_keys:
+                covered_ac_keys.add(k)
+        cat = tc.test_category or "positive"
+        by_cat[cat] = by_cat.get(cat, 0) + 1
+        auto = tc.automation or "manual"
+        by_auto[auto] = by_auto.get(auto, 0) + 1
+        prio = tc.priority or "medium"
+        by_prio[prio] = by_prio.get(prio, 0) + 1
+        cap = tc.execution_capability or "specification_validation"
+        by_cap[cap] = by_cap.get(cap, 0) + 1
+
+    total_acs = db.scalar(select(func.count(AcceptanceCriterion.id)).join(Requirement).where(Requirement.project_id == proj.id)) or 0
+    uncovered_acs = max(0, total_acs - len(covered_ac_keys))
+    ac_cov_pct = round((len(covered_ac_keys) / max(1, total_acs)) * 100.0, 1)
+
+    return {
+        "project_id": proj.id,
+        "total_tests": total,
+        "approved_tests": approved,
+        "pending_review": pending,
+        "automated_tests": automated,
+        "manual_tests": manual,
+        "executed_tests": executed,
+        "passed_tests": passed,
+        "failed_tests": failed,
+        "blocked_tests": blocked,
+        "unexecuted_tests": unexecuted,
+        "without_requirement": without_req,
+        "without_acceptance_criteria": without_ac,
+        "uncovered_ac_count": uncovered_acs,
+        "total_ac_count": total_acs,
+        "ac_coverage_pct": ac_cov_pct,
+        "by_category": by_cat,
+        "by_automation": by_auto,
+        "by_priority": by_prio,
+        "by_execution_capability": by_cap,
+    }
+
+
+class TestPreviewIn(BaseModel):
+    categories: list[str] | None = None
+    requirement_ids: list[int] | None = None
+    target_uncovered_acs_only: bool = False
+    limit: int = 24
+
+
+@router.post("/{project_id}/generate-tests/preview")
+def preview_project_tests(
+    project_id: int,
+    body: TestPreviewIn,
+    p: Principal = Depends(require("test.write")),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.test_design import preview_tests_for_project
+    return preview_tests_for_project(
+        db,
+        proj.id,
+        categories=body.categories,
+        requirement_ids=body.requirement_ids,
+        target_uncovered_acs_only=body.target_uncovered_acs_only,
+        limit=body.limit,
+        author_id=p.id,
+    )
+
+
+class StepCandidateIn(BaseModel):
+    step: int | None = None
+    action: str = Field(min_length=3)
+    expected: str = ""
+
+
+class CandidateTestCaseIn(BaseModel):
+    requirement_id: int
+    title: str = Field(min_length=5, max_length=300)
+    description: str = ""
+    preconditions: str = ""
+    test_data: dict = Field(default_factory=dict)
+    expected_result: str = Field(min_length=3)
+    priority: str = "medium"
+    test_category: str = "positive"
+    execution_capability: str = "specification_validation"
+    clause_keys: list[str] = Field(default_factory=list)
+    ac_keys: list[str] = Field(default_factory=list)
+    steps: list[StepCandidateIn] = Field(default_factory=list)
+    rationale: str = ""
+    confidence: float = 0.92
+
+
+class TestCommitIn(BaseModel):
+    test_cases: list[CandidateTestCaseIn]
+    auto_approve: bool = False
+
+
+@router.post("/{project_id}/generate-tests/commit")
+def commit_project_tests(
+    project_id: int,
+    body: TestCommitIn,
+    p: Principal = Depends(require("test.write")),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.test_design import commit_candidate_tests
+    return commit_candidate_tests(
+        db,
+        proj.id,
+        candidate_tests=[tc.model_dump() for tc in body.test_cases],
+        auto_approve=body.auto_approve,
+        author_id=p.id,
+    )
+

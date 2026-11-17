@@ -123,7 +123,7 @@ class PageParams:
     q: str | None
 
 
-def page_params(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=500),
+def page_params(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=1000),
                 sort: str | None = Query(None, max_length=40), order: str = Query("desc", pattern="^(asc|desc)$"),
                 q: str | None = Query(None, max_length=200)) -> PageParams:
     return PageParams(page, page_size, sort, order, q)

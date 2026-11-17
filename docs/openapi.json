@@ -147,7 +147,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -368,7 +368,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -2076,6 +2076,146 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/test-metrics": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project Test Metrics",
+        "operationId": "get_project_test_metrics_api_v1_projects__project_id__test_metrics_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/generate-tests/preview": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Preview Project Tests",
+        "operationId": "preview_project_tests_api_v1_projects__project_id__generate_tests_preview_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPreviewIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/generate-tests/commit": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Commit Project Tests",
+        "operationId": "commit_project_tests_api_v1_projects__project_id__generate_tests_commit_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestCommitIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/documents": {
       "get": {
         "tags": [
@@ -2759,7 +2899,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -4171,7 +4311,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -4660,6 +4800,47 @@
         }
       }
     },
+    "/api/v1/tests/{test_id}/execute": {
+      "post": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Execute Test",
+        "description": "Execute a single test case (sandbox or simulation) and record persistent execution telemetry.",
+        "operationId": "execute_test_api_v1_tests__test_id__execute_post",
+        "parameters": [
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Test Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/suites": {
       "get": {
         "tags": [
@@ -4717,7 +4898,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -5055,7 +5236,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -5723,7 +5904,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -6896,7 +7077,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 500,
+              "maximum": 1000,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -8428,6 +8609,92 @@
           "junit_xml"
         ],
         "title": "CIResultIn"
+      },
+      "CandidateTestCaseIn": {
+        "properties": {
+          "requirement_id": {
+            "type": "integer",
+            "title": "Requirement Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 5,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "preconditions": {
+            "type": "string",
+            "title": "Preconditions",
+            "default": ""
+          },
+          "test_data": {
+            "type": "object",
+            "title": "Test Data"
+          },
+          "expected_result": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Expected Result"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "medium"
+          },
+          "test_category": {
+            "type": "string",
+            "title": "Test Category",
+            "default": "positive"
+          },
+          "execution_capability": {
+            "type": "string",
+            "title": "Execution Capability",
+            "default": "specification_validation"
+          },
+          "clause_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Clause Keys"
+          },
+          "ac_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ac Keys"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepCandidateIn"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale",
+            "default": ""
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 0.92
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement_id",
+          "title",
+          "expected_result"
+        ],
+        "title": "CandidateTestCaseIn"
       },
       "ClarificationResolveIn": {
         "properties": {
@@ -10100,6 +10367,36 @@
         ],
         "title": "RunInterpreterIn"
       },
+      "StepCandidateIn": {
+        "properties": {
+          "step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "action": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Action"
+          },
+          "expected": {
+            "type": "string",
+            "title": "Expected",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "StepCandidateIn"
+      },
       "StepIn": {
         "properties": {
           "action": {
@@ -10235,6 +10532,27 @@
           "persona"
         ],
         "title": "SwitchOperatorIn"
+      },
+      "TestCommitIn": {
+        "properties": {
+          "test_cases": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateTestCaseIn"
+            },
+            "type": "array",
+            "title": "Test Cases"
+          },
+          "auto_approve": {
+            "type": "boolean",
+            "title": "Auto Approve",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_cases"
+        ],
+        "title": "TestCommitIn"
       },
       "TestConnectionIn": {
         "properties": {
@@ -10508,6 +10826,50 @@
         },
         "type": "object",
         "title": "TestPatch"
+      },
+      "TestPreviewIn": {
+        "properties": {
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "requirement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Ids"
+          },
+          "target_uncovered_acs_only": {
+            "type": "boolean",
+            "title": "Target Uncovered Acs Only",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 24
+          }
+        },
+        "type": "object",
+        "title": "TestPreviewIn"
       },
       "TransitionIn": {
         "properties": {

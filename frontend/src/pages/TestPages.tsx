@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { DataTable, FilterChips } from "@/components/DataTable";
-import { TestCasesManagementView } from "@/components/tests/TestCasesManagementView";
+import { TestManagementView } from "@/components/tests/TestManagementView";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Code, Dialog, EmptyState, ErrorState, Field, Input, Key, KV, LoadingBlock, Notice, PageHeader,
   Panel, Select, Tabs, Textarea } from "@/components/ui";
@@ -94,8 +94,8 @@ function CodeBasedTestsView() {
 
 export function TestsPage() {
   const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <TestCasesManagementView projectId={projectId} current={current} />;
+  if (projectId) {
+    return <TestManagementView projectId={projectId} current={current} />;
   }
   return <CodeBasedTestsView />;
 }

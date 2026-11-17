@@ -676,6 +676,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/test-metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Test Metrics */
+        get: operations["get_project_test_metrics_api_v1_projects__project_id__test_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/generate-tests/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Project Tests */
+        post: operations["preview_project_tests_api_v1_projects__project_id__generate_tests_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/generate-tests/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit Project Tests */
+        post: operations["commit_project_tests_api_v1_projects__project_id__generate_tests_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/documents": {
         parameters: {
             query?: never;
@@ -1429,6 +1480,26 @@ export interface paths {
          * @description Run an automated pytest test case directly in the Reference HCM sandbox.
          */
         post: operations["run_sandbox_test_api_v1_tests__test_id__run_sandbox_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tests/{test_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute Test
+         * @description Execute a single test case (sandbox or simulation) and record persistent execution telemetry.
+         */
+        post: operations["execute_test_api_v1_tests__test_id__execute_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2820,6 +2891,58 @@ export interface components {
             /** Junit Xml */
             junit_xml: string;
         };
+        /** CandidateTestCaseIn */
+        CandidateTestCaseIn: {
+            /** Requirement Id */
+            requirement_id: number;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Preconditions
+             * @default
+             */
+            preconditions: string;
+            /** Test Data */
+            test_data?: Record<string, never>;
+            /** Expected Result */
+            expected_result: string;
+            /**
+             * Priority
+             * @default medium
+             */
+            priority: string;
+            /**
+             * Test Category
+             * @default positive
+             */
+            test_category: string;
+            /**
+             * Execution Capability
+             * @default specification_validation
+             */
+            execution_capability: string;
+            /** Clause Keys */
+            clause_keys?: string[];
+            /** Ac Keys */
+            ac_keys?: string[];
+            /** Steps */
+            steps?: components["schemas"]["StepCandidateIn"][];
+            /**
+             * Rationale
+             * @default
+             */
+            rationale: string;
+            /**
+             * Confidence
+             * @default 0.92
+             */
+            confidence: number;
+        };
         /** ClarificationResolveIn */
         ClarificationResolveIn: {
             /** User Response */
@@ -3459,6 +3582,18 @@ export interface components {
              */
             policy_id?: string | null;
         };
+        /** StepCandidateIn */
+        StepCandidateIn: {
+            /** Step */
+            step?: number | null;
+            /** Action */
+            action: string;
+            /**
+             * Expected
+             * @default
+             */
+            expected: string;
+        };
         /** StepIn */
         StepIn: {
             /** Action */
@@ -3507,6 +3642,16 @@ export interface components {
         SwitchOperatorIn: {
             /** Persona */
             persona: string;
+        };
+        /** TestCommitIn */
+        TestCommitIn: {
+            /** Test Cases */
+            test_cases: components["schemas"]["CandidateTestCaseIn"][];
+            /**
+             * Auto Approve
+             * @default false
+             */
+            auto_approve: boolean;
         };
         /** TestConnectionIn */
         TestConnectionIn: {
@@ -3595,6 +3740,23 @@ export interface components {
              * @default
              */
             note: string;
+        };
+        /** TestPreviewIn */
+        TestPreviewIn: {
+            /** Categories */
+            categories?: string[] | null;
+            /** Requirement Ids */
+            requirement_ids?: number[] | null;
+            /**
+             * Target Uncovered Acs Only
+             * @default false
+             */
+            target_uncovered_acs_only: boolean;
+            /**
+             * Limit
+             * @default 24
+             */
+            limit: number;
         };
         /** TransitionIn */
         TransitionIn: {
@@ -5085,6 +5247,107 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_test_metrics_api_v1_projects__project_id__test_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_project_tests_api_v1_projects__project_id__generate_tests_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_project_tests_api_v1_projects__project_id__generate_tests_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestCommitIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -6767,6 +7030,37 @@ export interface operations {
         };
     };
     run_sandbox_test_api_v1_tests__test_id__run_sandbox_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                test_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    execute_test_api_v1_tests__test_id__execute_post: {
         parameters: {
             query?: never;
             header?: never;

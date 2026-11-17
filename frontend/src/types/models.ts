@@ -114,7 +114,8 @@ export interface TestCase { id: number; key: string; project_id: number; require
   expected_result?: string; source_quote?: string; rationale?: string; script?: string | null; script_hash?: string | null;
   validation_errors?: string[]; steps?: { position: number; action: string; expected: string }[];
   created_by?: UserRef | null; reviewer?: UserRef | null; reviews?: any[]; versions?: any[]; recent_results?: ExecResult[];
-  executable?: boolean; blocked_reason?: string; test_category?: string; steps_json?: { action: string; expected: string }[] }
+  executable?: boolean; blocked_reason?: string; test_category?: string; steps_json?: { action: string; expected: string }[];
+  generation_provenance?: string; execution_capability?: string; approval_status?: string }
 export interface Suite { id: number; key: string; project_id: number; module: Module | null; name: string; description: string;
   priority: string; test_count: number | null; tests?: TestCase[]; executions?: Execution[];
   coverage?: { requirements: number; clauses: number; covered: number } }

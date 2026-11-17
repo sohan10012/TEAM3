@@ -208,3 +208,4 @@ Screenshots are permanently archived in:
 - `docs/screenshots/phase-2/`
 - `docs/reports/enterprise-evaluation/screenshots/`
 - `docs/screenshots.zip` and `screenshots.zip`
+

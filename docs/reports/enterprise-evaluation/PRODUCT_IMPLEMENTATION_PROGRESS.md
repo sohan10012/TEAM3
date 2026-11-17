@@ -466,4 +466,47 @@ Transformed the core requirements workspace (`/requirements`, `/requirements/:id
    - 7 Multi-Viewport Screenshots captured in `docs/screenshots/phase-2/`.
    - Detailed Report: [`docs/reports/enterprise-evaluation/PHASE_2_ACCEPTANCE_CRITERIA_INTELLIGENCE_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_2_ACCEPTANCE_CRITERIA_INTELLIGENCE_REPORT.md).
 
+---
+
+## 23. Phase 3 Redesign: Enterprise Test Case Management & AI Test Intelligence Transformation
+
+**Objective:** Transform the Test Case Management experience into a production-grade enterprise workspace with real-time governance metrics, dual presentation modes (grouped by requirement vs. flat explorer table), 5-tab progressive disclosure rows, a 12-section contextual detail drawer, a two-stage AI test generation workflow targeting uncovered acceptance criteria, and direct execution telemetry integration.
+
+### Key Capabilities Delivered
+1. **Executive 12-Metric Governance Bar (`TestManagementOverviewMetrics.tsx`)**:
+   - Real database-backed metrics: Total Tests (686 for Dayforce), Approved (98), Pending Review (578), Automated (686), Manual (0), Executed (686), Passed (683), Failed (3), Blocked (2), Unexecuted (0), Without Requirement (0), Without AC (0).
+   - Interactive two-way filter binding: clicking any metric card instantly filters test cases.
+   - Live category breakdown across all 10 categories (positive, negative, boundary value, edge case, input validation, business rule, role/RBAC, security, error handling, integration) and priority levels (critical, high, medium, low).
+   - Acceptance Criteria Coverage Gap banner highlighting the 112 uncovered Dayforce ACs (33.3% coverage) with a one-click "Target Uncovered ACs" quick action.
+2. **Dual Presentation Engine (`TestManagementView.tsx`)**:
+   - **Mode A (Grouped by Requirement)**: Collapsible requirement containers displaying requirement title, category, priority, test counts, passed/failed execution badges, and expandable child test rows.
+   - **Mode B (Independent Explorer Table)**: High-density, sortable Linear/Stripe-style data table with multi-dimensional filtering (Category, Approval Status, Execution Status, Automation, Priority, Search, and Pagination).
+   - Floating bulk action bar supporting batch approval, rejection, or deletion.
+3. **Expandable Test Case Rows (`TestCaseRowExpanded.tsx`)**:
+   - 5 structured sub-tabs:
+     - **Test Specification**: Step sequence table (step number, action description, expected assertion, preconditions, parameter inputs).
+     - **Business Context**: Parent requirement, verified acceptance criteria, verbatim source quotation, and rationale.
+     - **Traceability Chain**: Direct links to parent requirement, atomic clauses (`DAY-REQ-001.C1`), acceptance criteria keys, and target test suite.
+     - **Execution Telemetry**: Outcome status, execution duration in milliseconds, stdout logs, and expected vs. actual comparison data.
+     - **AI Grounding & Rationale**: Generation confidence score, provider/model provenance, generation timestamp, and reasoning trace.
+4. **Contextual Right-Side Detail Drawer (`TestCaseDetailDrawer.tsx`)**:
+   - 12 comprehensive sections: Executive Overview, Business Context, Preconditions & Environment, Test Data & Input Parameters, Execution Steps Sequence, Verifiable Expected Results, Requirement & Clause Traceability, Acceptance Criteria Coverage, AI Generation Intelligence, Execution History, Linked Defects & Failure Evidence, Review & Audit History.
+   - Live action controls: "Execute Now" (single test live execution), "Approve Specification", "Reject", "Request Changes", and "Edit".
+5. **AI-Powered Two-Stage Test Generation Workflow (`TestGenerationPreviewModal.tsx`)**:
+   - **Stage A (Preview)**: Multi-category selection across 10 categories, "Target Uncovered ACs First" switch (specifically targeting the 112 uncovered ACs), candidate generation, and duplicate similarity detection (`similarity >= 0.90`).
+   - **Stage B (Commit)**: Candidate selection review, optional auto-approval, atomic database persistence of `TestCase` and `TestStep` records, and audit logging.
+6. **Live Execution Integration (`POST /api/v1/tests/{test_id}/execute`)**:
+   - Single test execution engine supporting sandbox reference harness or simulation validation with `Execution` + `ExecutionResult` persistence.
+7. **Verification Evidence**:
+   - Dedicated Backend Pytest: `backend/tests/test_test_management_phase3.py` (100% green).
+   - Combined Phase 2 + Phase 3 Backend Pytest: 100% green.
+   - TypeScript: 0 errors (`npm run typecheck --prefix frontend`).
+   - ESLint: 0 errors, 0 warnings (`npm run lint --prefix frontend`).
+   - Vitest: 23/23 tests passing (`npm test --prefix frontend`).
+   - Production Build: Succeeded in 4.42s (`npm run build --prefix frontend`).
+   - 7 Multi-Viewport High-Resolution Screenshots captured in `docs/screenshots/phase-3/` and `docs/reports/enterprise-evaluation/screenshots/`.
+   - Updated screenshot archives: `screenshots.zip` and `docs/screenshots.zip`.
+   - Detailed Report: [`docs/reports/enterprise-evaluation/PHASE_3_TEST_CASE_MANAGEMENT_INTELLIGENCE_REPORT.md`](file:///home/Sohan/PROJECTS/tracetest-ai/docs/reports/enterprise-evaluation/PHASE_3_TEST_CASE_MANAGEMENT_INTELLIGENCE_REPORT.md).
+
+
 

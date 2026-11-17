@@ -18,7 +18,18 @@ from app.api.deps import (
 )
 from app.core.errors import AppError, BadRequest
 from app.db.base import get_db
-from app.db.models import ExecutionResult, Requirement, Review, Run, TestCase, TestCaseVersion
+from app.db.models import (
+    AcceptanceCriterion,
+    AuditLog,
+    Clause,
+    Defect,
+    ExecutionResult,
+    Requirement,
+    Review,
+    Run,
+    TestCase,
+    TestCaseVersion,
+)
 from app.domain.enums import ALL_TEST_CATEGORIES, TEST_TYPES
 from app.graph import requirement_graph
 from app.services import audit
@@ -53,6 +64,40 @@ def list_tests(pp: PageParams = Depends(page_params), project_id: int | None = N
 def get_test(test_id: int, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
     t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
     out = S.test_case(db, t, full=True)
+
+    # Parent requirement details
+    req = db.get(Requirement, t.requirement_id) if t.requirement_id else None
+    out["requirement"] = S.requirement(db, req) if req else None
+
+    # Linked clauses
+    if t.clause_keys and t.requirement_id:
+        clauses = db.execute(
+            select(Clause).where(Clause.requirement_id == t.requirement_id, Clause.clause_key.in_(t.clause_keys))
+        ).scalars().all()
+        out["clauses"] = [S.clause(c) for c in clauses]
+    else:
+        out["clauses"] = []
+
+    # Linked acceptance criteria
+    if t.ac_keys:
+        acs = db.execute(
+            select(AcceptanceCriterion).where(AcceptanceCriterion.key.in_(t.ac_keys))
+        ).scalars().all()
+        out["acceptance_criteria"] = [S.criterion(a) for a in acs]
+    elif t.requirement_id:
+        acs = db.execute(
+            select(AcceptanceCriterion).where(AcceptanceCriterion.requirement_id == t.requirement_id)
+        ).scalars().all()
+        out["acceptance_criteria"] = [S.criterion(a) for a in acs]
+    else:
+        out["acceptance_criteria"] = []
+
+    # Linked defects
+    defects = db.execute(
+        select(Defect).where(Defect.test_case_id == t.id)
+    ).scalars().all()
+    out["defects"] = [S.defect(db, d, full=True) for d in defects]
+
     out["reviews"] = [{"decision": r.decision, "comment": r.comment, "version": r.entity_version,
                        "reviewer": S.user_ref(db, r.reviewer_id), "at": S.iso(r.created_at)}
                       for r in db.execute(select(Review).where(Review.entity_type == "test_case",
@@ -62,9 +107,19 @@ def get_test(test_id: int, p: Principal = Depends(current_principal), db: Sessio
                         "changed_by": S.user_ref(db, v.changed_by), "at": S.iso(v.created_at), "snapshot": v.snapshot}
                        for v in db.execute(select(TestCaseVersion).where(TestCaseVersion.test_case_id == t.id)
                                            .order_by(TestCaseVersion.version.desc())).scalars()]
-    out["recent_results"] = [S.result(db, r) for r in db.execute(
+    recent = [S.result(db, r) for r in db.execute(
         select(ExecutionResult).where(ExecutionResult.test_case_id == t.id)
         .order_by(ExecutionResult.id.desc()).limit(10)).scalars()]
+    out["recent_results"] = recent
+    out["latest_result"] = recent[0] if recent else None
+
+    # Audit trail
+    audits = db.execute(
+        select(AuditLog).where(AuditLog.entity_type == "test_case", AuditLog.entity_id == t.id)
+        .order_by(AuditLog.created_at.desc()).limit(20)
+    ).scalars().all()
+    out["audit_logs"] = [S.audit_entry(db, a) for a in audits]
+
     return out
 
 
@@ -287,3 +342,16 @@ def run_sandbox_test(
         "hcm_version": "1.0",
         "sandbox_mode": "Reference HCM In-Memory Harness",
     }
+
+
+@router.post("/{test_id}/execute")
+def execute_test(
+    test_id: int,
+    p: Principal = Depends(require("test.write")),
+    db: Session = Depends(get_db),
+):
+    """Execute a single test case (sandbox or simulation) and record persistent execution telemetry."""
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    from app.services.test_design import execute_single_test_case
+    return execute_single_test_case(db, t.id, user_id=p.id)
+
