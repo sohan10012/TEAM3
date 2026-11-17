@@ -43,3 +43,4 @@
 ## 3. Provenance & Integrity Statement
 
 All documents in this register are authentic, public, unmodified original files fetched directly from Amazon Web Services documentation endpoints on November 17, 2026. Cryptographic SHA-256 checksums are recorded prior to any ingestion and verified across repeated executions to ensure complete evaluation reproducibility.
+

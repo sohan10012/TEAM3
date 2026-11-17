@@ -130,3 +130,4 @@ All charts incorporate explicit axes labels, tooltip formatters, and standard br
 - `05_dashboard_project_quality_table.png`: Cross-project comparative table shown only in aggregate mode.
 - `06_dashboard_isolated_echobox.png`: ECHO project dashboard with zero extraneous controls.
 - `07_dashboard_isolated_evpay.png`: EV_PAY project dashboard displaying strictly isolated metrics.
+

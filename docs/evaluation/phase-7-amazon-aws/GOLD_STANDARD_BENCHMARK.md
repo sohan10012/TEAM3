@@ -364,3 +364,4 @@
 - **Verification Criteria:** S3 bucket configuration returns PASS for S3.12; attempts to write object ACLs return `AccessControlListNotSupported`.
 - **Expected Test Type:** Negative / Compliance
 - **Rationale:** Ensures ownership of all objects defaults to bucket owner, ending split-ownership vulnerabilities.
+

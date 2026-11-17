@@ -139,3 +139,4 @@ Defects: 2
 ls -lh docs/screenshots/phase-7-amazon-aws/
 ```
 Expected: 9 PNG files capturing each evaluation stage (`01_aws_empty_workspace_initial_state.png` through `09_aws_project_dashboard_final.png`).
+
