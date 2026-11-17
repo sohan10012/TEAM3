@@ -212,7 +212,7 @@ export function ReasonXTemplateGallery({
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
                 isActive
                   ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100/90 text-slate-600 hover:bg-slate-200/90 hover:text-slate-900"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               )}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -231,7 +231,7 @@ export function ReasonXTemplateGallery({
             onClick={() => onSelect(tpl.query)}
             className={cn(
               "group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 text-left transition-all duration-150 cursor-pointer",
-              "hover:border-slate-400 hover:shadow-xs hover:bg-slate-50/50",
+              "hover:border-slate-400 hover:shadow-xs hover:bg-slate-50",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
               "active:scale-[0.99]"
             )}

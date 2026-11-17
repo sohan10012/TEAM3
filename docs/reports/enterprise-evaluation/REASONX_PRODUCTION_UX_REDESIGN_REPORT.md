@@ -165,3 +165,4 @@ All 12 authentic screenshots were captured via Playwright in Chromium and saved 
 Both root and docs delivery archives have been synchronized with the latest redesign artifacts:
 - `screenshots.zip` (44MB) — Verified containing `docs/screenshots/reasonx-redesign/` (12 PNGs).
 - `docs/screenshots.zip` (44MB) — Mirrored copy for documentation packaging.
+

@@ -88,7 +88,7 @@ export function ReasonXConversationHistory({
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-white animate-in fade-in slide-in-from-left-4 duration-200">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-slate-50/80">
+      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-slate-50">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-slate-700" />
           <h3 className="font-semibold text-xs text-slate-900">
@@ -131,7 +131,7 @@ export function ReasonXConversationHistory({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             {searchQuery && (
               <button

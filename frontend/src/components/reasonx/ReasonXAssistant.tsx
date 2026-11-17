@@ -286,7 +286,7 @@ export function ReasonXAssistant() {
             width: mode === "fullscreen" ? "100vw" : mode === "expanded" ? "760px" : `${panelWidth}px`,
           }}
           className={cn(
-            "fixed top-0 right-0 z-50 flex h-[100dvh] flex-col border-l border-slate-200 bg-slate-50/60 shadow-2xl transition-[width] duration-200 ease-out",
+            "fixed top-0 right-0 z-50 flex h-[100dvh] flex-col border-l border-slate-200 bg-white shadow-2xl transition-[width] duration-200 ease-out",
             mode === "fullscreen" && "z-[60] inset-0 border-l-0",
             isResizing && "select-none transition-none"
           )}
@@ -383,7 +383,7 @@ export function ReasonXAssistant() {
           </div>
 
           {/* Main Workspace Body */}
-          <div className="relative flex-1 overflow-hidden flex flex-col">
+          <div className="relative flex-1 overflow-hidden flex flex-col bg-white">
             {/* Conversation History Popover Drawer */}
             {historyOpen && (
               <ReasonXConversationHistory
@@ -403,7 +403,7 @@ export function ReasonXAssistant() {
             )}
 
             {/* Conversation Messages Container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
               {messages.length === 0 ? (
                 <div className="py-2">
                   <ReasonXTemplateGallery onSelect={(q) => handleSend(q)} />
@@ -431,7 +431,7 @@ export function ReasonXAssistant() {
                         <div className="space-y-3">
                           {/* 1. Direct Answer Highlight */}
                           {m.structured_payload?.direct_answer && (
-                            <div className="rounded-lg bg-blue-50/70 border-l-2 border-blue-600 p-2.5 text-slate-900 font-medium text-xs leading-snug">
+                            <div className="rounded-lg bg-blue-50 border-l-2 border-blue-600 p-2.5 text-slate-900 font-medium text-xs leading-snug">
                               {m.structured_payload.direct_answer}
                             </div>
                           )}
@@ -475,7 +475,7 @@ export function ReasonXAssistant() {
                           {/* 6. Actionable Recommendations Checklist */}
                           {m.structured_payload?.recommended_actions &&
                             m.structured_payload.recommended_actions.length > 0 && (
-                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 space-y-1.5">
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 space-y-1.5">
                                 <span className="text-[10px] font-semibold text-emerald-900 uppercase tracking-wider block">
                                   Recommended Actions
                                 </span>
@@ -550,7 +550,7 @@ export function ReasonXAssistant() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="flex items-end gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 focus-within:border-slate-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/5 transition-all"
+                className="flex items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-slate-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-slate-900/5 transition-all"
               >
                 <textarea
                   ref={textareaRef}

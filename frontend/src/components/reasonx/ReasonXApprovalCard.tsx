@@ -46,7 +46,7 @@ export function ReasonXApprovalCard({
 
   if (outcome === "approved") {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 my-3 text-xs flex items-center gap-2 text-emerald-900 font-medium animate-in fade-in">
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 my-3 text-xs flex items-center gap-2 text-emerald-900 font-medium animate-in fade-in">
         <Check className="h-4 w-4 text-emerald-600" />
         <span>Action approved and successfully committed to database records.</span>
       </div>
@@ -69,8 +69,8 @@ export function ReasonXApprovalCard({
       className={cn(
         "rounded-2xl border p-4 my-3 text-xs shadow-md transition-all animate-in fade-in duration-200",
         isLevel4
-          ? "border-rose-200 bg-rose-50/40 ring-1 ring-rose-300"
-          : "border-amber-200 bg-amber-50/40 ring-1 ring-amber-300"
+          ? "border-rose-200 bg-rose-50 ring-1 ring-rose-300"
+          : "border-amber-200 bg-amber-50 ring-1 ring-amber-300"
       )}
     >
       <div className="flex items-start gap-3">

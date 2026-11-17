@@ -43,7 +43,7 @@ export function ReasonXTaskTimeline({
   if (plan.length === 0 && steps.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 my-2 text-xs transition-all shadow-2xs">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 my-2 text-xs transition-all shadow-2xs">
       {/* Header bar */}
       <div
         className="flex items-center justify-between cursor-pointer select-none text-slate-800"
@@ -78,7 +78,7 @@ export function ReasonXTaskTimeline({
 
       {/* Expanded Step Timeline */}
       {expanded && (
-        <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-2">
+        <div className="mt-2.5 pt-2 border-t border-slate-200 space-y-2">
           {plan.map((p, idx) => {
             const executedStep = steps.find((s) => s.step_number === p.step || s.tool === p.tool);
             const isCompleted = executedStep?.status === "completed" || p.status === "completed";

@@ -21,7 +21,7 @@ export function ReasonXEvidencePanel({
   if (!evidence || evidence.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3 my-2 space-y-2 text-xs">
+    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 my-2 space-y-2 text-xs">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-[10px] font-bold text-blue-900 uppercase tracking-wider">
           <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
@@ -32,7 +32,7 @@ export function ReasonXEvidencePanel({
         </span>
       </div>
 
-      <div className="space-y-2 pt-1 border-t border-blue-100/80">
+      <div className="space-y-2 pt-1 border-t border-blue-100">
         {evidence.map((ev, idx) => {
           // Check if requirement_id can link to requirements page
           const reqLink = ev.requirement_id
@@ -42,7 +42,7 @@ export function ReasonXEvidencePanel({
           return (
             <div
               key={idx}
-              className="rounded-lg border border-white/80 bg-white/90 p-2.5 shadow-2xs space-y-1 text-2xs leading-relaxed"
+              className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-2xs space-y-1 text-2xs leading-relaxed"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-1.5 font-semibold text-slate-900">

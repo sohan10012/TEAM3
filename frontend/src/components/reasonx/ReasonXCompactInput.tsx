@@ -31,7 +31,7 @@ export function ReasonXCompactInput({
 
   return (
     <div className="fixed bottom-6 right-20 z-40 w-[420px] max-w-[calc(100vw-6rem)] animate-in fade-in slide-in-from-bottom-3 duration-200 ease-out">
-      <div className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-md ring-1 ring-slate-900/5 transition-all focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-blue-500/20">
+      <div className="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-slate-900/5 transition-all focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-blue-500/20">
         {/* Emblem Trigger */}
         <button
           type="button"
