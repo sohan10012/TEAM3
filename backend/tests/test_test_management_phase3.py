@@ -135,3 +135,4 @@ def test_test_management_phase3_endpoints(qa, reviewer, admin):
     assert len(after_exec["recent_results"]) >= 1
     assert after_exec["latest_result"] is not None
     assert after_exec["latest_result"]["status"] == exec_result["status"]
+

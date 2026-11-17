@@ -309,6 +309,142 @@ class AnalyseIn(BaseModel):
     result_id: int | None = None
 
 
+class RerunSelectedIn(BaseModel):
+    test_ids: list[int]
+    environment_id: int | None = None
+
+
+@router.post("/executions/{ex_id}/rerun-failed", status_code=202)
+def rerun_failed(ex_id: int, p: Principal = Depends(require("suite.execute")), db: Session = Depends(get_db)):
+    """Rerun only failed/errored tests from this execution."""
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    q = select(TestCase).join(ExecutionResult, ExecutionResult.test_case_id == TestCase.id).where(
+        ExecutionResult.execution_id == ex.id,
+        ExecutionResult.status.in_(["failed", "error", "timed_out"]),
+    )
+    tests = list(db.execute(q).scalars())
+    if not tests:
+        raise Conflict("No failed tests to rerun")
+    env = db.get(Environment, ex.environment_id)
+    proj = get_project_checked(db, p, ex.project_id)
+    suite = db.get(TestSuite, ex.suite_id) if ex.suite_id else None
+    new, runnable = create_execution(db, proj, env, tests, source="platform_run", actor_id=p.id, suite=suite,
+                                     retry_of=ex)
+    return _launch(db, p, new, runnable)
+
+
+@router.post("/executions/{ex_id}/rerun-selected", status_code=202)
+def rerun_selected(ex_id: int, body: RerunSelectedIn, p: Principal = Depends(require("suite.execute")), db: Session = Depends(get_db)):
+    """Rerun specific selected tests from this execution."""
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    if not body.test_ids:
+        raise BadRequest("test_ids list cannot be empty")
+    q = select(TestCase).where(TestCase.id.in_(body.test_ids), TestCase.project_id == ex.project_id)
+    tests = list(db.execute(q).scalars())
+    if not tests:
+        raise Conflict("No matching test cases found to rerun")
+    env = db.get(Environment, body.environment_id or ex.environment_id)
+    proj = get_project_checked(db, p, ex.project_id)
+    suite = db.get(TestSuite, ex.suite_id) if ex.suite_id else None
+    new, runnable = create_execution(db, proj, env, tests, source="platform_run", actor_id=p.id, suite=suite,
+                                     retry_of=ex)
+    return _launch(db, p, new, runnable)
+
+
+@router.get("/executions/{ex_id}/compare/{other_ex_id}")
+def compare_runs_endpoint(
+    ex_id: int,
+    other_ex_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Compares two execution runs and reports regressions, recoveries, and persistent failures."""
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    check_entity_project(db, p, db.get(Execution, other_ex_id), "Comparison Execution")
+    from app.services.execution_intelligence import compare_executions
+    return compare_executions(db, ex.id, other_ex_id, ex.project_id)
+
+
+@router.get("/executions/{ex_id}/export.{fmt}")
+def export_execution(
+    ex_id: int,
+    fmt: str,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Exports an execution report in JSON, CSV, or Markdown format."""
+    ex = check_entity_project(db, p, db.get(Execution, ex_id), "Execution")
+    from app.services.execution_intelligence import export_execution_report_content
+    content, media_type, filename = export_execution_report_content(db, ex.id, fmt.lower())
+    return Response(content=content, media_type=media_type, headers={
+        "Content-Disposition": f'attachment; filename="{filename}"'
+    })
+
+
+@router.get("/execution-results/{result_id}")
+def get_execution_result_detail(
+    result_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Retrieves full expected vs actual result intelligence and traceability context."""
+    from app.services.execution_intelligence import get_enriched_execution_result
+    res = db.get(ExecutionResult, result_id)
+    if not res:
+        raise NotFound("ExecutionResult")
+    check_entity_project(db, p, db.get(Execution, res.execution_id), "Execution")
+    return get_enriched_execution_result(db, result_id)
+
+
+class ResultAnalyzeIn(BaseModel):
+    note: str = ""
+
+
+@router.post("/execution-results/{result_id}/analyze")
+def analyze_execution_result(
+    result_id: int,
+    body: ResultAnalyzeIn = ResultAnalyzeIn(),
+    p: Principal = Depends(require("execution.read")),
+    db: Session = Depends(get_db),
+):
+    """Generates and persists evidence-grounded AI failure analysis on an execution result."""
+    from app.services.execution_intelligence import analyze_and_persist_failure
+    res = db.get(ExecutionResult, result_id)
+    if not res:
+        raise NotFound("ExecutionResult")
+    check_entity_project(db, p, db.get(Execution, res.execution_id), "Execution")
+    return analyze_and_persist_failure(db, result_id, p.id)
+
+
+class ResultDefectIn(BaseModel):
+    action: str = Field(default="create", pattern="^(create|link)$")
+    defect_id: int | None = None
+    title: str | None = None
+    description: str | None = None
+    severity: str | None = "high"
+    priority: str | None = "high"
+    expected_result: str | None = None
+    actual_result: str | None = None
+    reproduction_steps: str | None = None
+
+
+@router.post("/execution-results/{result_id}/defects")
+def create_defect_from_result_endpoint(
+    result_id: int,
+    body: ResultDefectIn,
+    p: Principal = Depends(require("defect.write")),
+    db: Session = Depends(get_db),
+):
+    """Creates or links a defect directly from an execution result."""
+    from app.services.execution_intelligence import create_defect_from_result
+    res = db.get(ExecutionResult, result_id)
+    if not res:
+        raise NotFound("ExecutionResult")
+    check_entity_project(db, p, db.get(Execution, res.execution_id), "Execution")
+    return create_defect_from_result(db, result_id, body.model_dump(), p.id)
+
+
+
 @router.post("/executions/{ex_id}/analyse-failure", status_code=202)
 def analyse_failure(ex_id: int, body: AnalyseIn, p: Principal = Depends(require("execution.read")),
                     db: Session = Depends(get_db)):

@@ -123,12 +123,141 @@ export interface Execution { id: number; key: string; project_id: number; suite:
   environment: Environment | null; source: string; runner: string; status: string; isolation_level?: string; hcm_version: string | null; total: number;
   passed: number; failed: number; errored: number; skipped: number; duration_ms: number; commit_sha: string | null;
   branch: string | null; retry_of_id: number | null; run_id: number | null; triggered_by: UserRef | null;
-  started_at: string | null; finished_at: string | null; execution_type?: string; log_excerpt?: string;
+  started_at: string | null; finished_at: string | null; created_at?: string | null; execution_type?: string; log_excerpt?: string;
   results?: ExecResult[];
   artifacts?: { id: number; kind: string; name: string; size_bytes: number; sha256: string }[] }
 export interface ExecResult { id: number; execution_id: number; test_case_id: number; test_key: string; test_title: string;
   test_case_version: number; script_hash: string | null; status: string; duration_ms: number; message: string;
-  stack_trace: string; stdout: string; failure_analysis: Record<string, any> | null }
+  stack_trace: string; stdout: string; failure_analysis: Record<string, any> | null;
+  comparison?: {
+    expected: string;
+    actual: string;
+    condition?: string;
+    inputs?: Record<string, any>;
+    steps?: { action: string; expected: string }[];
+  };
+  requirement_id?: number | null;
+  requirement_key?: string | null;
+  requirement_title?: string | null;
+  started_at?: string;
+  finished_at?: string;
+}
+
+export interface ExecutionMetrics {
+  total_runs: number;
+  latest_run: {
+    id: number;
+    key: string;
+    status: string;
+    runner: string;
+    execution_type: string;
+    total: number;
+    passed: number;
+    failed: number;
+    errored: number;
+    skipped: number;
+    duration_ms: number;
+    started_at: string | null;
+    finished_at: string | null;
+  } | null;
+  total_tests_executed: number;
+  unique_tests_executed: number;
+  passed_tests: number;
+  failed_tests: number;
+  blocked_tests: number;
+  skipped_tests: number;
+  not_executed_tests: number;
+  pass_rate: number;
+  failure_rate: number;
+  avg_duration_ms: number;
+  open_defects: number;
+  flaky_tests_count: number;
+  breakdowns: {
+    by_runner: Record<string, number>;
+    by_category: Record<string, number>;
+    by_priority: Record<string, number>;
+    by_environment: Record<string, number>;
+  };
+  trends: {
+    id: number;
+    key: string;
+    started_at: string;
+    status: string;
+    total: number;
+    passed: number;
+    failed: number;
+    duration_ms: number;
+    pass_rate: number;
+  }[];
+}
+
+export interface FlakyTestCandidate {
+  test_case_id: number;
+  test_key: string;
+  test_title: string;
+  category: string;
+  priority: string;
+  flip_count: number;
+  total_runs: number;
+  passed_runs: number;
+  failed_runs: number;
+  flip_rate: number;
+  confidence: number;
+  supporting_execution_ids: number[];
+  recent_statuses: string[];
+  history: {
+    result_id: number;
+    execution_id: number;
+    execution_key: string;
+    status: string;
+    duration_ms: number;
+    started_at: string;
+  }[];
+}
+
+export interface ExecutionComparisonData {
+  run_a: {
+    id: number;
+    key: string;
+    status: string;
+    total: number;
+    passed: number;
+    failed: number;
+    pass_rate: number;
+    duration_ms: number;
+    started_at: string;
+  };
+  run_b: {
+    id: number;
+    key: string;
+    status: string;
+    total: number;
+    passed: number;
+    failed: number;
+    pass_rate: number;
+    duration_ms: number;
+    started_at: string;
+  };
+  delta: {
+    total_diff: number;
+    passed_diff: number;
+    failed_diff: number;
+    pass_rate_diff: number;
+    duration_diff_ms: number;
+  };
+  summary: {
+    regressions_count: number;
+    improvements_count: number;
+    persistent_failures_count: number;
+    stable_passes_count: number;
+    total_compared: number;
+  };
+  regressions: any[];
+  improvements: any[];
+  persistent_failures: any[];
+  all_comparisons: any[];
+}
+
 export interface Defect { id: number; key: string; project_id: number; title: string; severity: string; priority: string;
   status: string; approval_status: string; evidence_type?: string; source_commit_sha?: string | null; owner: UserRef | null; test_case_id: number | null; requirement_id: number | null;
   execution_id: number | null; github_issue_url: string | null; github_issue_state: string | null; created_at: string;

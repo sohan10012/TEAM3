@@ -2216,6 +2216,86 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/execution-metrics": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project Execution Metrics Endpoint",
+        "operationId": "get_project_execution_metrics_endpoint_api_v1_projects__project_id__execution_metrics_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/flaky-tests": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project Flaky Tests Endpoint",
+        "operationId": "get_project_flaky_tests_endpoint_api_v1_projects__project_id__flaky_tests_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/documents": {
       "get": {
         "tags": [
@@ -4841,6 +4921,47 @@
         }
       }
     },
+    "/api/v1/tests/{test_id}/execution-history": {
+      "get": {
+        "tags": [
+          "test cases"
+        ],
+        "summary": "Test Execution History",
+        "description": "Returns chronological historical execution results for a specific test case.",
+        "operationId": "test_execution_history_api_v1_tests__test_id__execution_history_get",
+        "parameters": [
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Test Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/suites": {
       "get": {
         "tags": [
@@ -5603,6 +5724,343 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/executions/{ex_id}/rerun-failed": {
+      "post": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Rerun Failed",
+        "description": "Rerun only failed/errored tests from this execution.",
+        "operationId": "rerun_failed_api_v1_executions__ex_id__rerun_failed_post",
+        "parameters": [
+          {
+            "name": "ex_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ex Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/executions/{ex_id}/rerun-selected": {
+      "post": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Rerun Selected",
+        "description": "Rerun specific selected tests from this execution.",
+        "operationId": "rerun_selected_api_v1_executions__ex_id__rerun_selected_post",
+        "parameters": [
+          {
+            "name": "ex_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ex Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RerunSelectedIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/executions/{ex_id}/compare/{other_ex_id}": {
+      "get": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Compare Runs Endpoint",
+        "description": "Compares two execution runs and reports regressions, recoveries, and persistent failures.",
+        "operationId": "compare_runs_endpoint_api_v1_executions__ex_id__compare__other_ex_id__get",
+        "parameters": [
+          {
+            "name": "ex_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ex Id"
+            }
+          },
+          {
+            "name": "other_ex_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Other Ex Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/executions/{ex_id}/export.{fmt}": {
+      "get": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Export Execution",
+        "description": "Exports an execution report in JSON, CSV, or Markdown format.",
+        "operationId": "export_execution_api_v1_executions__ex_id__export__fmt__get",
+        "parameters": [
+          {
+            "name": "ex_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ex Id"
+            }
+          },
+          {
+            "name": "fmt",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fmt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution-results/{result_id}": {
+      "get": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Get Execution Result Detail",
+        "description": "Retrieves full expected vs actual result intelligence and traceability context.",
+        "operationId": "get_execution_result_detail_api_v1_execution_results__result_id__get",
+        "parameters": [
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution-results/{result_id}/analyze": {
+      "post": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Analyze Execution Result",
+        "description": "Generates and persists evidence-grounded AI failure analysis on an execution result.",
+        "operationId": "analyze_execution_result_api_v1_execution_results__result_id__analyze_post",
+        "parameters": [
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultAnalyzeIn",
+                "default": {
+                  "note": ""
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execution-results/{result_id}/defects": {
+      "post": {
+        "tags": [
+          "test suites & executions"
+        ],
+        "summary": "Create Defect From Result Endpoint",
+        "description": "Creates or links a defect directly from an execution result.",
+        "operationId": "create_defect_from_result_endpoint_api_v1_execution_results__result_id__defects_post",
+        "parameters": [
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultDefectIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -10263,6 +10721,146 @@
         },
         "type": "object",
         "title": "RequirementPatch"
+      },
+      "RerunSelectedIn": {
+        "properties": {
+          "test_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Test Ids"
+          },
+          "environment_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_ids"
+        ],
+        "title": "RerunSelectedIn"
+      },
+      "ResultAnalyzeIn": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ResultAnalyzeIn"
+      },
+      "ResultDefectIn": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "pattern": "^(create|link)$",
+            "title": "Action",
+            "default": "create"
+          },
+          "defect_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defect Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity",
+            "default": "high"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority",
+            "default": "high"
+          },
+          "expected_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Result"
+          },
+          "actual_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Result"
+          },
+          "reproduction_steps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reproduction Steps"
+          }
+        },
+        "type": "object",
+        "title": "ResultDefectIn"
       },
       "RetestIn": {
         "properties": {

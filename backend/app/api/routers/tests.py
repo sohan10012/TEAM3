@@ -23,6 +23,7 @@ from app.db.models import (
     AuditLog,
     Clause,
     Defect,
+    Execution,
     ExecutionResult,
     Requirement,
     Review,
@@ -354,4 +355,37 @@ def execute_test(
     t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
     from app.services.test_design import execute_single_test_case
     return execute_single_test_case(db, t.id, user_id=p.id)
+
+
+@router.get("/{test_id}/execution-history")
+def test_execution_history(
+    test_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Returns chronological historical execution results for a specific test case."""
+    t = check_entity_project(db, p, db.get(TestCase, test_id), "Test case")
+    stmt = (
+        select(ExecutionResult, Execution.key, Execution.started_at, Execution.runner)
+        .join(Execution, Execution.id == ExecutionResult.execution_id)
+        .where(ExecutionResult.test_case_id == t.id)
+        .order_by(ExecutionResult.id.desc())
+        .limit(25)
+    )
+    rows = db.execute(stmt).all()
+    return [
+        {
+            "result_id": r.id,
+            "execution_id": r.execution_id,
+            "execution_key": ek,
+            "runner": runner,
+            "status": r.status,
+            "duration_ms": r.duration_ms,
+            "message": r.message,
+            "stdout": r.stdout,
+            "started_at": S.iso(es or r.started_at),
+        }
+        for r, ek, es, runner in rows
+    ]
+
 

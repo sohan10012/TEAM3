@@ -1156,3 +1156,26 @@ def commit_project_tests(
         author_id=p.id,
     )
 
+
+@router.get("/{project_id}/execution-metrics")
+def get_project_execution_metrics_endpoint(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.execution_intelligence import get_project_execution_metrics
+    return get_project_execution_metrics(db, proj.id)
+
+
+@router.get("/{project_id}/flaky-tests")
+def get_project_flaky_tests_endpoint(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.execution_intelligence import get_project_flaky_tests
+    return get_project_flaky_tests(db, proj.id)
+
+

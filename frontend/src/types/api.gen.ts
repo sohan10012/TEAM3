@@ -727,6 +727,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/execution-metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Execution Metrics Endpoint */
+        get: operations["get_project_execution_metrics_endpoint_api_v1_projects__project_id__execution_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/flaky-tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Flaky Tests Endpoint */
+        get: operations["get_project_flaky_tests_endpoint_api_v1_projects__project_id__flaky_tests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/documents": {
         parameters: {
             query?: never;
@@ -1506,6 +1540,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tests/{test_id}/execution-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Test Execution History
+         * @description Returns chronological historical execution results for a specific test case.
+         */
+        get: operations["test_execution_history_api_v1_tests__test_id__execution_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/suites": {
         parameters: {
             query?: never;
@@ -1689,6 +1743,146 @@ export interface paths {
         put?: never;
         /** Cancel */
         post: operations["cancel_api_v1_executions__ex_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions/{ex_id}/rerun-failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rerun Failed
+         * @description Rerun only failed/errored tests from this execution.
+         */
+        post: operations["rerun_failed_api_v1_executions__ex_id__rerun_failed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions/{ex_id}/rerun-selected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rerun Selected
+         * @description Rerun specific selected tests from this execution.
+         */
+        post: operations["rerun_selected_api_v1_executions__ex_id__rerun_selected_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions/{ex_id}/compare/{other_ex_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare Runs Endpoint
+         * @description Compares two execution runs and reports regressions, recoveries, and persistent failures.
+         */
+        get: operations["compare_runs_endpoint_api_v1_executions__ex_id__compare__other_ex_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions/{ex_id}/export.{fmt}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Execution
+         * @description Exports an execution report in JSON, CSV, or Markdown format.
+         */
+        get: operations["export_execution_api_v1_executions__ex_id__export__fmt__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/execution-results/{result_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Execution Result Detail
+         * @description Retrieves full expected vs actual result intelligence and traceability context.
+         */
+        get: operations["get_execution_result_detail_api_v1_execution_results__result_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/execution-results/{result_id}/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analyze Execution Result
+         * @description Generates and persists evidence-grounded AI failure analysis on an execution result.
+         */
+        post: operations["analyze_execution_result_api_v1_execution_results__result_id__analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/execution-results/{result_id}/defects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Defect From Result Endpoint
+         * @description Creates or links a defect directly from an execution result.
+         */
+        post: operations["create_defect_from_result_endpoint_api_v1_execution_results__result_id__defects_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3539,6 +3733,51 @@ export interface components {
              */
             change_summary: string;
         };
+        /** RerunSelectedIn */
+        RerunSelectedIn: {
+            /** Test Ids */
+            test_ids: number[];
+            /** Environment Id */
+            environment_id?: number | null;
+        };
+        /** ResultAnalyzeIn */
+        ResultAnalyzeIn: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** ResultDefectIn */
+        ResultDefectIn: {
+            /**
+             * Action
+             * @default create
+             */
+            action: string;
+            /** Defect Id */
+            defect_id?: number | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Severity
+             * @default high
+             */
+            severity: string | null;
+            /**
+             * Priority
+             * @default high
+             */
+            priority: string | null;
+            /** Expected Result */
+            expected_result?: string | null;
+            /** Actual Result */
+            actual_result?: string | null;
+            /** Reproduction Steps */
+            reproduction_steps?: string | null;
+        };
         /** RetestIn */
         RetestIn: {
             /** Environment Id */
@@ -5369,6 +5608,68 @@ export interface operations {
             };
         };
     };
+    get_project_execution_metrics_endpoint_api_v1_projects__project_id__execution_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_flaky_tests_endpoint_api_v1_projects__project_id__flaky_tests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_project_documents_api_v1_projects__project_id__documents_get: {
         parameters: {
             query?: never;
@@ -7091,6 +7392,37 @@ export interface operations {
             };
         };
     };
+    test_execution_history_api_v1_tests__test_id__execution_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                test_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_suites_api_v1_suites_get: {
         parameters: {
             query?: {
@@ -7504,6 +7836,237 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rerun_failed_api_v1_executions__ex_id__rerun_failed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ex_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rerun_selected_api_v1_executions__ex_id__rerun_selected_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ex_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RerunSelectedIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_runs_endpoint_api_v1_executions__ex_id__compare__other_ex_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ex_id: number;
+                other_ex_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_execution_api_v1_executions__ex_id__export__fmt__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ex_id: number;
+                fmt: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_execution_result_detail_api_v1_execution_results__result_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyze_execution_result_api_v1_execution_results__result_id__analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ResultAnalyzeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_defect_from_result_endpoint_api_v1_execution_results__result_id__defects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResultDefectIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

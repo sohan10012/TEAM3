@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Copy, GitCommit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataTable, FilterChips } from "@/components/DataTable";
-import { TestRunsManagementView } from "@/components/executions/TestRunsManagementView";
+import { ExecutionManagementWorkspace } from "@/components/executions/ExecutionManagementWorkspace";
 import { RunProgress } from "@/components/RunProgress";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Code, Dialog, EmptyState, ErrorState, Field, Input, Key, KV, LoadingBlock, Notice, PageHeader,
@@ -52,8 +52,8 @@ function CodeBasedExecutionsView({ projectId }: { projectId: number | null }) {
 
 export function ExecutionsPage() {
   const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <TestRunsManagementView projectId={projectId} current={current} />;
+  if (projectId) {
+    return <ExecutionManagementWorkspace projectId={projectId} currentProject={current} />;
   }
   return <CodeBasedExecutionsView projectId={projectId} />;
 }
@@ -74,6 +74,20 @@ function ResultBar({ e }: { e: Execution }) {
 
 export function ExecutionDetailPage() {
   const { id } = useParams();
+  const { projectId, current } = useProjects();
+  if (projectId) {
+    return (
+      <ExecutionManagementWorkspace
+        projectId={projectId}
+        currentProject={current}
+        initialRunId={Number(id)}
+      />
+    );
+  }
+  return <CodeBasedExecutionDetailPage id={id} />;
+}
+
+function CodeBasedExecutionDetailPage({ id }: { id?: string }) {
   const q = useQuery({ queryKey: ["execution", id], queryFn: () => api.get<Execution>(`/executions/${id}`),
     refetchInterval: (qq) => qq.state.data && ["queued", "running"].includes(qq.state.data.status) ? 1500 : false });
   const logs = useQuery({ queryKey: ["execution-logs", id, q.data?.status], enabled: !!q.data, queryFn: () => api.get<{ log: string }>(`/executions/${id}/logs`) });
