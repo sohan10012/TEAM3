@@ -151,3 +151,4 @@ High-resolution screenshots captured across viewports:
 7. `07_requirements_mobile_390x844.png`: Mobile viewport verifying responsive sheet layout and zero horizontal shift.
 
 All screenshots archived in `docs/reports/enterprise-evaluation/screenshots/` and zipped in `docs/screenshots.zip`.
+

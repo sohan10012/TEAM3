@@ -7,6 +7,8 @@ import { DataTable, FilterChips } from "@/components/DataTable";
 import { EmbeddedDocumentViewer } from "@/components/documents/EmbeddedDocumentViewer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RequirementsManagementView } from "@/components/requirements/RequirementsManagementView";
+import { AcceptanceCriteriaRowExpanded } from "@/components/criteria/AcceptanceCriteriaRowExpanded";
+import { AcceptanceCriteriaDetailDrawer } from "@/components/criteria/AcceptanceCriteriaDetailDrawer";
 import { RunProgress } from "@/components/RunProgress";
 import { useToast } from "@/components/Toast";
 import { Badge, Button, Dialog, EmptyState, ErrorState, Field, Input, Key, KV, LoadingBlock, Notice, PageHeader, Panel,
@@ -477,56 +479,93 @@ function AnalysisTab({ r, onChange }: { r: Requirement; onChange: () => void }) 
 }
 
 function CriteriaTab({ r }: { r: Requirement }) {
-  const { can } = useAuth();
   const toast = useToast();
+  const [selectedDrawerId, setSelectedDrawerId] = useState<number | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+
   const q = useQuery({ queryKey: ["criteria", r.id], queryFn: () => api.get<Criterion[]>(`/requirements/${r.id}/acceptance-criteria`) });
   const m = useMutation({
     mutationFn: ({ id, decision, comment }: { id: number; decision: string; comment?: string }) =>
       api.post(`/acceptance-criteria/${id}/review`, { decision, comment: comment ?? "" }),
     onSuccess: () => { q.refetch(); toast.ok("Review recorded"); }, onError: toast.error,
   });
+
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />;
   if (!q.data) return <LoadingBlock />;
   if (!q.data.length) return <Panel><EmptyState title="No acceptance criteria yet" body="Analyse the requirement to generate criteria grounded in its clauses." /></Panel>;
+
+  const toggleExpand = (k: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
   return (
-    <div className="space-y-3">{q.data.map((a) => (
-      <Panel key={a.id} title={<span className="flex items-center gap-2"><Key>{a.key}</Key><Badge value={a.review_status} /></span>}
-        actions={can("test.review") && a.review_status !== "approved" && <>
-          <Button size="sm" onClick={() => m.mutate({ id: a.id, decision: "approve" })}>Approve</Button>
-          <Button size="sm" variant="ghost" onClick={() => { const c = prompt("What needs to change?"); if (c) m.mutate({ id: a.id, decision: "request_changes", comment: c }); }}>Request changes</Button>
-          <Button size="sm" variant="ghost" onClick={() => m.mutate({ id: a.id, decision: "reject" })}>Reject</Button></>}>
-        <p className="text-sm text-ink">{a.description}</p>
-        <div className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-          <div><p className="text-xs text-slate-500">Expected behaviour</p><p>{a.expected_behaviour}</p></div>
-          <div><p className="text-xs text-slate-500">Cited clauses</p><p className="font-mono text-xs">{(Array.isArray(a.clause_keys) ? a.clause_keys : [a.clause_keys]).filter(Boolean).join(", ")}</p></div>
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs font-medium text-slate-500">Source quotation</p>
-              {a.quote_verified ? (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
-                  (verified against clause text)
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 uppercase tracking-wider">
-                  Ungrounded Quote
-                </span>
+    <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-2xs divide-y divide-slate-100 overflow-hidden">
+        {q.data.map((a) => {
+          const isExpanded = expandedKeys.has(a.key);
+          return (
+            <div key={a.id} className="transition-colors hover:bg-slate-50/50">
+              <div
+                onClick={() => toggleExpand(a.key)}
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                    {a.key}
+                  </span>
+                  <Badge value={a.review_status} />
+                  {a.quote_verified ? (
+                    <span className="inline-flex items-center rounded bg-teal-50 border border-teal-200 px-2 py-0.5 text-[10px] font-semibold text-teal-800">
+                      Grounded
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
+                      Inferred
+                    </span>
+                  )}
+                  <p className="text-xs text-slate-700 truncate">{a.description}</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDrawerId(a.id);
+                    }}
+                    className="h-7 text-xs text-blue-600 hover:bg-blue-50"
+                  >
+                    Inspect
+                  </Button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <AcceptanceCriteriaRowExpanded
+                  criterion={a}
+                  onInspect={(crit) => setSelectedDrawerId(crit.id)}
+                  onReview={(crit, decision, comment) => m.mutate({ id: crit.id, decision, comment })}
+                  onEdit={() => setSelectedDrawerId(a.id)}
+                />
               )}
             </div>
-            <blockquote className={cn("border-l-2 pl-3 italic text-slate-700", a.quote_verified ? "border-accent-ring" : "border-rose-400 bg-rose-50/30 py-1")}>
-              {a.source_quote}
-            </blockquote>
-            {!a.quote_verified && (
-              <p className="mt-1 text-[11px] text-rose-600 font-medium">
-                Guardrail violation: Quotation does not appear verbatim in cited clauses ({(Array.isArray(a.clause_keys) ? a.clause_keys : [a.clause_keys]).filter(Boolean).join(", ")}).
-              </p>
-            )}
-          </div>
-          <div><p className="text-xs text-slate-500">Confidence</p><p className={cn(a.confidence < 0.6 && "text-amber-800")}>{Math.round(a.confidence * 100)}%{a.confidence < 0.6 && ", needs additional review"}</p></div>
-          <div><p className="text-xs text-slate-500">Provenance</p><p>{a.provider}{a.model ? `, ${a.model}` : ""}</p></div>
-          {Array.isArray(a.assumptions) && a.assumptions.length > 0 && <div className="md:col-span-2"><p className="text-xs font-medium text-slate-500">Assumptions</p>
-            <ul className="list-disc pl-4">{a.assumptions.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
-        </div>
-      </Panel>))}</div>
+          );
+        })}
+      </div>
+
+      <AcceptanceCriteriaDetailDrawer
+        criterionId={selectedDrawerId}
+        open={selectedDrawerId !== null}
+        onClose={() => setSelectedDrawerId(null)}
+        onCriterionUpdated={() => q.refetch()}
+      />
+    </div>
   );
 }
 

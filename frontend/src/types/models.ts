@@ -38,9 +38,74 @@ export interface Requirement { id: number; key: string; project_id: number; proj
   document_id?: number | null; evidence_excerpt?: string | null; description?: string | null;
   source_page?: string | null; source_section?: string | null;
   review_status?: string | null; confidence?: number | null; }
-export interface Criterion { id: number; key: string; clause_keys: string[]; description: string; preconditions: string;
-  expected_behaviour: string; validation_conditions: string[]; source_quote: string; quote_verified: boolean;
-  confidence: number; rationale: string; assumptions: string[]; review_status: string; provider: string; model: string | null }
+export interface Criterion {
+  id: number;
+  key: string;
+  requirement_id?: number;
+  requirement_version?: number;
+  clause_keys: string[];
+  description: string;
+  preconditions: string;
+  expected_behaviour: string;
+  validation_conditions: string[];
+  actor?: string | null;
+  action?: string | null;
+  input_conditions?: any[];
+  expected_output?: string | null;
+  business_rules?: any[];
+  source_quote: string;
+  quote_verified: boolean;
+  confidence: number;
+  rationale: string;
+  assumptions: string[];
+  review_status: string;
+  provider: string;
+  model: string | null;
+  created_at?: string;
+  requirement_key?: string;
+  requirement_title?: string;
+  requirement_category?: string;
+  requirement_priority?: string;
+  linked_test_count?: number;
+  linked_test_keys?: string[];
+  requirement?: {
+    id: number;
+    key: string;
+    title: string;
+    category: string;
+    priority: string;
+    status: string;
+    project_id: number;
+  };
+  clauses?: Array<{
+    id: number;
+    key: string;
+    text: string;
+    source_paths?: string | null;
+    line_start?: number | null;
+    line_end?: number | null;
+    ambiguity_flags?: any[];
+    analysis?: Record<string, any>;
+  }>;
+  linked_test_cases?: Array<{
+    id: number;
+    key: string;
+    title: string;
+    priority: string;
+    test_type: string;
+    status: string;
+    automation: string;
+    validation_status: string;
+  }>;
+  reviews?: Array<{
+    id: number;
+    decision: string;
+    comment: string;
+    reviewer_name: string;
+    reviewer_email?: string | null;
+    created_at: string;
+  }>;
+}
 export interface TestCase { id: number; key: string; project_id: number; requirement_id: number; requirement_key: string;
   requirement_version: number; clause_keys: string[]; ac_keys: string[]; title: string; priority: string; test_type: string;
   confidence: number; automation: string; status: string; validation_status: string; version: number; provider: string;

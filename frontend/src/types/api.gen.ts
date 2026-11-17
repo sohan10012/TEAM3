@@ -1072,6 +1072,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/acceptance-criteria/{ac_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Criterion Detail */
+        get: operations["get_criterion_detail_api_v1_acceptance_criteria__ac_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Criterion */
+        patch: operations["update_criterion_api_v1_acceptance_criteria__ac_id__patch"];
+        trace?: never;
+    };
     "/api/v1/acceptance-criteria/{ac_id}/review": {
         parameters: {
             query?: never;
@@ -1083,6 +1101,23 @@ export interface paths {
         put?: never;
         /** Review Criterion */
         post: operations["review_criterion_api_v1_acceptance_criteria__ac_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/requirements/{req_id}/generate-acceptance-criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Criteria For Single Requirement */
+        post: operations["generate_criteria_for_single_requirement_api_v1_requirements__req_id__generate_acceptance_criteria_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2813,6 +2848,33 @@ export interface components {
              * @default false
              */
             auto_approve: boolean;
+        };
+        /** CriterionPatch */
+        CriterionPatch: {
+            /** Description */
+            description?: string | null;
+            /** Preconditions */
+            preconditions?: string | null;
+            /** Expected Behaviour */
+            expected_behaviour?: string | null;
+            /** Actor */
+            actor?: string | null;
+            /** Action */
+            action?: string | null;
+            /** Expected Output */
+            expected_output?: string | null;
+            /** Rationale */
+            rationale?: string | null;
+            /** Source Quote */
+            source_quote?: string | null;
+            /** Validation Conditions */
+            validation_conditions?: string[] | null;
+            /** Input Conditions */
+            input_conditions?: unknown[] | null;
+            /** Business Rules */
+            business_rules?: unknown[] | null;
+            /** Assumptions */
+            assumptions?: string[] | null;
         };
         /** CriterionReview */
         CriterionReview: {
@@ -5951,6 +6013,72 @@ export interface operations {
             };
         };
     };
+    get_criterion_detail_api_v1_acceptance_criteria__ac_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ac_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_criterion_api_v1_acceptance_criteria__ac_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ac_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriterionPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     review_criterion_api_v1_acceptance_criteria__ac_id__review_post: {
         parameters: {
             query?: never;
@@ -5965,6 +6093,37 @@ export interface operations {
                 "application/json": components["schemas"]["CriterionReview"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_criteria_for_single_requirement_api_v1_requirements__req_id__generate_acceptance_criteria_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                req_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

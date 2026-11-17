@@ -919,12 +919,33 @@ def list_project_criteria(
     db: Session = Depends(get_db),
 ):
     proj = get_project_checked(db, p, project_id)
-    from app.db.models import AcceptanceCriterion
+    from app.db.models import AcceptanceCriterion, Requirement, TestCase
     stmt = select(AcceptanceCriterion).join(Requirement).where(Requirement.project_id == proj.id)
     if requirement_id:
         stmt = stmt.where(AcceptanceCriterion.requirement_id == requirement_id)
     rows = db.execute(stmt.order_by(AcceptanceCriterion.id)).scalars().all()
-    return [S.criterion(a) for a in rows]
+
+    reqs = {r.id: r for r in db.execute(select(Requirement).where(Requirement.project_id == proj.id)).scalars().all()}
+    tcs = db.execute(select(TestCase).where(TestCase.project_id == proj.id)).scalars().all()
+    tc_ac_map: dict[str, list[str]] = {}
+    for t in tcs:
+        for ack in (t.ac_keys or []):
+            tc_ac_map.setdefault(ack, []).append(t.key)
+
+    res = []
+    for a in rows:
+        d = S.criterion(a)
+        r = reqs.get(a.requirement_id)
+        if r:
+            d["requirement_key"] = r.key
+            d["requirement_title"] = r.title
+            d["requirement_category"] = r.category
+            d["requirement_priority"] = r.priority
+        linked = tc_ac_map.get(a.key, [])
+        d["linked_test_count"] = len(linked)
+        d["linked_test_keys"] = linked[:5]
+        res.append(d)
+    return res
 
 
 @router.post("/{project_id}/generate-tests")

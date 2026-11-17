@@ -10,6 +10,7 @@ import { ProjectDetailPage, ProjectsPage } from "@/pages/ProjectsPage";
 import { RequirementDetailPage, RequirementsPage } from "@/pages/RequirementsPages";
 import SimulationPage from "@/pages/SimulationPage";
 import { ConsumerMonitoringPage, ReviewWorkspacePage, SuiteDetailPage, SuitesPage, TestDetailPage, TestsPage } from "@/pages/TestPages";
+import { AcceptanceCriteriaPage } from "@/pages/AcceptanceCriteriaPage";
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, "Overview"],
@@ -17,6 +18,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/(simulation|validation)/, "Policy & Scenario Validation"],
   [/^\/projects/, "Projects"],
   [/^\/requirements/, "Requirements"],
+  [/^\/acceptance-criteria/, "Acceptance Criteria"],
   [/^\/tests\/monitoring/, "Consumer Policy Monitoring"],
   [/^\/tests\/review/, "Approval workspace"],
   [/^\/tests/, "Test cases"],
@@ -52,6 +54,7 @@ export default function App() {
           <Route path="validation" element={<SimulationPage />} />
           <Route path="requirements" element={<RequirementsPage />} />
           <Route path="requirements/:id" element={<RequirementDetailPage />} />
+          <Route path="acceptance-criteria" element={<AcceptanceCriteriaPage />} />
           <Route path="tests" element={<TestsPage />} />
           <Route path="tests/monitoring" element={<ConsumerMonitoringPage />} />
           <Route path="tests/review" element={<ReviewWorkspacePage />} />

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, Field
@@ -303,8 +304,144 @@ def list_criteria(req_id: int, p: Principal = Depends(current_principal), db: Se
 
 
 class CriterionReview(BaseModel):
-    decision: str = Field(pattern="^(approve|reject|request_changes)$")
+    decision: str = Field(pattern="^(approve|reject|request_changes|request_clarification)$")
     comment: str = ""
+
+
+class CriterionPatch(BaseModel):
+    description: str | None = None
+    preconditions: str | None = None
+    expected_behaviour: str | None = None
+    actor: str | None = None
+    action: str | None = None
+    expected_output: str | None = None
+    rationale: str | None = None
+    source_quote: str | None = None
+    validation_conditions: list[str] | None = None
+    input_conditions: list[Any] | None = None
+    business_rules: list[Any] | None = None
+    assumptions: list[str] | None = None
+
+
+@router.get("/acceptance-criteria/{ac_id}")
+def get_criterion_detail(ac_id: int, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
+    a = db.get(AcceptanceCriterion, ac_id)
+    if a is None:
+        raise NotFound("Acceptance criterion")
+    r = check_entity_project(db, p, db.get(Requirement, a.requirement_id), "Acceptance criterion")
+    out = S.criterion(a)
+    out["requirement"] = {
+        "id": r.id,
+        "key": r.key,
+        "title": r.title,
+        "category": r.category,
+        "priority": r.priority,
+        "status": r.status,
+        "project_id": r.project_id,
+    }
+
+    # Linked clauses
+    from app.db.models import Clause
+    clause_rows = []
+    if a.clause_keys:
+        clause_rows = db.execute(
+            select(Clause).where(Clause.clause_key.in_(a.clause_keys))
+        ).scalars().all()
+    out["clauses"] = [
+        {
+            "id": c.id,
+            "key": c.clause_key,
+            "text": c.text,
+            "source_paths": c.source_paths,
+            "line_start": c.line_start,
+            "line_end": c.line_end,
+            "ambiguity_flags": c.ambiguity_flags,
+            "analysis": c.analysis,
+        }
+        for c in clause_rows
+    ]
+
+    # Linked test cases
+    from app.db.models import TestCase
+    tc_rows = db.execute(
+        select(TestCase).where(
+            TestCase.project_id == r.project_id,
+            TestCase.requirement_id == a.requirement_id,
+        )
+    ).scalars().all()
+    matching_tcs = [tc for tc in tc_rows if a.key in (tc.ac_keys or [])]
+    if not matching_tcs and tc_rows and a.clause_keys:
+        matching_tcs = [tc for tc in tc_rows if any(ck in (tc.clause_keys or []) for ck in a.clause_keys)]
+
+    out["linked_test_cases"] = [
+        {
+            "id": tc.id,
+            "key": tc.key,
+            "title": tc.title,
+            "priority": tc.priority,
+            "test_type": tc.test_type,
+            "status": tc.status,
+            "automation": tc.automation,
+            "validation_status": tc.validation_status,
+        }
+        for tc in matching_tcs
+    ]
+
+    # Review history
+    from app.db.models import Review, User
+    rev_rows = db.execute(
+        select(Review).where(
+            Review.entity_type == "acceptance_criterion",
+            Review.entity_id == a.id,
+        ).order_by(Review.created_at.desc())
+    ).scalars().all()
+    reviews = []
+    for rev in rev_rows:
+        reviewer = db.get(User, rev.reviewer_id) if rev.reviewer_id else None
+        reviews.append({
+            "id": rev.id,
+            "decision": rev.decision,
+            "comment": rev.comment,
+            "reviewer_name": reviewer.full_name if reviewer else "System Operator",
+            "reviewer_email": reviewer.email if reviewer else None,
+            "created_at": S.iso(rev.created_at),
+        })
+    out["reviews"] = reviews
+    return out
+
+
+@router.patch("/acceptance-criteria/{ac_id}")
+def update_criterion(
+    ac_id: int,
+    body: CriterionPatch,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    a = db.get(AcceptanceCriterion, ac_id)
+    if a is None:
+        raise NotFound("Acceptance criterion")
+    r = check_entity_project(db, p, db.get(Requirement, a.requirement_id), "Acceptance criterion")
+
+    data = body.model_dump(exclude_unset=True)
+    if not data:
+        return S.criterion(a)
+
+    for field, val in data.items():
+        if hasattr(a, field):
+            setattr(a, field, val)
+
+    audit.record(
+        db,
+        p.id,
+        "criterion.update",
+        "acceptance_criterion",
+        a.id,
+        a.key,
+        r.project_id,
+        {"updated_fields": list(data.keys())},
+    )
+    db.commit()
+    return S.criterion(a)
 
 
 @router.post("/acceptance-criteria/{ac_id}/review")
@@ -314,15 +451,32 @@ def review_criterion(ac_id: int, body: CriterionReview, p: Principal = Depends(r
     if a is None:
         raise NotFound("Acceptance criterion")
     r = check_entity_project(db, p, db.get(Requirement, a.requirement_id), "Acceptance criterion")
-    if body.decision == "request_changes" and not body.comment.strip():
-        raise BadRequest("A comment is required when requesting changes")
-    a.review_status = {"approve": "approved", "reject": "rejected", "request_changes": "changes_requested"}[body.decision]
+    if body.decision in ("request_changes", "request_clarification") and not body.comment.strip():
+        raise BadRequest(f"A comment is required when {body.decision.replace('_', ' ')}")
+    status_map = {
+        "approve": "approved",
+        "reject": "rejected",
+        "request_changes": "changes_requested",
+        "request_clarification": "needs_clarification",
+    }
+    a.review_status = status_map[body.decision]
     db.add(Review(entity_type="acceptance_criterion", entity_id=a.id, decision=body.decision, comment=body.comment,
                   reviewer_id=p.id))
     audit.record(db, p.id, f"criterion.review.{body.decision}", "acceptance_criterion", a.id, a.key, r.project_id,
                  {"comment": body.comment})
     db.commit()
     return S.criterion(a)
+
+
+@router.post("/requirements/{req_id}/generate-acceptance-criteria", status_code=200)
+def generate_criteria_for_single_requirement(
+    req_id: int,
+    p: Principal = Depends(require("requirement.write")),
+    db: Session = Depends(get_db),
+):
+    r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    from app.services.test_design import generate_acceptance_criteria_for_requirement
+    return generate_acceptance_criteria_for_requirement(db, r.id, author_id=p.id)
 
 
 @router.get("/requirements/{req_id}/export")
