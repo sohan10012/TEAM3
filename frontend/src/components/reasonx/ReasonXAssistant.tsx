@@ -2,28 +2,30 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   CheckCircle2,
-  ChevronRight,
   Copy,
+  Download,
   History,
+  Maximize2,
+  Minimize2,
   Plus,
   Send,
   Sparkles,
-  Trash2,
+  StopCircle,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
-
-interface EvidenceItem {
-  source_document?: string;
-  page?: number | null;
-  section?: string;
-  requirement_id?: string;
-  quote?: string;
-}
+import { ReasonXApprovalCard, type ApprovalRequestPayload } from "./ReasonXApprovalCard";
+import { ReasonXCompactInput } from "./ReasonXCompactInput";
+import { ReasonXConversationHistory, type ConversationSummary } from "./ReasonXConversationHistory";
+import { ReasonXEvidencePanel, type EvidenceItem } from "./ReasonXEvidencePanel";
+import { ReasonXLauncher } from "./ReasonXLauncher";
+import { ReasonXModelIndicator } from "./ReasonXModelIndicator";
+import { ReasonXTaskTimeline, type TaskStepItem } from "./ReasonXTaskTimeline";
+import { ReasonXTemplateGallery } from "./ReasonXTemplateGallery";
 
 interface StructuredPayload {
   direct_answer?: string;
@@ -32,6 +34,12 @@ interface StructuredPayload {
   recommended_actions?: string[];
   confidence_level?: "HIGH" | "MEDIUM" | "QUALIFIED";
   simplified_summary?: string;
+  task_id?: number;
+  task_type?: string;
+  status?: string;
+  plan?: Array<{ step: number; title: string; tool?: string; status?: string }>;
+  steps?: TaskStepItem[];
+  approval_request?: ApprovalRequestPayload;
 }
 
 interface ChatMessage {
@@ -40,22 +48,15 @@ interface ChatMessage {
   content: string;
   structured_payload?: StructuredPayload | null;
   created_at: string;
-}
-
-interface ConversationItem {
-  id: number;
-  title: string;
-  page_context?: string;
-  created_at: string;
-  updated_at: string;
-  message_count: number;
-  preview: string;
+  model?: string;
+  provider?: string;
 }
 
 function getPageName(pathname: string): string {
   if (pathname === "/") return "dashboard";
   if (pathname.includes("intelligence-report")) return "intelligence_report";
   if (pathname.includes("requirements")) return "requirements";
+  if (pathname.includes("acceptance-criteria")) return "acceptance-criteria";
   if (pathname.includes("simulation") || pathname.includes("validation")) return "validation";
   if (pathname.includes("tests")) return "tests";
   if (pathname.includes("executions")) return "executions";
@@ -72,12 +73,14 @@ function getContextBadge(page: string): string {
       return "Executive Intelligence";
     case "requirements":
       return "Requirements Intake";
+    case "acceptance-criteria":
+      return "BDD & Criteria";
     case "validation":
       return "Policy Validation";
     case "tests":
       return "Test Design & BDD";
     case "executions":
-      return "Test Verification";
+      return "Execution Intelligence";
     case "defects":
       return "Defects & RCA";
     case "traceability":
@@ -85,141 +88,153 @@ function getContextBadge(page: string): string {
     case "dashboard":
       return "Executive Command";
     default:
-      return "Contextual Assistant";
-  }
-}
-
-function getContextSubtitle(page: string, projectName?: string): string {
-  const pName = projectName || "Project";
-  switch (page) {
-    case "intelligence_report":
-      return `Executive Readiness & Compliance Audit (${pName})`;
-    case "requirements":
-      return `Requirements & Clause Extraction (${pName})`;
-    case "validation":
-      return `Policy & Scenario Validation (${pName})`;
-    case "tests":
-      return `Test Scenarios & Dual-Control (${pName})`;
-    case "executions":
-      return `Sandboxed Execution Verification (${pName})`;
-    case "defects":
-      return `Defect Remediation & Evidence (${pName})`;
-    case "traceability":
-      return `Clause-to-Test Traceability Matrix (${pName})`;
-    case "dashboard":
-      return `Executive Command Center (${pName})`;
-    default:
-      return `${pName} Quality Workspace`;
+      return "Autonomous Agent";
   }
 }
 
 export function ReasonXAssistant() {
-  const { projectId, current } = useProjects();
-  const { pathname } = useLocation();
   const qc = useQueryClient();
+  const location = useLocation();
+  const { current: activeProject, projectId } = useProjects();
+  const effectiveProjectId = projectId || (activeProject ? activeProject.id : 5);
+  const pageContext = getPageName(location.pathname);
 
+  // Layout & Mode State
   const [isOpen, setIsOpen] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [mode, setMode] = useState<"compact" | "drawer" | "expanded" | "fullscreen">("drawer");
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("tracetest.reasonx.width");
+      return saved ? Math.min(Math.max(Number(saved), 380), 920) : 480;
+    } catch {
+      return 480;
+    }
+  });
+
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [inputVal, setInputVal] = useState("");
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isResizing, setIsResizing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const launcherRef = useRef<HTMLButtonElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
 
-  const activePage = getPageName(pathname);
-
-  // Quick prompts query
-  const quickPromptsQ = useQuery({
-    queryKey: ["reasonx_quick_prompts", activePage],
-    queryFn: () => api.get<{ prompts: { label: string; query: string }[] }>("/reasonx/quick-prompts", { page: activePage }),
-    staleTime: 60_000,
-  });
-
-  // Conversations query
-  const convsQ = useQuery({
-    queryKey: ["reasonx_conversations", projectId],
-    queryFn: () => api.get<{ conversations: ConversationItem[] }>(`/reasonx/projects/${projectId}/conversations`),
-    enabled: isOpen && !!projectId,
-  });
-
-  // Messages query
-  const messagesQ = useQuery({
-    queryKey: ["reasonx_messages", activeConvId],
-    queryFn: () => api.get<{ messages: ChatMessage[] }>(`/reasonx/conversations/${activeConvId}/messages`),
-    enabled: !!activeConvId,
-    refetchInterval: false,
-  });
-
-  // Reset active conversation on project switch
-  useEffect(() => {
-    setActiveConvId(null);
-  }, [projectId]);
-
-  // Open drawer helper
-  const handleOpenDrawer = () => {
-    setIsOpen(true);
-    setUnreadCount(0);
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 150);
+  // Resize handler
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
   };
 
-  // Close drawer helper with focus restoration to launcher
-  const handleCloseDrawer = () => {
-    setIsOpen(false);
-    setShowHistory(false);
-    setTimeout(() => {
-      launcherRef.current?.focus();
-    }, 50);
-  };
-
-  // Keyboard accessibility: Escape to close drawer
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        e.preventDefault();
-        handleCloseDrawer();
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth >= 380 && newWidth <= 920) {
+        setPanelWidth(newWidth);
+        try {
+          localStorage.setItem("tracetest.reasonx.width", String(newWidth));
+        } catch {
+          /* ignore */
+        }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
 
-  // Scroll to bottom on new message
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Query: Conversations list for active project
+  const convsQ = useQuery({
+    queryKey: ["reasonx_conversations", effectiveProjectId],
+    queryFn: () => api.get<{ conversations: ConversationSummary[] }>(`/reasonx/projects/${effectiveProjectId}/conversations`),
+    enabled: Boolean(effectiveProjectId) && isOpen,
+  });
+
+  // Query: Messages for active conversation
+  const msgsQ = useQuery({
+    queryKey: ["reasonx_messages", activeConvId],
+    queryFn: () => api.get<{ messages: ChatMessage[] }>(`/reasonx/conversations/${activeConvId}/messages`),
+    enabled: Boolean(activeConvId),
+  });
+
+  // Auto-scroll to bottom of messages
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messagesQ.data?.messages, isOpen]);
+  }, [msgsQ.data, isOpen]);
 
-  // Send message mutation
+  // Mutation: Send chat query
   const sendM = useMutation({
-    mutationFn: (text: string) =>
+    mutationFn: (queryText: string) =>
       api.post<any>("/reasonx/chat", {
-        project_id: projectId || 11,
-        query: text,
-        page: activePage,
-        conversation_id: activeConvId || undefined,
+        project_id: effectiveProjectId,
+        query: queryText,
+        page: pageContext,
+        conversation_id: activeConvId,
       }),
     onSuccess: (data) => {
-      setActiveConvId(data.conversation_id);
-      qc.invalidateQueries({ queryKey: ["reasonx_messages", data.conversation_id] });
-      qc.invalidateQueries({ queryKey: ["reasonx_conversations", projectId] });
-      setInputVal("");
-      if (!isOpen) {
-        setUnreadCount((c) => c + 1);
+      if (!activeConvId && data.conversation_id) {
+        setActiveConvId(data.conversation_id);
       }
+      qc.invalidateQueries({ queryKey: ["reasonx_conversations", effectiveProjectId] });
+      qc.invalidateQueries({ queryKey: ["reasonx_messages", data.conversation_id || activeConvId] });
+      qc.invalidateQueries({ queryKey: ["reasonx_tasks", effectiveProjectId] });
     },
   });
 
-  const handleSend = (textToSend?: string) => {
-    const text = (textToSend || inputVal).trim();
-    if (!text || sendM.isPending) return;
-    sendM.mutate(text);
+  // Mutation: Approve task action
+  const approveM = useMutation({
+    mutationFn: (taskId: number) => api.post(`/reasonx/tasks/${taskId}/approve`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reasonx_messages", activeConvId] });
+      qc.invalidateQueries({ queryKey: ["reasonx_tasks", effectiveProjectId] });
+      qc.invalidateQueries({ queryKey: ["defects"] });
+      qc.invalidateQueries({ queryKey: ["tests"] });
+    },
+  });
+
+  // Mutation: Cancel task action
+  const cancelM = useMutation({
+    mutationFn: ({ taskId, reason }: { taskId: number; reason?: string }) =>
+      api.post(`/reasonx/tasks/${taskId}/cancel`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reasonx_messages", activeConvId] });
+      qc.invalidateQueries({ queryKey: ["reasonx_tasks", effectiveProjectId] });
+    },
+  });
+
+  // Mutation: Delete conversation
+  const deleteM = useMutation({
+    mutationFn: (convId: number) => api.delete(`/reasonx/conversations/${convId}`),
+    onSuccess: (_, deletedId) => {
+      if (activeConvId === deletedId) {
+        setActiveConvId(null);
+      }
+      qc.invalidateQueries({ queryKey: ["reasonx_conversations", effectiveProjectId] });
+    },
+  });
+
+  const handleSend = (overrideQuery?: string) => {
+    const q = (overrideQuery || inputVal).trim();
+    if (!q || sendM.isPending) return;
+    setInputVal("");
+    if (mode === "compact") {
+      setMode("drawer");
+    }
+    setIsOpen(true);
+    sendM.mutate(q);
   };
 
   const handleCopy = (id: number, text: string) => {
@@ -228,223 +243,223 @@ export function ReasonXAssistant() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const startNewConversation = () => {
-    setActiveConvId(null);
-    setShowHistory(false);
-    setInputVal("");
-    setTimeout(() => textareaRef.current?.focus(), 100);
+  const handleExportMarkdown = () => {
+    const msgs = msgsQ.data?.messages || [];
+    if (msgs.length === 0) return;
+    let md = `# ReasonX AI Quality Intelligence Report\n**Project:** ${activeProject?.name || "TraceTest"}\n**Date:** ${new Date().toLocaleString()}\n\n---\n\n`;
+    msgs.forEach((m) => {
+      md += `### ${m.role === "user" ? "👤 User Query" : "🤖 ReasonX AI Agent"}\n\n${m.content}\n\n`;
+      if (m.structured_payload?.supporting_evidence?.length) {
+        md += `#### Statutory & Grounding Evidence:\n`;
+        m.structured_payload.supporting_evidence.forEach((ev) => {
+          md += `- **${ev.source_document || "Source"}** (p. ${ev.page || 1}): "${ev.quote || ""}"\n`;
+        });
+        md += `\n`;
+      }
+    });
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ReasonX_Report_${activeProject?.key || "TRACETEST"}_${Date.now()}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const deleteConvM = useMutation({
-    mutationFn: (id: number) => api.delete(`/reasonx/conversations/${id}`),
-    onSuccess: (_, deletedId) => {
-      if (activeConvId === deletedId) setActiveConvId(null);
-      qc.invalidateQueries({ queryKey: ["reasonx_conversations", projectId] });
-    },
-  });
-
-  const messages: ChatMessage[] = messagesQ.data?.messages ?? [];
-  const quickPrompts = quickPromptsQ.data?.prompts ?? [];
+  const messages: ChatMessage[] = msgsQ.data?.messages || [];
+  const conversations: ConversationSummary[] = convsQ.data?.conversations || [];
 
   return (
     <>
-      {/* ==================================================================== */}
-      {/* 1. FLOATING LAUNCHER: Pure 56px Circular FAB Button                 */}
-      {/* ==================================================================== */}
-      {!isOpen && (
-        <button
-          ref={launcherRef}
-          onClick={handleOpenDrawer}
-          className={cn(
-            "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full",
-            "bg-slate-900/92 hover:bg-slate-900 text-white backdrop-blur-md",
-            "border border-slate-700/70 hover:border-blue-500/50",
-            "shadow-popover hover:shadow-xl",
-            "transition-[transform,background-color,border-color,box-shadow] duration-150 motion-reduce:transition-none",
-            "active:scale-[0.95] select-none cursor-pointer",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D63ED]/50 focus-visible:ring-offset-2"
-          )}
-          title="Open ReasonX AI"
-          aria-label="Open ReasonX AI Assistant"
-        >
-          <Sparkles className="h-6 w-6 text-blue-400" aria-hidden="true" />
-          {unreadCount > 0 && (
-            <span
-              className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs motion-safe:pulse-subtle"
-              aria-label={`${unreadCount} unread message`}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </button>
+      {/* 1. Floating ReasonX Launcher Emblem */}
+      <ReasonXLauncher
+        isOpen={isOpen}
+        onToggle={() => {
+          if (isOpen && mode === "compact") {
+            setMode("drawer");
+          } else {
+            setIsOpen(!isOpen);
+          }
+        }}
+        isRunning={sendM.isPending}
+      />
+
+      {/* 2. Compact Single-Input Bar Mode */}
+      {isOpen && mode === "compact" && (
+        <ReasonXCompactInput
+          onSubmit={(q) => handleSend(q)}
+          onExpand={() => setMode("drawer")}
+          onDismiss={() => setIsOpen(false)}
+          projectName={activeProject?.name}
+          isPending={sendM.isPending}
+        />
       )}
 
-      {/* ==================================================================== */}
-      {/* 2. FULL-HEIGHT RESPONSIVE DRAWER & MODAL BACKDROP                   */}
-      {/* ==================================================================== */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-label="ReasonX AI Assistant">
-          {/* Modal Backdrop with subtle blur */}
-          <div
-            className="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs transition-opacity animate-in fade-in duration-200 motion-reduce:animate-none"
-            onClick={handleCloseDrawer}
-            aria-hidden="true"
-          />
+      {/* 3. Full / Resizable Agent Workspace Panel */}
+      {isOpen && mode !== "compact" && (
+        <div
+          role="dialog"
+          aria-label="ReasonX AI Autonomous Quality Engineering Workspace"
+          style={{
+            width: mode === "fullscreen" ? "100vw" : mode === "expanded" ? "760px" : `${panelWidth}px`,
+          }}
+          className={cn(
+            "fixed top-0 right-0 z-50 flex h-[100dvh] flex-col border-l border-slate-200 bg-slate-50 shadow-2xl transition-[width] duration-200 ease-out",
+            mode === "fullscreen" && "z-[60] inset-0 border-l-0",
+            isResizing && "select-none transition-none"
+          )}
+        >
+          {/* Accessible Drag-to-Resize Handle on Left Edge (Drawer Modes) */}
+          {mode !== "fullscreen" && (
+            <div
+              onMouseDown={handleMouseDown}
+              title="Drag to resize panel width"
+              className={cn(
+                "absolute top-0 bottom-0 left-0 w-1.5 cursor-ew-resize hover:bg-blue-500/40 transition-colors z-20 group",
+                isResizing && "bg-blue-600"
+              )}
+            >
+              <div className="absolute top-1/2 -left-1 -translate-y-1/2 h-8 w-1 rounded-full bg-slate-300 group-hover:bg-blue-600" />
+            </div>
+          )}
 
-          {/* Full-Height Drawer Container: Desktop right-docked, Mobile full-screen */}
-          <div
-            ref={drawerRef}
-            className={cn(
-              "fixed inset-y-0 right-0 z-50 flex flex-col bg-white shadow-2xl border-l border-slate-200",
-              "w-full sm:w-[440px] md:w-[460px] max-w-full h-full min-h-[100dvh]",
-              "animate-in slide-in-from-right duration-250 ease-out motion-reduce:animate-none will-change-transform"
-            )}
-          >
-            {/* Drawer Header matching Design System */}
-            <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-[#1E293B] px-4 sm:px-5 text-white">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8] text-white shadow-xs">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 leading-tight">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold tracking-tight text-white">reasonX AI</span>
-                    <span className="rounded-full bg-blue-500/25 px-2 py-0.5 text-[10px] font-semibold text-blue-200 border border-blue-400/20">
-                      {getContextBadge(activePage)}
-                    </span>
-                  </div>
-                  <p className="truncate text-[11px] text-slate-300 mt-0.5" title={getContextSubtitle(activePage, current?.name)}>
-                    {getContextSubtitle(activePage, current?.name)}
-                  </p>
-                </div>
+          {/* Premium Header */}
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1D4ED8] to-[#2563EB] text-white shadow-xs">
+                <Sparkles className="h-5 w-5" />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={startNewConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-                  title="Start New Conversation"
-                  aria-label="New Conversation"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className={cn(
-                    "rounded-lg p-2 transition-colors",
-                    showHistory ? "bg-white/20 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"
-                  )}
-                  title="Conversation History"
-                  aria-label="Conversation History"
-                >
-                  <History className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={handleCloseDrawer}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-                  title="Close (Esc)"
-                  aria-label="Close ReasonX Assistant"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 tracking-tight">ReasonX AI</h2>
+                  <span className="rounded-full bg-blue-50 border border-blue-200/80 px-2 py-0.5 text-[10px] font-semibold text-[#1D4ED8] uppercase tracking-wide">
+                    {getContextBadge(pageContext)}
+                  </span>
+                </div>
+                <p className="truncate text-2xs text-slate-500 mt-0.5">
+                  Project Scope: <strong className="text-slate-700 font-semibold">{activeProject?.name || "Global Workspace"}</strong>
+                </p>
               </div>
             </div>
 
-            {/* Slide-Over Conversation History Panel */}
-            {showHistory && (
-              <div className="absolute inset-x-0 bottom-0 top-16 z-30 flex flex-col bg-slate-50 p-4 animate-in slide-in-from-right duration-200">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
-                  <span className="text-xs font-bold text-slate-900">Conversation History</span>
-                  <button
-                    onClick={() => setShowHistory(false)}
-                    className="text-xs font-semibold text-[#1D4ED8] hover:underline"
-                  >
-                    Back to Chat
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto space-y-2">
-                  {convsQ.isLoading ? (
-                    <p className="text-xs text-slate-500 p-3">Loading history...</p>
-                  ) : !convsQ.data?.conversations.length ? (
-                    <p className="text-xs text-slate-500 p-4 text-center">No past conversations recorded for this project yet.</p>
-                  ) : (
-                    convsQ.data.conversations.map((c) => (
-                      <div
-                        key={c.id}
-                        onClick={() => {
-                          setActiveConvId(c.id);
-                          setShowHistory(false);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between rounded-xl border p-3 text-xs cursor-pointer transition-colors shadow-2xs",
-                          activeConvId === c.id
-                            ? "border-blue-400 bg-blue-50 font-semibold text-blue-900 ring-1 ring-blue-300"
-                            : "border-slate-200 bg-white hover:border-slate-300 text-slate-800"
-                        )}
-                      >
-                        <div className="min-w-0 flex-1 pr-2">
-                          <p className="truncate font-semibold text-slate-900">{c.title}</p>
-                          <p className="text-2xs text-slate-500 mt-1 truncate">{c.preview}</p>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteConvM.mutate(c.id);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50"
-                          title="Delete conversation"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+            {/* Header Window & Conversation Controls */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(!historyOpen)}
+                title="Conversation history"
+                className={cn(
+                  "rounded-lg p-2 transition-colors",
+                  historyOpen ? "bg-blue-50 text-[#1D4ED8]" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                )}
+              >
+                <History className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveConvId(null);
+                  setHistoryOpen(false);
+                }}
+                title="New conversation"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportMarkdown}
+                  title="Export conversation as Markdown"
+                  className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+              )}
+
+              {/* Mode Toggle: Drawer / Expanded / Fullscreen / Compact */}
+              <button
+                type="button"
+                onClick={() => setMode(mode === "drawer" ? "expanded" : mode === "expanded" ? "fullscreen" : "drawer")}
+                title={mode === "drawer" ? "Expand drawer" : mode === "expanded" ? "Fullscreen" : "Standard drawer"}
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+              >
+                {mode === "fullscreen" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode("compact")}
+                title="Minimize to compact bar"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors text-xs font-mono"
+              >
+                —
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                title="Close ReasonX (Alt+R)"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Model & Security Banner */}
+          <div className="flex items-center justify-between border-b border-slate-200/60 bg-white px-4 py-1.5 text-2xs text-slate-500">
+            <ReasonXModelIndicator
+              model="gemini-3.8-flash"
+              provider="gemini"
+              workflowStage={sendM.isPending ? "Autonomous Synthesis" : undefined}
+            />
+            <span className="text-[10px] text-slate-400 font-mono">Dual-Control Governed</span>
+          </div>
+
+          {/* Main Workspace Body */}
+          <div className="relative flex-1 overflow-hidden flex flex-col">
+            {/* Conversation History Popover Drawer */}
+            {historyOpen && (
+              <ReasonXConversationHistory
+                conversations={conversations}
+                activeId={activeConvId}
+                onSelect={(id) => setActiveConvId(id)}
+                onNew={() => {
+                  setActiveConvId(null);
+                  setHistoryOpen(false);
+                }}
+                onDelete={(id) => deleteM.mutate(id)}
+                onClose={() => setHistoryOpen(false)}
+              />
             )}
 
-            {/* Quick Action Prompt Chips Bar */}
-            <div className="border-b border-slate-200 bg-slate-50/90 px-3.5 py-2.5 shrink-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-semibold text-slate-600 mr-1">Quick:</span>
-                {quickPrompts.map((p, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(p.query)}
-                    disabled={sendM.isPending}
-                    className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-medium text-[#1D4ED8] shadow-2xs hover:bg-blue-50 hover:border-blue-300 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    <span>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Dedicated Conversation Thread Body */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/50 overscroll-y-contain">
-              {!messages.length && !sendM.isPending ? (
-                <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-4 space-y-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-[#1D4ED8] shadow-xs">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">ReasonX Quality Intelligence</h4>
-                    <p className="text-xs text-slate-600 mt-1 max-w-xs leading-relaxed">
-                      Ask me to verify policy rules, explain root causes for variances, inspect traceability matrices, or summarize readiness audit reports.
+            {/* Conversation Messages Container */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.length === 0 ? (
+                <div className="py-6 space-y-4">
+                  {/* Empty State Welcome Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs text-center space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#1D4ED8]">
+                      <Sparkles className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-bold text-sm text-slate-900 tracking-tight">
+                      Autonomous Quality Engineering Agent
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                      ReasonX can investigate test failures, formulate regression plans, identify coverage gaps, and safely draft or commit quality engineering records.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 w-full max-w-sm text-left pt-2">
-                    {quickPrompts.slice(0, 3).map((qp, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSend(qp.query)}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-700 hover:border-blue-300 hover:bg-blue-50/60 transition-colors shadow-2xs group"
-                      >
-                        <span className="truncate group-hover:text-[#1D4ED8] font-medium">{qp.query}</span>
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-[#1D4ED8]" />
-                      </button>
-                    ))}
+
+                  {/* Context-Aware Default Template Actions */}
+                  <div>
+                    <h4 className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+                      Recommended Quality Actions for {activeProject?.name || "Workspace"}
+                    </h4>
+                    <ReasonXTemplateGallery onSelect={(q) => handleSend(q)} />
                   </div>
                 </div>
               ) : (
@@ -458,58 +473,67 @@ export function ReasonXAssistant() {
                   >
                     <div
                       className={cn(
-                        "rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs",
+                        "rounded-2xl p-4 text-xs leading-relaxed shadow-xs transition-all",
                         m.role === "user"
                           ? "bg-[#1D4ED8] text-white rounded-br-xs max-w-[85%]"
-                          : "bg-white border border-slate-200 text-slate-800 rounded-bl-xs max-w-[92%]"
+                          : "bg-white border border-slate-200 text-slate-800 rounded-bl-xs w-full max-w-full"
                       )}
                     >
                       {m.role === "user" ? (
                         <p className="whitespace-pre-wrap">{m.content}</p>
                       ) : (
                         <div className="space-y-3">
-                          {/* Direct Answer (Bold High-Craft Highlight) */}
-                          {m.structured_payload?.direct_answer ? (
-                            <div className="rounded-lg bg-blue-50/70 border-l-4 border-[#1D4ED8] p-2.5">
-                              <p className="font-semibold text-slate-900 text-xs leading-snug">
-                                {m.structured_payload.direct_answer}
-                              </p>
+                          {/* 1. Direct Answer Highlight */}
+                          {m.structured_payload?.direct_answer && (
+                            <div className="rounded-xl bg-blue-50/80 border-l-4 border-[#1D4ED8] p-3 text-slate-900 font-semibold text-xs leading-snug">
+                              {m.structured_payload.direct_answer}
                             </div>
-                          ) : null}
+                          )}
 
-                          {/* Detailed Explanation */}
+                          {/* 2. Agent Task Timeline (Real Executed Plan & Tool Latencies) */}
+                          {m.structured_payload?.plan && (
+                            <ReasonXTaskTimeline
+                              plan={m.structured_payload.plan}
+                              steps={m.structured_payload.steps}
+                              taskType={m.structured_payload.task_type}
+                              currentStatus={m.structured_payload.status}
+                            />
+                          )}
+
+                          {/* 3. Detailed Explanation with Markdown/Tables */}
                           <div className="text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">
                             {m.structured_payload?.explanation || m.content}
                           </div>
 
-                          {/* Supporting Evidence Citation Pills */}
-                          {m.structured_payload?.supporting_evidence && m.structured_payload.supporting_evidence.length > 0 && (
-                            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-2.5 space-y-1.5">
-                              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider block">
-                                Supporting Evidence & Statutory Grounding
-                              </span>
-                              {m.structured_payload.supporting_evidence.map((ev, ei) => (
-                                <div key={ei} className="text-2xs text-slate-700 flex items-start gap-1.5 leading-snug">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] mt-1 shrink-0" />
-                                  <span>
-                                    <strong className="text-slate-900">{ev.source_document || "Source"}</strong>
-                                    {ev.page ? ` (p. ${ev.page})` : ""}
-                                    {ev.section ? ` · ${ev.section}` : ""}:
-                                    {ev.quote ? <em className="ml-1 text-slate-800">“{ev.quote}”</em> : ""}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                          {/* 4. Interactive Human-in-the-Loop Approval Card (Level 3/4) */}
+                          {m.structured_payload?.approval_request && (
+                            <ReasonXApprovalCard
+                              request={m.structured_payload.approval_request}
+                              onApprove={async (tId) => {
+                                await approveM.mutateAsync(tId);
+                              }}
+                              onReject={async (tId) => {
+                                await cancelM.mutateAsync({ taskId: tId });
+                              }}
+                            />
                           )}
 
-                          {/* Actionable Recommendations Checklist */}
+                          {/* 5. Supporting Evidence & Document Provenance Panel */}
+                          {m.structured_payload?.supporting_evidence && (
+                            <ReasonXEvidencePanel
+                              evidence={m.structured_payload.supporting_evidence}
+                              projectId={effectiveProjectId}
+                            />
+                          )}
+
+                          {/* 6. Actionable Recommendations Checklist */}
                           {m.structured_payload?.recommended_actions && m.structured_payload.recommended_actions.length > 0 && (
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5 space-y-1.5">
+                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 space-y-1.5">
                               <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider block">
                                 Recommended Operational Actions
                               </span>
                               {m.structured_payload.recommended_actions.map((act, ai) => (
-                                <div key={ai} className="text-2xs text-slate-800 flex items-start gap-1.5">
+                                <div key={ai} className="text-2xs text-slate-800 flex items-start gap-2">
                                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 mt-0.5" />
                                   <span>{act}</span>
                                 </div>
@@ -517,13 +541,14 @@ export function ReasonXAssistant() {
                             </div>
                           )}
 
-                          {/* Footer Confidence & Copy */}
+                          {/* Footer: Confidence Level & Copy Button */}
                           <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-2xs text-slate-500">
                             <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                               {m.structured_payload?.confidence_level || "HIGH"} CONFIDENCE
                             </span>
                             <button
+                              type="button"
                               onClick={() => handleCopy(m.id, m.content)}
                               className="flex items-center gap-1 text-slate-500 hover:text-slate-900 transition-colors font-medium"
                             >
@@ -547,28 +572,31 @@ export function ReasonXAssistant() {
                 ))
               )}
 
-              {/* Sending / Loading Indicator */}
+              {/* Live Task Processing Indicator */}
               {sendM.isPending && (
                 <div className="flex items-start gap-2.5 animate-in fade-in duration-200">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-[#1D4ED8]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-[#1D4ED8]">
                     <Sparkles className="h-4 w-4 animate-spin" />
                   </div>
-                  <div className="rounded-2xl rounded-bl-xs border border-slate-200 bg-white p-3 shadow-xs">
-                    <div className="flex items-center gap-2 text-xs text-slate-800 font-medium">
-                      <span>ReasonX is synthesizing live project records</span>
+                  <div className="rounded-2xl rounded-bl-xs border border-slate-200 bg-white p-3.5 shadow-xs space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-900 font-semibold">
+                      <span>ReasonX is executing autonomous workflow</span>
                       <span className="flex gap-1 items-center">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
                         <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse delay-100" />
                         <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse delay-200" />
                       </span>
                     </div>
+                    <p className="text-2xs text-slate-500">
+                      Querying authentic project records, calculating metrics, and synthesizing grounded findings...
+                    </p>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Fixed Bottom Message Composer */}
+            {/* Bottom Message Composer */}
             <div className="border-t border-slate-200 bg-white p-3 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <form
                 onSubmit={(e) => {
@@ -588,23 +616,38 @@ export function ReasonXAssistant() {
                       handleSend();
                     }
                   }}
-                  placeholder="Ask ReasonX anything... (Enter to send, Shift+Enter for newline)"
+                  placeholder="Ask ReasonX to investigate, plan, or execute... (Enter to send, Shift+Enter for newline)"
                   disabled={sendM.isPending}
                   className="flex-1 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed"
                 />
-                <button
-                  type="submit"
-                  disabled={!inputVal.trim() || sendM.isPending}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8] text-white shadow-xs transition-colors hover:bg-[#1E40AF] disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Send query"
-                  aria-label="Send query"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {sendM.isPending ? (
+                    <button
+                      type="button"
+                      onClick={() => qc.cancelQueries({ queryKey: ["reasonx_chat"] })}
+                      title="Stop generation"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors"
+                    >
+                      <StopCircle className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!inputVal.trim() || sendM.isPending}
+                      title="Send query"
+                      aria-label="Send query"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1D4ED8] text-white shadow-xs transition-colors hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                    >
+                      <Send className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </form>
+
               <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1">
-                <span>Grounded in actual project documentation</span>
-                <span>Shift+Enter for newline</span>
+                <span>Grounded in active project evidence</span>
+                <span>Alt+R to toggle</span>
               </div>
             </div>
           </div>

@@ -787,3 +787,26 @@ class ReasonXMessage(Base):
     created_at: Mapped[datetime] = _ts()
     conversation: Mapped[ReasonXConversation] = relationship(back_populates="messages")
 
+
+class ReasonXTask(Base):
+    __tablename__ = "reasonx_tasks"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    conversation_id: Mapped[int | None] = mapped_column(ForeignKey("reasonx_conversations.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    task_type: Mapped[str] = mapped_column(String(50), default="general_query")
+    title: Mapped[str] = mapped_column(String(255), default="ReasonX Task")
+    status: Mapped[str] = mapped_column(String(30), default="completed")  # queued | planning | running | awaiting_approval | completed | failed | cancelled
+    risk_level: Mapped[int] = mapped_column(Integer, default=1)  # 1: read-only, 2: low-risk, 3: persistent write, 4: high impact
+    plan: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    steps: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    pending_action: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    result_summary: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    evidence: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = _ts()
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    project: Mapped[Project] = relationship()
+    conversation: Mapped[ReasonXConversation | None] = relationship()
+
+

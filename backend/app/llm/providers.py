@@ -320,19 +320,22 @@ class GeminiProvider(LLMProvider):
         if self.fallback_model and self.fallback_model != self.primary_model:
             models_to_try.append(self.fallback_model)
 
+        # Cap individual attempt timeout to 8 seconds so failover to Groq/fallback is crisp
+        slot_timeout = min(timeout, 8.0)
+
         errors: list[str] = []
         for idx, model in enumerate(models_to_try):
             candidates = self.pool.get_candidate_slots(allow_rate_limited=(idx > 0))
             if not candidates:
                 continue
 
-            for slot in candidates:
+            for slot in candidates[:2]:  # Try at most 2 candidate slots per model
                 try:
-                    with slot.throttle(timeout=min(timeout, 15.0)):
+                    with slot.throttle(timeout=min(slot_timeout, 8.0)):
                         self.pool.mark_used(slot)
                         client = genai.Client(
                             api_key=slot.secret,
-                            http_options={"timeout": int(timeout * 1000)},
+                            http_options={"timeout": int(slot_timeout * 1000)},
                         )
                         resp = client.models.generate_content(
                             model=model,
@@ -370,7 +373,7 @@ class GeminiProvider(LLMProvider):
                     errors.append(f"Slot {slot.slot_id} error (model {model}): {msg[:200]}")
                     continue
 
-        raise ProviderError(f"Gemini failover failed: {' | '.join(errors)}", True, 429)
+        raise ProviderError(f"Gemini failover failed: {' | '.join(errors)}", False, 429)
 
 
 class OllamaProvider(LLMProvider):

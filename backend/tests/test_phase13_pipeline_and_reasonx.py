@@ -86,15 +86,36 @@ def test_reasonx_quick_prompts_and_chat_for_validation():
     qp_data = qp_resp.json()
     assert len(qp_data.get("prompts", [])) >= 3
 
+    # Authenticate session
+    session = requests.Session()
+    creds_path = Path(__file__).resolve().parents[2] / "var" / "initial_credentials.txt"
+    admin_email = "admin@northwind-hcm.example"
+    admin_pw = "test-admin-password-1"
+    if creds_path.exists():
+        for line in creds_path.read_text().splitlines():
+            if line.startswith("admin="):
+                parts = line.split("=", 1)[1].split(":", 1)
+                admin_email, admin_pw = parts[0], parts[1]
+                break
+
+    login_res = session.post(
+        f"{BASE_URL}/api/v1/auth/login",
+        json={"email": admin_email, "password": admin_pw},
+        timeout=10,
+    )
+    assert login_res.status_code == 200
+
     # Send a contextual query
-    chat_resp = requests.post(
+    csrf = session.cookies.get("tt_csrf") or ""
+    chat_resp = session.post(
         f"{BASE_URL}/api/v1/reasonx/chat",
+        headers={"x-csrf-token": csrf},
         json={
             "query": "Explain the root cause for DEF-EV_PAY-0001 and variance in overtime calculations.",
             "page": "validation",
             "project_id": 11,
         },
-        timeout=15,
+        timeout=45,
     )
     assert chat_resp.status_code == 200
     chat_data = chat_resp.json()

@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    // @ts-expect-error allowedHosts is valid in Vite 6
     allowedHosts: true,
     proxy: {
       "/api": {
