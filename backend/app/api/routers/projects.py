@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -1177,5 +1177,164 @@ def get_project_flaky_tests_endpoint(
     proj = get_project_checked(db, p, project_id)
     from app.services.execution_intelligence import get_project_flaky_tests
     return get_project_flaky_tests(db, proj.id)
+
+
+class TraceabilityAuditIn(BaseModel):
+    action: str
+    entity_type: str
+    entity_id: int | None = None
+    entity_key: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.get("/{project_id}/traceability/overview")
+def get_traceability_overview_endpoint(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_project_traceability_overview
+    return get_project_traceability_overview(db, proj.id)
+
+
+@router.get("/{project_id}/traceability/health")
+def get_traceability_health_endpoint(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_coverage_health_assessment
+    return get_coverage_health_assessment(db, proj.id)
+
+
+@router.get("/{project_id}/traceability/hierarchy")
+def get_traceability_hierarchy_endpoint(
+    project_id: int,
+    requirement_id: int | None = None,
+    page: int = 1,
+    page_size: int = 25,
+    search: str | None = None,
+    coverage_filter: str | None = None,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_traceability_hierarchy
+    return get_traceability_hierarchy(
+        db, proj.id,
+        requirement_id=requirement_id,
+        page=page,
+        page_size=page_size,
+        search=search,
+        coverage_filter=coverage_filter,
+    )
+
+
+@router.get("/{project_id}/traceability/gaps")
+def get_traceability_gaps_endpoint(
+    project_id: int,
+    severity: str | None = None,
+    category: str | None = None,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_coverage_gaps
+    return get_coverage_gaps(db, proj.id, severity=severity, category=category)
+
+
+@router.get("/{project_id}/traceability/matrix")
+def get_traceability_matrix_endpoint(
+    project_id: int,
+    matrix_type: str = "req_by_ac",
+    search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_advanced_coverage_matrix
+    return get_advanced_coverage_matrix(
+        db, proj.id,
+        matrix_type=matrix_type,
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/{project_id}/traceability/recommendations")
+def get_traceability_recommendations_endpoint(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_coverage_recommendations
+    return get_coverage_recommendations(db, proj.id)
+
+
+@router.get("/{project_id}/traceability/audit")
+def get_traceability_audit_endpoint(
+    project_id: int,
+    limit: int = 100,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import get_traceability_audit_ledger
+    return get_traceability_audit_ledger(db, proj.id, limit=limit)
+
+
+@router.post("/{project_id}/traceability/audit")
+def record_traceability_audit_endpoint(
+    project_id: int,
+    body: TraceabilityAuditIn,
+    p: Principal = Depends(require("test.write")),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    from app.services.traceability_intelligence import record_traceability_audit_event
+    entry = record_traceability_audit_event(
+        db,
+        project_id=proj.id,
+        action=body.action,
+        entity_type=body.entity_type,
+        entity_id=body.entity_id,
+        entity_key=body.entity_key,
+        actor_id=p.id,
+        details=body.details,
+    )
+    db.commit()
+    return {
+        "id": entry.id,
+        "action": entry.action,
+        "entity_type": entry.entity_type,
+        "entity_key": entry.entity_key,
+        "created_at": entry.created_at.isoformat(),
+    }
+
+
+@router.get("/{project_id}/traceability/export.{fmt}")
+def export_traceability_report_endpoint(
+    project_id: int,
+    fmt: str,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    proj = get_project_checked(db, p, project_id)
+    if fmt not in ("json", "csv", "md"):
+        raise BadRequest(f"Unsupported export format '{fmt}'. Use json, csv, or md.")
+    from app.services.traceability_intelligence import export_traceability_report
+    content, filename, media_type = export_traceability_report(db, proj.id, fmt=fmt)
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
 
 

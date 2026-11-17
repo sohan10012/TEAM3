@@ -622,3 +622,247 @@ export interface QualityReport {
   section_18_audit_log_and_human_approvals: Record<string, any>;
   section_19_recommendations: Record<string, any>;
 }
+
+// ---------------- Phase 5: Traceability Intelligence & Coverage Governance ----------------
+
+export interface TraceabilityOverviewData {
+  project_id: number;
+  project_key: string;
+  project_name: string;
+  data_freshness_timestamp: string;
+  total_requirements: number;
+  requirements_with_clauses: number;
+  requirements_without_clauses: number;
+  fully_covered_requirements: number;
+  partially_covered_requirements: number;
+  untested_requirements: number;
+  requirement_coverage_pct: number;
+  full_requirement_coverage_pct: number;
+  total_clauses: number;
+  clause_coverage_pct: number;
+  total_acceptance_criteria: number;
+  acs_with_linked_tests: number;
+  acs_without_linked_tests: number;
+  ac_coverage_pct: number;
+  total_test_cases: number;
+  tests_without_requirement_links: number;
+  tests_without_ac_links: number;
+  executed_test_cases: number;
+  tests_never_executed: number;
+  tests_with_passing_results: number;
+  tests_with_failing_results: number;
+  tests_with_blocked_results: number;
+  execution_coverage_pct: number;
+  passing_execution_pct: number;
+  open_defects: number;
+  total_defects: number;
+}
+
+export interface CoverageHealthData {
+  status_grade: "good" | "warning" | "critical";
+  composite_score: number;
+  headline: string;
+  summary: string;
+  methodology: {
+    formula: string;
+    components: Record<string, any>;
+  };
+  critical_uncovered_requirements: Array<{
+    id: number;
+    key: string;
+    title: string;
+    priority: string;
+  }>;
+  high_risk_uncovered_acs: Array<{
+    id: number;
+    key: string;
+    description: string;
+    confidence: number;
+  }>;
+  unresolved_linked_defects: Array<{
+    id: number;
+    key: string;
+    title: string;
+    severity: string;
+    status: string;
+  }>;
+  key_risks: string[];
+  recommended_priorities: string[];
+}
+
+export interface TraceabilityHierarchyClauseNode {
+  id: number;
+  key: string;
+  clause_key: string;
+  type: "clause";
+  title: string;
+  text: string;
+  position: number;
+  source_paths?: string | null;
+  line_start?: number | null;
+  line_end?: number | null;
+  ambiguity_flags: string[];
+  linked_ac_count: number;
+}
+
+export interface TraceabilityHierarchyTestNode {
+  id: number;
+  key: string;
+  type: "test_case";
+  title: string;
+  category: string;
+  priority: string;
+  review_status: string;
+  is_automated: boolean;
+  latest_result?: {
+    id: number;
+    status: string;
+    duration_ms: number;
+    created_at?: string | null;
+  } | null;
+  execution_count: number;
+  defects: Array<{
+    id: number;
+    key: string;
+    title: string;
+    severity: string;
+    status: string;
+  }>;
+}
+
+export interface TraceabilityHierarchyACNode {
+  id: number;
+  key: string;
+  type: "acceptance_criteria";
+  title: string;
+  description: string;
+  clause_keys: string[];
+  source_quote?: string;
+  confidence: number;
+  review_status: string;
+  test_count: number;
+  is_covered: boolean;
+  tests: TraceabilityHierarchyTestNode[];
+}
+
+export interface TraceabilityHierarchyReqNode {
+  id: number;
+  key: string;
+  type: "requirement";
+  title: string;
+  category: string;
+  priority: string;
+  status: string;
+  review_status: string;
+  coverage_status: "fully_covered" | "partially_covered" | "uncovered";
+  document_id?: number | null;
+  source_section?: string | null;
+  source_page?: string | null;
+  clauses_count: number;
+  acs_count: number;
+  tests_count: number;
+  defects_count: number;
+  clauses: TraceabilityHierarchyClauseNode[];
+  acceptance_criteria: TraceabilityHierarchyACNode[];
+  defects: Array<{
+    id: number;
+    key: string;
+    title: string;
+    severity: string;
+    status: string;
+  }>;
+}
+
+export interface CoverageGapItem {
+  gap_id: string;
+  category: string;
+  category_label: string;
+  entity_type: string;
+  entity_id: number;
+  entity_key: string;
+  business_context: string;
+  severity: "critical" | "high" | "medium" | "low";
+  evidence: string;
+  why_it_matters: string;
+  recommended_action: string;
+  navigation_link: string;
+}
+
+export interface CoverageGapsData {
+  project_id: number;
+  total_gaps: number;
+  critical_gaps: number;
+  high_gaps: number;
+  medium_gaps: number;
+  low_gaps: number;
+  gaps: CoverageGapItem[];
+}
+
+export interface ChangeImpactData {
+  requirement_id?: number;
+  requirement_key?: string;
+  requirement_title?: string;
+  priority?: string;
+  impact_level?: "critical" | "high" | "medium" | "low";
+  summary: string;
+  affected_clauses?: Array<{
+    id: number;
+    clause_key: string;
+    position: number;
+    text: string;
+  }>;
+  affected_acceptance_criteria?: Array<{
+    id: number;
+    key: string;
+    description: string;
+    status: string;
+  }>;
+  affected_test_cases?: Array<{
+    id: number;
+    key: string;
+    title: string;
+    category: string;
+    priority: string;
+    status: string;
+  }>;
+  affected_executions_count?: number;
+  affected_defects?: Array<{
+    id: number;
+    key: string;
+    title: string;
+    severity: string;
+    status: string;
+  }>;
+  revalidation_instructions: string[];
+}
+
+export interface CoverageRecommendation {
+  id: string;
+  type: string;
+  title: string;
+  target_entity_type: string;
+  target_entity_id: number;
+  target_entity_key: string;
+  priority: "critical" | "high" | "medium" | "low";
+  evidence: string;
+  reason: string;
+  proposed_action: string;
+  expected_coverage_improvement: string;
+  ai_assisted: boolean;
+  requires_human_approval: boolean;
+  action_endpoint?: string;
+}
+
+export interface TraceabilityAuditEntry {
+  id: number;
+  timestamp?: string | null;
+  actor_id?: number | null;
+  action: string;
+  entity_type: string;
+  entity_id?: number | null;
+  entity_key?: string | null;
+  project_id?: number | null;
+  source: string;
+  details: Record<string, any>;
+}
+

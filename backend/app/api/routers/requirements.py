@@ -236,13 +236,74 @@ def diff(req_id: int, from_version: int, to_version: int, p: Principal = Depends
 def impact(req_id: int, from_version: int | None = None, to_version: int | None = None,
            p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
     r = check_entity_project(db, p, db.get(Requirement, req_id), "Requirement")
+    from app.services.traceability_intelligence import get_requirement_change_impact_analysis
+    base_impact = get_requirement_change_impact_analysis(db, r.id)
     to_v = to_version or r.current_version
     from_v = from_version or max(1, to_v - 1)
     if from_v == to_v:
-        return {"requirement": r.key, "from_version": from_v, "to_version": to_v, "message": "Only one version exists",
-                "added": [], "removed": [], "modified": [], "impacted_tests": [], "impacted_suites": [],
-                "changed_clause_keys": [], "uncovered_new_clauses": []}
-    return impact_analysis(db, r, from_v, to_v, apply=False)
+        base_impact.update({
+            "requirement": r.key,
+            "from_version": from_v,
+            "to_version": to_v,
+            "message": "Current version footprint. Single version history recorded in database.",
+            "added": [],
+            "removed": [],
+            "modified": [],
+            "impacted_tests": [t["key"] for t in base_impact["affected_test_cases"]],
+            "impacted_suites": [],
+            "changed_clause_keys": [],
+            "uncovered_new_clauses": [],
+        })
+        return base_impact
+    diff = impact_analysis(db, r, from_v, to_v, apply=False)
+    diff.update(base_impact)
+    return diff
+
+
+@router.get("/acceptance-criteria/{ac_id}/impact-analysis")
+def ac_impact(
+    ac_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    ac = db.get(AcceptanceCriterion, ac_id)
+    if not ac:
+        raise NotFound("AcceptanceCriterion")
+    r = check_entity_project(db, p, db.get(Requirement, ac.requirement_id), "Requirement")
+    tests = list(
+        db.execute(select(TestCase).where(TestCase.project_id == r.project_id)).scalars().all()
+    )
+    linked_tests = [t for t in tests if ac.key in (t.ac_keys or [])]
+    test_ids = [t.id for t in linked_tests]
+    from app.db.models import ExecutionResult, Defect
+    results = list(
+        db.execute(select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1]))).scalars().all()
+    )
+    defects = list(
+        db.execute(select(Defect).where(Defect.test_case_id.in_(test_ids or [-1]))).scalars().all()
+    )
+    return {
+        "ac_id": ac.id,
+        "ac_key": ac.key,
+        "requirement_id": r.id,
+        "requirement_key": r.key,
+        "description": ac.description,
+        "clause_keys": ac.clause_keys,
+        "linked_tests": [
+            {"id": t.id, "key": t.key, "title": t.title, "category": t.test_category, "priority": t.priority, "status": t.status}
+            for t in linked_tests
+        ],
+        "historical_executions_count": len(results),
+        "linked_defects": [
+            {"id": d.id, "key": d.key, "title": d.title, "severity": d.severity, "status": d.status}
+            for d in defects
+        ],
+        "revalidation_instructions": [
+            f"If {ac.key} changes, revalidate the {len(linked_tests)} linked test specifications.",
+            "Mark linked test cases as 'needs_reapproval' for QA review.",
+            "Re-run execution suite to prevent regression leakage.",
+        ],
+    }
 
 
 @router.get("/requirements/{req_id}/clauses")

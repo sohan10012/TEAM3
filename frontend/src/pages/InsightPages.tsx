@@ -6,6 +6,7 @@ import { DataTable, FilterChips } from "@/components/DataTable";
 import { RunProgress } from "@/components/RunProgress";
 import { useToast } from "@/components/Toast";
 import { CoverageExplorerView } from "@/components/traceability/CoverageExplorerView";
+import { TraceabilityIntelligenceWorkspace } from "@/components/traceability/TraceabilityIntelligenceWorkspace";
 import { Badge, Button, Code, EmptyState, ErrorState, Input, Key, KV, LoadingBlock, Notice, PageHeader, Panel, Select, Stat } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useListState } from "@/hooks/useListState";
@@ -109,17 +110,23 @@ export function TraceabilityPage() {
 
       {q.error ? (
         <ErrorState error={q.error} onRetry={q.refetch} />
-      ) : !q.data ? (
-        <LoadingBlock rows={10} />
+      ) : sp.get("view") === "matrix" ? (
+        q.data ? (
+          <CoverageExplorerView
+            data={q.data}
+            projectId={pid}
+            onRefresh={() => {
+              q.refetch();
+              reqs.refetch();
+            }}
+          />
+        ) : (
+          <LoadingBlock rows={10} />
+        )
+      ) : pid ? (
+        <TraceabilityIntelligenceWorkspace projectId={pid} />
       ) : (
-        <CoverageExplorerView
-          data={q.data}
-          projectId={pid}
-          onRefresh={() => {
-            q.refetch();
-            reqs.refetch();
-          }}
-        />
+        <LoadingBlock rows={10} />
       )}
     </>
   );
