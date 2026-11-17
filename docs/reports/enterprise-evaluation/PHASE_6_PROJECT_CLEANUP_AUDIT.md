@@ -127,3 +127,51 @@ The TraceTest workspace cleanup is complete and officially audited:
 - Exactly 2 projects exist in the database: `ECHO` (ID: 5) and `EV_PAY` (ID: 11).
 - No orphaned records, loose documents, or synthetic fixtures remain.
 - The evaluation environment is fully prepared for Phase 7 real-world document ingestion and autonomous testing.
+
+---
+
+## 8. Post-Cleanup Project Switcher Reconciliation
+
+### 8.1 Discrepancy Statement
+During Phase 6 visual verification, an inventory discrepancy was observed between the Projects management page and the top navigation Project Switcher:
+- **Projects Page (`/projects`)**: Displayed the authoritative, cleaned inventory: `ECHO` (EchoBox Platform) and `EV_PAY` (Enterprise Payroll & Compliance).
+- **Project Switcher Dropdown**: Still showed legacy entries (`CUREON` and `DAYFORCE`) under certain navigation scenarios or stale browser storage states.
+
+### 8.2 Root Cause Analysis
+A root-cause investigation identified three contributing factors:
+1. **Application Lifespan Re-Seeding (`backend/app/db/init_db.py`)**:
+   During application startup, `initialise()` unconditionally invoked demo project seeds (`CUREON`, `DAYFORCE`, `WFMQ`) if certain table conditions were met, occasionally reintroducing deleted project keys into memory or ephemeral test runs.
+2. **Permissive Fallback in Analytics Scoping (`backend/app/api/routers/misc.py`)**:
+   When an unknown or deleted `project_id` was queried against `/analytics/dashboard`, the route caught `AppError` and fell back to `pids = scoped_project_ids(db, p, None)`. This silently broadened the query scope to all projects rather than returning an explicit HTTP 404 Not Found, causing the frontend to mask deleted project states.
+3. **Dual Cache & Stale LocalStorage (`frontend/src/hooks/useProjects.tsx`)**:
+   The Project Switcher previously consumed a separate query key with a long `staleTime` (30s) and failed to actively purge deleted `projectId` values from `localStorage`. If a user had previously selected a deleted project, `localStorage` retained the stale ID indefinitely.
+
+### 8.3 Technical Remediation
+1. **Backend Seed Elimination (`backend/app/db/init_db.py`)**:
+   Removed unconditional re-seeding of legacy projects (`CUREON`, `DAYFORCE`, `WFMQ`). Database initialization now strictly preserves persisted SQLite state without mutating project inventory.
+2. **Strict Project Boundary Enforcement (`backend/app/api/routers/misc.py`)**:
+   Eliminated permissive `try...except AppError` fallback in analytics queries. If an invalid or deleted `project_id` is supplied, the API raises an explicit HTTP 404, strictly preventing unauthorized data leakage across workspaces.
+3. **Single Authoritative Inventory Contract (`frontend/src/hooks/useProjects.tsx`)**:
+   - Unified the project query key to `["projects", { page_size: 200, sort: "key", order: "asc" }]`.
+   - Reduced `staleTime` to 5 seconds and enabled `refetchOnWindowFocus`.
+   - Added active synchronization: if the cached `projectId` does not exist in the authorized projects list, `localStorage.removeItem("tracetest_active_project_id")` is immediately invoked and `projectId` is reset to `null` (All Project Workspaces).
+   - Project Switcher and Projects Page now consume the identical React Query cache.
+
+### 8.4 Verification Evidence
+- **Automated Backend Test Suite**:
+  `backend/tests/test_phase6_project_switcher_isolation.py` validates:
+  1. `test_authoritative_project_inventory_strictly_isolated`: Exactly `ECHO` and `EV_PAY` returned by `/projects`.
+  2. `test_analytics_dashboard_rejects_deleted_projects`: HTTP 404 returned for deleted project IDs; no scope broadening.
+  3. `test_init_db_does_not_reseed_legacy_projects`: Calling `initialise()` does not resurrect `CUREON`, `DAYFORCE`, or `WFMQ`.
+- **Automated Frontend Test Suite**:
+  `frontend/tests/pages.test.tsx` (9/9 passed) and full Vitest suite (23/23 passed) verify switcher alignment and clean workspace booting.
+- **Visual Evidence Directory**:
+  All reconciliation screenshots are persisted in `docs/screenshots/phase-7-amazon-aws/workspace-isolation/`:
+  - `01_projects_page_authoritative_inventory.png`: Only ECHO and EV_PAY rendered.
+  - `02_project_switcher_open_aligned.png`: Popover open with All Workspaces, ECHO, and EV_PAY.
+  - `03_project_switcher_filter_match.png`: Quick filter matches "EV" $\to$ EV_PAY.
+  - `04_project_switcher_filter_no_legacy.png`: Quick filter for "CUREON" returns "No projects match".
+  - `05_project_selected_echobox.png`: ECHO selected with isolated scope.
+  - `06_project_selected_payroll.png`: EV_PAY selected with isolated scope.
+
+

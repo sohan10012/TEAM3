@@ -1,0 +1,50 @@
+{
+  "evaluation": {
+    "target_organization": "Amazon Web Services (AWS)",
+    "evaluation_phase": "Phase 7 — Independent Real-World Document Evaluation",
+    "evaluation_domain": "Cloud Security, Architecture, Identity & Access Management, Amazon S3",
+    "registered_date": "2026-11-17T21:40:00Z",
+    "total_documents": 3
+  },
+  "documents": [
+    {
+      "id": "DOC-AWS-01",
+      "title": "AWS Well-Architected Framework — Security Pillar",
+      "filename": "wellarchitected-security-pillar.pdf",
+      "relative_path": "docs/evaluation/phase-7-amazon-aws/source-documents/wellarchitected-security-pillar.pdf",
+      "url": "https://docs.aws.amazon.com/pdfs/wellarchitected/latest/security-pillar/wellarchitected-security-pillar.pdf",
+      "format": "application/pdf",
+      "file_size_bytes": 2854291,
+      "page_count": 240,
+      "sha256": "7e2a463a43b6f3bfb94776512845203254e220b88fbe36d88158c8c7a169a382",
+      "license": "Amazon Web Services, Inc. or its affiliates. All rights reserved.",
+      "description": "Comprehensive architectural guidance for securing workloads on AWS, covering Identity & Access Management (SEC01-SEC03), Detection & Monitoring (SEC04-SEC05), Infrastructure Protection (SEC06), Data Protection (SEC07-SEC09), and Incident Response (SEC10-SEC11)."
+    },
+    {
+      "id": "DOC-AWS-02",
+      "title": "Security Best Practices for Amazon S3",
+      "filename": "s3-security-best-practices.html",
+      "relative_path": "docs/evaluation/phase-7-amazon-aws/source-documents/s3-security-best-practices.html",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html",
+      "format": "text/html",
+      "file_size_bytes": 73549,
+      "section_count": 18,
+      "sha256": "3b6def5e219dc2b38041e775d2910853736935b23cb0dc4544e6b8557b0b68a8",
+      "license": "Amazon Web Services, Inc. or its affiliates. All rights reserved.",
+      "description": "Amazon S3 prescriptive security best practices covering bucket policy hardening, Block Public Access (BPA), object encryption (SSE-S3, SSE-KMS), versioning, Object Lock, Macie classification, and least-privilege IAM policies."
+    },
+    {
+      "id": "DOC-AWS-03",
+      "title": "Security Hub CSPM Controls for Amazon S3",
+      "filename": "securityhub-s3-controls.html",
+      "relative_path": "docs/evaluation/phase-7-amazon-aws/source-documents/securityhub-s3-controls.html",
+      "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html",
+      "format": "text/html",
+      "file_size_bytes": 75915,
+      "control_count": 42,
+      "sha256": "991e147461b865628514666c1ee66a7f6815dea836b9a5563551d7a36118523f",
+      "license": "Amazon Web Services, Inc. or its affiliates. All rights reserved.",
+      "description": "42 formal AWS Security Hub Cloud Security Posture Management (CSPM) controls for Amazon S3, including S3.1 (Block Public Access), S3.5 (Require TLS), S3.8 (Default Server-Side Encryption), S3.13 (Lifecycle Configuration), and S3.14 (Cross-Region Replication)."
+    }
+  ]
+}

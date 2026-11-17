@@ -125,9 +125,9 @@ All system settings are controlled through environment variables or the `.env` f
 | `TRACETEST_QA_EMAIL` | Identity email for senior QA automation specialist persona. | Optional | `qa.engineer@dayforce-qa.local` | `backend/app/core/config.py` | No |
 | `TRACETEST_REVIEWER_EMAIL` | Identity email for the independent QA Lead / Reviewer persona. | Optional | `reviewer@dayforce-qa.local` | `backend/app/core/config.py` | No |
 | `TRACETEST_LLM_MODE` | AI provider operational mode (`live` for real LLM APIs, `mock` for test fixtures). | Optional | `live` | `backend/app/core/config.py` | No |
-| `TRACETEST_PRIMARY_PROVIDER` | Primary LLM provider for generation (`groq`, `gemini`, `ollama`, `mock`). | Optional | `groq` | `backend/app/core/config.py` | No |
-| `TRACETEST_JUDGE_PROVIDER` | LLM-as-a-Judge provider for independent test evaluation (`gemini`, `groq`, `ollama`, `mock`). | Optional | `gemini` | `backend/app/core/config.py` | No |
-| `TRACETEST_JUDGE_MODEL` | Model identifier used by the LLM Judge. | Optional | `gemini-2.5-flash` | `backend/app/core/config.py` | No |
+| `TRACETEST_PRIMARY_PROVIDER` | Primary LLM provider for generation (`gemini`, `groq`, `ollama`, `mock`). | Optional | `gemini` | `backend/app/core/config.py` | No |
+| `TRACETEST_JUDGE_PROVIDER` | LLM-as-a-Judge provider for independent test evaluation (`groq`, `gemini`, `ollama`, `mock`). | Optional | `groq` | `backend/app/core/config.py` | No |
+| `TRACETEST_JUDGE_MODEL` | Model identifier used by the LLM Judge. | Optional | `openai/gpt-oss-120b` | `backend/app/core/config.py` | No |
 | `GROQ_API_KEY` | Primary API credential for Groq provider (Slot 1). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GROQ_API_KEY2` | Secondary API credential for Groq provider (Slot 2). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GROQ_API_KEY3` | Tertiary API credential for Groq provider (Slot 3). | Optional | None | `backend/app/core/config.py` | **Yes** |
@@ -138,8 +138,8 @@ All system settings are controlled through environment variables or the `.env` f
 | `GEMINI_API_KEY` | Primary API credential for Google Gemini provider (Slot 1). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GEMINI_API_KEY2` | Secondary API credential for Google Gemini provider (Slot 2). | Optional | None | `backend/app/core/config.py` | **Yes** |
 | `GEMINI_API_KEY3` | Tertiary API credential for Google Gemini provider (Slot 3). | Optional | None | `backend/app/core/config.py` | **Yes** |
-| `GEMINI_MODEL` | Primary LLM model for Google Gemini completions. | Optional | `gemini-2.5-flash` | `backend/app/core/config.py` | No |
-| `GEMINI_FALLBACK_MODEL` | Secondary fallback model for Google Gemini when primary rate limits trigger. | Optional | `gemini-2.5-flash-lite` | `backend/app/core/config.py` | No |
+| `GEMINI_MODEL` | Primary LLM model for Google Gemini completions. | Optional | `gemini-3.8-flash` | `backend/app/core/config.py` | No |
+| `GEMINI_FALLBACK_MODEL` | Secondary fallback model for Google Gemini when primary rate limits trigger. | Optional | `gemini-3.1-pro-preview` | `backend/app/core/config.py` | No |
 | `OLLAMA_BASE_URL` | Base endpoint URL for local Ollama instances. | Optional | None | `backend/app/core/config.py` | No |
 | `OLLAMA_MODEL` | Model identifier for local Ollama execution. | Optional | `llama3.1` | `backend/app/core/config.py` | No |
 | `TRACETEST_LLM_TIMEOUT` | Timeout limit in seconds for external AI HTTP completions. | Optional | `60.0` | `backend/app/core/config.py` | No |

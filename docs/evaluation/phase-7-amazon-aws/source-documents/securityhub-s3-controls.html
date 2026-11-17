@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Security Hub CSPM controls for Amazon S3 - AWS Security Hub</title><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="assets_root" content="/assets" /><meta name="target_state" content="s3-controls" /><meta name="default_state" content="s3-controls" /><link rel="icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="shortcut icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="canonical" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html" /><link rel="alternate" type="text/markdown" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.md" title="Markdown version" /><meta name="description" content="See a list of AWS Security Hub CSPM controls for the Amazon Simple Storage Service (Amazon S3) service and resources." /><meta name="deployment_region" content="IAD" /><meta name="product" content="AWS Security Hub" /><meta name="guide" content="User Guide" /><meta name="abstract" content="Learn about AWS Security Hub." /><meta name="guide-locale" content="en_us" /><meta name="tocs" content="toc-contents.json" /><link rel="canonical" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/securityhub/latest/userguide/s3-controls.html" hreflang="id-id" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/securityhub/latest/userguide/s3-controls.html" hreflang="id" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/securityhub/latest/userguide/s3-controls.html" hreflang="de-de" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/securityhub/latest/userguide/s3-controls.html" hreflang="de" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html" hreflang="en-us" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html" hreflang="en" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/securityhub/latest/userguide/s3-controls.html" hreflang="es-es" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/securityhub/latest/userguide/s3-controls.html" hreflang="es" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/securityhub/latest/userguide/s3-controls.html" hreflang="fr-fr" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/securityhub/latest/userguide/s3-controls.html" hreflang="fr" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/securityhub/latest/userguide/s3-controls.html" hreflang="it-it" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/securityhub/latest/userguide/s3-controls.html" hreflang="it" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/securityhub/latest/userguide/s3-controls.html" hreflang="ja-jp" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/securityhub/latest/userguide/s3-controls.html" hreflang="ja" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/securityhub/latest/userguide/s3-controls.html" hreflang="ko-kr" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/securityhub/latest/userguide/s3-controls.html" hreflang="ko" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/securityhub/latest/userguide/s3-controls.html" hreflang="pt-br" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/securityhub/latest/userguide/s3-controls.html" hreflang="pt" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_cn/securityhub/latest/userguide/s3-controls.html" hreflang="zh-cn" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_tw/securityhub/latest/userguide/s3-controls.html" hreflang="zh-tw" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/s3-controls.html" hreflang="x-default" /><meta name="feedback-item" content="Security Hub" /><meta name="this_doc_product" content="AWS Security Hub" /><meta name="this_doc_guide" content="&#xA;            User Guide&#xA;        " /><head xmlns="http://www.w3.org/1999/xhtml"> <script defer="" src="/assets/r/awsdocs-doc-page.2.0.0.js"></script><link href="/assets/r/awsdocs-doc-page.2.0.0.css" rel="stylesheet"/></head>
+<script defer="" id="awsc-panorama-bundle" type="text/javascript" src="https://prod.pa.cdn.uis.awsstatic.com/panorama-nav-init.js" data-config="{'appEntity':'aws-documentation','region':'us-east-1','service':'securityhub'}"></script><meta id="panorama-serviceSubSection" value="&#xA;            User Guide&#xA;        " /><meta id="panorama-serviceConsolePage" value="Security Hub CSPM controls for Amazon S3" /></head><body class="awsdocs awsui"><div class="awsdocs-container"><p><a href="s3-controls.md">View a markdown version of this page</a></p><awsdocs-header></awsdocs-header><awsui-app-layout id="app-layout" class="awsui-util-no-gutters" ng-controller="ContentController as $ctrl" header-selector="awsdocs-header" navigation-hide="false" navigation-width="$ctrl.navWidth" navigation-open="$ctrl.navOpen" navigation-change="$ctrl.onNavChange($event)" tools-hide="$ctrl.hideTools" tools-width="$ctrl.toolsWidth" tools-open="$ctrl.toolsOpen" tools-change="$ctrl.onToolsChange($event)"><div id="guide-toc" dom-region="navigation"><awsdocs-toc></awsdocs-toc></div><div id="main-column" dom-region="content" tabindex="-1"><awsdocs-view class="awsdocs-view"><div id="awsdocs-content"><head><title>Security Hub CSPM controls for Amazon S3 - AWS Security Hub</title><meta name="pdf" content="/pdfs/securityhub/latest/userguide/securityhub.pdf#s3-controls" /><meta name="rss" content="aws-security-hub-doc-updates.rss" /><meta name="forums" content="https://repost.aws/tags/TAFZPV4oyuS6-TWxLQfz5qSQ" /><meta name="feedback" content="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security%20Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/s3-controls.html" /><meta name="feedback-yes" content="feedbackyes.html?topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/s3-controls.html" /><meta name="feedback-no" content="feedbackno.html?topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/s3-controls.html" /><meta name="keywords" content="AWS Security Hub,AWS Security Hub CSPM,Security Hub CSPM,AWS security,cloud security,cloud compliance,cloud security posture management,cloud SIEM,AWS security finding format,ASFF,Security Hub CSPM overview,how Security Hub CSPM works,Security Hub CSPM controls,security controls,cspm controls,Security Hub CSPM controls reference,Security Hub CSPM controls list,Security Hub CSPM controls glossary,AWS security controls list,Security Hub CSPM controls for Amazon S3,Amazon S3 security controls,Amazon S3 controls,Amazon S3 security checks" /><script type="application/ld+json">
+{
+    "@context" : "https://schema.org",
+    "@type" : "BreadcrumbList",
+    "itemListElement" : [
+      {
+        "@type" : "ListItem",
+        "position" : 1,
+        "name" : "AWS",
+        "item" : "https://aws.amazon.com"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 2,
+        "name" : "AWS Security Hub",
+        "item" : "https://docs.aws.amazon.com/securityhub/index.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 3,
+        "name" : "
+            User Guide
+        ",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 4,
+        "name" : "Introduction to AWS Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 5,
+        "name" : "Understanding security controls in Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/controls-view-manage.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 6,
+        "name" : "Control reference for Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 7,
+        "name" : "Security Hub CSPM controls for Amazon S3",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html"
+      }
+    ]
+}
+</script></head><body><div id="main"><div style="display: none"><a href="/pdfs/securityhub/latest/userguide/securityhub.pdf#s3-controls" target="_blank" rel="noopener noreferrer" title="Open PDF"></a></div><div id="breadcrumbs" class="breadcrumb"><a href="/index.html">Documentation</a><a href="/securityhub/index.html">AWS Security Hub</a><a href="what-are-securityhub-services.html">
+            User Guide
+        </a></div><div id="page-toc-src"><a href="#s3-1">[S3.1] S3 general purpose buckets should have block public access settings enabled</a><a href="#s3-2">[S3.2] S3 general purpose buckets should block public read access</a><a href="#s3-3">[S3.3] S3 general purpose buckets should block public write access</a><a href="#s3-5">[S3.5] S3 general purpose buckets should require requests to use TLS</a><a href="#s3-6">[S3.6] S3 general purpose bucket policies should restrict access to other AWS accounts</a><a href="#s3-7">[S3.7] S3 general purpose buckets should use cross-Region replication</a><a href="#s3-8">[S3.8] S3 general purpose buckets should block public access</a><a href="#s3-9">[S3.9] S3 general purpose buckets should have server access logging enabled</a><a href="#s3-10">[S3.10] S3 general purpose buckets with versioning enabled should have Lifecycle configurations</a><a href="#s3-11">[S3.11] S3 general purpose buckets should have event notifications enabled</a><a href="#s3-12">[S3.12] ACLs should not be used to manage user access to S3 general purpose buckets</a><a href="#s3-13">[S3.13] S3 general purpose buckets should have Lifecycle configurations</a><a href="#s3-14">[S3.14] S3 general purpose buckets should have versioning enabled</a><a href="#s3-15">[S3.15] S3 general purpose buckets should have Object Lock enabled</a><a href="#s3-17">[S3.17] S3 general purpose buckets should be encrypted at rest with AWS KMS keys</a><a href="#s3-19">[S3.19] S3 access points should have block public access settings enabled</a><a href="#s3-20">[S3.20] S3 general purpose buckets should have MFA delete enabled</a><a href="#s3-22">[S3.22] S3 general purpose buckets should log object-level write events</a><a href="#s3-23">[S3.23] S3 general purpose buckets should log object-level read events</a><a href="#s3-24">[S3.24] S3 Multi-Region Access Points should have block public access settings enabled</a><a href="#s3-25">[S3.25] S3 directory buckets should have lifecycle configurations</a></div><div id="main-content" class="awsui-util-container"><div id="main-col-body"><awsdocs-language-banner data-service="$ctrl.pageService"></awsdocs-language-banner><h1 class="topictitle" id="s3-controls">Security Hub CSPM controls for Amazon S3</h1><div class="awsdocs-page-header-container"><awsdocs-page-header></awsdocs-page-header><awsdocs-filter-selector id="awsdocs-filter-selector"></awsdocs-filter-selector></div><p>These AWS Security Hub CSPM controls evaluate the Amazon Simple Storage Service (Amazon S3) service and resources. The controls
+        might not be available in all AWS Regions. For more information, see <a href="./securityhub-regions.html#securityhub-regions-control-support">Availability of controls by Region</a>.</p>
+  
+    <h2 id="s3-1">[S3.1] S3 general purpose buckets should have block public access settings enabled</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/2.1.4, CIS AWS Foundations Benchmark v3.0.0/2.1.4, CIS AWS Foundations Benchmark v1.4.0/2.1.5, NIST.800-53.r5 AC-21, NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-4, NIST.800-53.r5 AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7, NIST.800-53.r5 SC-7(11), NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20), NIST.800-53.r5 SC-7(21), NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-53.r5 SC-7(9), PCI DSS v3.2.1/1.2.1, PCI DSS v3.2.1/1.3.1, PCI DSS v3.2.1/1.3.2, PCI DSS v3.2.1/1.3.4, PCI DSS v3.2.1/1.3.6, PCI DSS v4.0.1/1.4.4,
+        CRI Profile v2.2/PR.AA-03.02, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.IR-01.01</p>
+   <p><b>Category:</b> Protect &gt; Secure network configuration</p>
+   <p><b>Severity:</b> Medium</p>
+   <p><b>Resource type:</b> <code class="code">AWS::::Account</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-account-level-public-access-blocks-periodic.html">s3-account-level-public-access-blocks-periodic</a>
+   </p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b>
+   </p>
+   <div class="itemizedlist">
+     
+     
+     
+     
+   <ul class="itemizedlist"><li class="listitem">
+     <p><code class="code">ignorePublicAcls</code>: <code class="code">true</code> (not customizable)</p>
+    </li><li class="listitem">
+     <p><code class="code">blockPublicPolicy</code>: <code class="code">true</code> (not customizable)</p>
+    </li><li class="listitem">
+     <p><code class="code">blockPublicAcls</code>: <code class="code">true</code> (not customizable)</p>
+    </li><li class="listitem">
+     <p><code class="code">restrictPublicBuckets</code>: <code class="code">true</code> (not customizable)</p>
+    </li></ul></div>
+   <p>This control checks whether the preceding Amazon S3 block public access settings are configured
+    at the account level for an S3 general purpose bucket. The control fails if one or more of the 
+    block public access settings are set to <code class="code">false</code>.</p>
+   <p>The control fails if any of the settings are set to <code class="code">false</code>, or if any of the
+    settings are not configured.</p>
+   <p>Amazon S3 public access block is designed to provide controls across an entire AWS account or
+    at the individual S3 bucket level to ensure that objects never have public access. Public access
+    is granted to buckets and objects through access control lists (ACLs), bucket policies, or
+    both.</p>
+   <p>Unless you intend to have your S3 buckets be publicly accessible, you should configure the
+    account level Amazon S3 Block Public Access feature.</p>
+   <p>To learn more, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html">Using Amazon S3 Block Public
+     Access</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+   
+    
+    <h3 id="s3-1-remediation">Remediation</h3>
+    <p>To enable Amazon S3 Block Public Access for your AWS account, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-account.html">Configuring block public 
+access settings for your account</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+    
+  
+ 
+        <h2 id="s3-2">[S3.2] S3 general purpose buckets should block public read access</h2>
+        <p><b>Related requirements:</b> PCI DSS v3.2.1/1.2.1, PCI DSS
+            v3.2.1/1.3.1, PCI DSS v3.2.1/1.3.2, PCI DSS v3.2.1/1.3.6, PCI DSS v3.2.1/7.2.1,
+            NIST.800-53.r5 AC-21, NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-4,
+            NIST.800-53.r5 AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7, NIST.800-53.r5
+            SC-7(11), NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20), NIST.800-53.r5 SC-7(21),
+            NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-53.r5 SC-7(9),
+            CRI Profile v2.2/PR.AA-03.02, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.IR-01.01</p>
+        <p><b>Category:</b> Protect &gt; Secure network
+            configuration</p>
+        <p><b>Severity:</b> Critical</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::Bucket</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-public-read-prohibited">s3-bucket-public-read-prohibited</a></p>
+        <p><b>Schedule type:</b> Periodic and change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an Amazon S3 general purpose bucket permits public read access.
+            It evaluates the block public access settings, the bucket policy, and the bucket access
+            control list (ACL). The control fails if the bucket permits public read access.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><div class="awsdocs-block-title">Note</div></div><div class="awsdocs-note-text"><p>If an S3 bucket has a bucket policy, this control doesn't evaluate policy
+                conditions that use wildcard characters or variables. To produce a
+                    <code class="code">PASSED</code> finding, conditions in the bucket policy must only use fixed
+                values, which are values that don't contain wildcard characters or policy variables.
+                For information about policy variables, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_variables.html">Variables and
+                    tags</a> in the <em>AWS Identity and Access Management User
+                Guide</em>.</p></div></div>
+        <p>Some use cases may require that everyone on the internet be able to read from your S3
+            bucket. However, those situations are rare. To ensure the integrity and security of your
+            data, your S3 bucket should not be publicly readable.</p>
+         
+            <h3 id="s3-2-remediation">Remediation</h3>
+            <p>To block public read access on your Amazon S3 buckets, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html">Configuring block public access settings for your S3 buckets</a> in the
+                    <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+        <h2 id="s3-3">[S3.3] S3 general purpose buckets should block public write access</h2>
+        <p><b>Related requirements:</b> PCI DSS v3.2.1/1.2.1, PCI DSS
+            v3.2.1/1.3.1, PCI DSS v3.2.1/1.3.2, PCI DSS v3.2.1/1.3.4, PCI DSS v3.2.1/1.3.6, PCI DSS
+            v3.2.1/7.2.1, NIST.800-53.r5 AC-21, NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7),
+            NIST.800-53.r5 AC-4, NIST.800-53.r5 AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7,
+            NIST.800-53.r5 SC-7(11), NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20),
+            NIST.800-53.r5 SC-7(21), NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-53.r5
+            SC-7(9), CRI Profile v2.2/PR.AA-03.02, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.IR-01.01</p>
+        <p><b>Category:</b> Protect &gt; Secure network
+            configuration</p>
+        <p><b>Severity:</b> Critical</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::Bucket</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-public-write-prohibited.html">s3-bucket-public-write-prohibited</a>
+        </p>
+        <p><b>Schedule type:</b> Periodic and change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an Amazon S3 general purpose bucket permits public write
+            access. It evaluates the block public access settings, the bucket policy, and the bucket
+            access control list (ACL). The control fails if the bucket permits public write
+            access.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><div class="awsdocs-block-title">Note</div></div><div class="awsdocs-note-text"><p>If an S3 bucket has a bucket policy, this control doesn't evaluate policy
+                conditions that use wildcard characters or variables. To produce a
+                    <code class="code">PASSED</code> finding, conditions in the bucket policy must only use fixed
+                values, which are values that don't contain wildcard characters or policy variables.
+                For information about policy variables, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_variables.html">Variables and
+                    tags</a> in the <em>AWS Identity and Access Management User
+                Guide</em>.</p></div></div>
+        <p>Some use cases require that everyone on the internet be able to write to your S3
+            bucket. However, those situations are rare. To ensure the integrity and security of your
+            data, your S3 bucket should not be publicly writable.</p>
+         
+            <h3 id="s3-3-remediation">Remediation</h3>
+            <p>To block public write access on your Amazon S3 buckets, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html">Configuring block public access settings for your S3 buckets</a> in the
+                    <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+  
+   <h2 id="s3-5">[S3.5] S3 general purpose buckets should require requests to use TLS</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/2.1.1, CIS AWS Foundations Benchmark v3.0.0/2.1.1, CIS AWS Foundations Benchmark v1.4.0/2.1.2,
+            NIST.800-53.r5 AC-17(2), NIST.800-53.r5 AC-4, NIST.800-53.r5 IA-5(1), NIST.800-53.r5
+            SC-12(3), NIST.800-53.r5 SC-13, NIST.800-53.r5 SC-23, NIST.800-53.r5 SC-23(3),
+            NIST.800-53.r5 SC-7(4), NIST.800-53.r5 SC-8, NIST.800-53.r5 SC-8(1), NIST.800-53.r5
+            SC-8(2), NIST.800-53.r5 SI-7(6), NIST.800-171.r2 3.13.8, NIST.800-171.r2 3.13.15, PCI
+            DSS v3.2.1/4.1, PCI DSS v4.0.1/4.2.1, CRI Profile v2.2/PR.DS-02.01, CRI Profile v2.2/PR.PS-01.06</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Medium</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-ssl-requests-only.html">s3-bucket-ssl-requests-only</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether an Amazon S3 general purpose bucket has a policy that requires requests to use TLS.
+    The control fails if the bucket policy doesn't require requests to use TLS.</p>
+   <p>S3 buckets should have policies that require all requests (<code class="code">Action: S3:*</code>) to
+    only accept transmission of data over HTTPS in the S3 resource policy, indicated by the
+    condition key <code class="code">aws:SecureTransport</code>.</p>
+  
+    
+    <h3 id="s3-5-remediation">Remediation</h3>
+       <p>To update an Amazon S3 bucket policy to deny nonsecure transport, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/add-bucket-policy.html">Adding 
+        a bucket policy by using the Amazon S3 console</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+      <p>Add a policy statement similar to the one in the following policy. Replace
+        <code class="code">amzn-s3-demo-bucket</code> with the name of the bucket you're modifying.</p>
+      <awsdocs-tabs><dl style="display: none">
+    <dt>JSON</dt><dd tab-id="json">
+            <div class="variablelist">
+     
+<dl>
+        <dt><b><span class="term"></span></b></dt>
+        <dd>
+            
+                
+                <pre class="programlisting" data-example-id="253011c619d5688ab23fd0d59e61387f121752e506c4a2c45f035b2b5528b490"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (json)--><code class="json "><code class="userinput"><span>{</span>
+    "Id": "ExamplePolicy",
+    "Version":"2012-10-17",
+    "Statement": [
+        <span>{</span>
+            "Sid": "AllowSSLRequestsOnly",
+            "Action": "s3:*",
+            "Effect": "Deny",
+            "Resource": [
+                "arn:aws:s3:::amzn-s3-demo-bucket",
+                "arn:aws:s3:::amzn-s3-demo-bucket/*"
+            ],
+            "Condition": <span>{</span>
+                "Bool": <span>{</span>
+                     "aws:SecureTransport": "false"
+                }
+            },
+           "Principal": "*"
+        }
+    ]
+}</code>
+</code></pre>
+            
+        </dd>
+    </dl></div>
+        </dd>
+</dl></awsdocs-tabs>
+    <p>For more information, see <a href="https://aws.amazon.com/premiumsupport/knowledge-center/s3-bucket-policy-for-config-rule/" rel="noopener noreferrer" target="_blank"><span>What S3 bucket policy
+      should I use to comply with the AWS Config rule s3-bucket-ssl-requests-only?</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a> in the <em>AWS Official Knowledge Center</em>.</p>
+    
+  
+ 
+  
+   <h2 id="s3-6">[S3.6] S3 general purpose bucket policies should restrict access to other AWS accounts</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 CA-9(1), NIST.800-53.r5
+            CM-2, NIST.800-171.r2 3.13.4, CRI Profile v2.2/PR.AA-05.01</p>
+   <p><b>Category:</b> Protect &gt; Secure access management &gt; Sensitive
+    API operations actions restricted </p>
+   <p><b>Severity:</b> High</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config</b> rule: <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-blacklisted-actions-prohibited.html">s3-bucket-blacklisted-actions-prohibited</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem">
+     <p><code class="code">blacklistedactionpatterns</code>: <code class="code">s3:DeleteBucketPolicy, s3:PutBucketAcl,
+       s3:PutBucketPolicy, s3:PutEncryptionConfiguration, s3:PutObjectAcl</code> (not customizable)</p>
+    </li></ul></div>
+   <p>This control checks whether an Amazon S3 general purpose bucket policy prevents principals from other AWS accounts
+    from performing denied actions on resources in the S3 bucket. The control fails if the
+    bucket policy allows one or more of the preceding actions for a principal in another AWS account.</p>
+   <p>Implementing least privilege access is fundamental to reducing security risk and the impact
+    of errors or malicious intent. If an S3 bucket policy allows access from external accounts, it
+    could result in data exfiltration by an insider threat or an attacker.</p>
+   <p>The <code class="code">blacklistedactionpatterns</code> parameter allows for successful evaluation of
+    the rule for S3 buckets. The parameter grants access to external accounts for action patterns
+    that are not included in the <code class="code">blacklistedactionpatterns</code> list.</p>
+  
+    
+    <h3 id="s3-6-remediation">Remediation</h3>
+       <p>To update an Amazon S3 bucket policy to remove permissions, see.<a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/add-bucket-policy.html">Adding 
+           a bucket policy by using the Amazon S3 console</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+      <p>On the <b>Edit bucket policy</b> page, in the policy editing text box, take one of the
+       following actions:</p>
+      <div class="itemizedlist">
+        
+        
+      <ul class="itemizedlist"><li class="listitem">
+           <p>Remove the statements that grant other
+               AWS accounts access to denied actions.</p>
+       </li><li class="listitem">
+        <p>Remove the permitted denied actions from the statements.</p>
+       </li></ul></div>
+    
+  
+ 
+  
+      <h2 id="s3-7">[S3.7] S3 general purpose buckets should use cross-Region replication</h2>
+<p><b>Related requirements:</b> PCI DSS v3.2.1/2.2, NIST.800-53.r5 AU-9(2), NIST.800-53.r5 CP-10, NIST.800-53.r5 CP-6, NIST.800-53.r5 CP-6(1), NIST.800-53.r5 CP-6(2), NIST.800-53.r5 CP-9, NIST.800-53.r5 SC-36(2), NIST.800-53.r5 SC-5(2), NIST.800-53.r5 SI-13(5),
+    CRI Profile v2.2/GV.OC-05.03, CRI Profile v2.2/GV.OC-05.04, CRI Profile v2.2/PR.DS-11.01, CRI Profile v2.2/PR.IR-03.01,
+    CRI Profile v2.2/PR.IR-04.02, CRI Profile v2.2/RC.RP-03.01</p>
+ <p><b>Category:</b> Protect &gt; Secure access management</p>
+ <p><b>Severity: </b> Low</p>
+      <p><b>Resource type:</b>
+        <code class="code">AWS::S3::Bucket</code></p>
+      <p><b>AWS Config rule: </b>
+          <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-cross-region-replication-enabled.html">s3-bucket-cross-region-replication-enabled</a></p>
+      <p><b>Schedule type:</b> Change triggered</p>
+      <p><b>Parameters:</b> None</p>
+    <p>This control checks whether an Amazon S3 general purpose bucket has cross-Region replication enabled. The control fails if the 
+bucket doesn't have cross-Region replication enabled.</p>
+    <p>Replication is the automatic, asynchronous copying of objects across buckets in the same or different AWS Regions. 
+    Replication copies newly created objects and object updates from a source bucket to a destination bucket or buckets. 
+    AWS best practices recommend replication for source and destination buckets that are owned by the same AWS account. 
+    In addition to availability, you should consider other systems hardening settings.</p>
+	<p>This control produces a <code class="code">FAILED</code> finding for a replication destination bucket if it doesn't have cross-region 
+replication enabled. If there's a legitimate reason that the destination bucket doesn't need cross-region replication to be 
+enabled, you can suppress findings for this bucket.</p>
+  
+       
+        <h3 id="s3-7-remediation">Remediation</h3>
+        <p>To enable Cross-Region Replication on an S3 bucket, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-walkthrough1.html">Configuring replication for source and destination buckets owned by the same account</a> in the <em>Amazon Simple Storage Service User Guide</em>. 
+            For <b>Source bucket</b>, choose <b>Apply to all objects in the bucket</b>.</p>
+       
+    
+ 
+  
+   <h2 id="s3-8">[S3.8] S3 general purpose buckets should block public access</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/2.1.4, CIS AWS Foundations Benchmark v3.0.02.1.4, CIS AWS Foundations Benchmark v1.4.0/2.1.5, NIST.800-53.r5 AC-21, NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-4, NIST.800-53.r5 AC-4(21), NIST.800-53.r5 AC-6, NIST.800-53.r5 SC-7, NIST.800-53.r5 SC-7(11), NIST.800-53.r5 SC-7(16), NIST.800-53.r5 SC-7(20), NIST.800-53.r5 SC-7(21), NIST.800-53.r5 SC-7(3), NIST.800-53.r5 SC-7(4), NIST.800-53.r5 SC-7(9), PCI DSS v4.0.1/1.4.4,
+        CRI Profile v2.2/PR.AA-03.02, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.IR-01.01, CRI Profile v2.2/PR.PS-01.01,
+        CRI Profile v2.2/PR.PS-01.03, CRI Profile v2.2/PR.PS-04.03, CRI Profile v2.2/RS.AN-07.01</p>
+   <p><b>Category:</b> Protect &gt; Secure access management &gt; Access
+    control</p>
+   <p><b>Severity:</b> High</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-level-public-access-prohibited.html">s3-bucket-level-public-access-prohibited</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem">
+     <p><code class="code">excludedPublicBuckets</code> (not customizable) – A comma-separated list of known
+      allowed public S3 bucket names</p>
+    </li></ul></div>
+   <p>This control checks whether an Amazon S3 general purpose bucket blocks public access at the bucket level. The
+    control fails if any of the following settings are set to <code class="code">false</code>:</p>
+   <div class="itemizedlist">
+     
+     
+     
+     
+   <ul class="itemizedlist"><li class="listitem">
+     <p><code class="code">ignorePublicAcls</code></p>
+    </li><li class="listitem">
+     <p><code class="code">blockPublicPolicy</code></p>
+    </li><li class="listitem">
+     <p><code class="code">blockPublicAcls</code></p>
+    </li><li class="listitem">
+     <p><code class="code">restrictPublicBuckets</code></p>
+    </li></ul></div>
+   <p>Block Public Access at the S3 bucket level provides controls to ensure that objects never
+    have public access. Public access is granted to buckets and objects through access control lists
+    (ACLs), bucket policies, or both.</p>
+   <p>Unless you intend to have your S3 buckets publicly accessible, you should configure the
+    bucket level Amazon S3 Block Public Access feature.</p>
+   
+    
+    <h3 id="s3-8-remediation">Remediation</h3>
+    <p>For information on how to remove public access at a bucket level, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html">Blocking public access to your Amazon S3 storage</a> in the <em>Amazon S3 User Guide</em>.</p>
+    
+  
+ 
+  
+    <h2 id="s3-9">[S3.9] S3 general purpose buckets should have server access logging enabled</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 AC-2(4), NIST.800-53.r5
+            AC-4(26), NIST.800-53.r5 AC-6(9), NIST.800-53.r5 AU-10, NIST.800-53.r5 AU-12,
+            NIST.800-53.r5 AU-2, NIST.800-53.r5 AU-3, NIST.800-53.r5 AU-6(3), NIST.800-53.r5
+            AU-6(4), NIST.800-53.r5 CA-7, NIST.800-53.r5 SC-7(9), NIST.800-53.r5 SI-3(8),
+            NIST.800-53.r5 SI-4(20), NIST.800-53.r5 SI-7(8), NIST.800-171.r2 3.3.8,
+            PCI DSS v4.0.1/10.2.1, CRI Profile v2.2/DE.AE-03.01, CRI Profile v2.2/DE.CM-03.01, CRI Profile v2.2/PR.PS-04.02</p>
+   <p><b>Category:</b> Identify &gt; Logging</p>
+   <p><b>Severity:</b> Medium</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-logging-enabled.html">s3-bucket-logging-enabled</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether server access logging is enabled for an Amazon S3 general purpose bucket. The control fails if server 
+access logging isn't enabled. When logging is enabled, Amazon S3 delivers access logs for a source bucket to a chosen target bucket. The 
+target bucket must be in the same AWS Region as the source bucket and must not have a default retention period configured. The 
+target logging bucket does not need to have server access logging enabled, and you should suppress findings for this bucket. </p>
+   <p>Server access logging provides detailed records of requests made to a bucket. Server access logs can assist in security and access audits. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/security-best-practices.html">Security Best Practices for Amazon S3: Enable Amazon S3 server access logging</a>.</p>
+  
+    
+    <h3 id="s3-9-remediation">Remediation</h3>
+       <p>To enable Amazon S3 server access logging, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html">Enabling Amazon S3 server access logging</a> in the <em>Amazon S3 User Guide</em>.</p>
+    
+  
+ 
+   <h2 id="s3-10">[S3.10] S3 general purpose buckets with versioning enabled should have Lifecycle configurations</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 CP-10, NIST.800-53.r5 CP-6(2), NIST.800-53.r5 CP-9, NIST.800-53.r5 SC-5(2), NIST.800-53.r5 SI-13(5),
+     CRI Profile v2.2/ID.AM-08.01</p>
+   <p><b>Category:</b> Identify &gt; Logging</p>
+   <p><b>Severity:</b> Medium</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-version-lifecycle-policy-check.html">s3-version-lifecycle-policy-check</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether an Amazon S3 general purpose versioned bucket has a Lifecycle configuration. The control fails 
+if the bucket doesn't have a Lifecycle configuration.</p>
+   <p>We recommended creating a Lifecycle configuration for your S3 bucket to help you define actions that you want Amazon S3 to take during 
+an object's lifetime. </p>
+    <div class="awsdocs-note awsdocs-tip"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><div class="awsdocs-block-title">Tip</div></div><div class="awsdocs-note-text"><p>Enabling versioning without lifecycle management can lead to unbounded storage growth and increased costs. 
+      Every object modification creates a new version that is retained indefinitely. Configure S3 Lifecycle rules to 
+      automatically transition noncurrent versions to cheaper storage classes or expire them after a defined retention 
+      period.</p></div></div>
+    
+    <h3 id="s3-10-remediation">Remediation</h3>
+    <p>For more information on configuring lifecycle on an Amazon S3 bucket, see 
+    <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html#versioning-lifecycle">Using S3 Versioning with S3 Lifecycle</a>, 
+    <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html">Setting lifecycle configuration on a bucket</a> and 
+    <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html">Managing the lifecycle of objects</a>
+    in the <em>Amazon S3 User Guide</em>.</p>
+    
+  
+  
+ <h2 id="s3-11">[S3.11] S3 general purpose buckets should have event notifications enabled</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 CA-7, NIST.800-53.r5
+            SI-3(8), NIST.800-53.r5 SI-4, NIST.800-53.r5 SI-4(4), NIST.800-171.r2 3.3.8,
+     CRI Profile v2.2/DE.AE-03.01, CRI Profile v2.2/PR.PS-04.01, CRI Profile v2.2/PR.PS-04.02</p>
+ <p><b>Category:</b> Identify &gt; Logging</p>
+ <p><b>Severity:</b> Medium</p>
+ <p><b>Resource type:</b>
+  <code class="code">AWS::S3::Bucket</code></p>
+ <p><b>AWS Config rule:</b>
+  <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-event-notifications-enabled.html">s3-event-notifications-enabled</a></p>
+ <p><b>Schedule type:</b> Change triggered</p>
+ <p><b>Parameters:</b></p>
+ <div class="table-container"><div class="table-contents"><table id="d0e1"><thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Allowed custom values</th>
+                    <th>Security Hub CSPM default value</th>
+                </tr>
+            </thead>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">eventTypes</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>List of preferred S3 event types</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>EnumList (maximum of 28 items)</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">s3:IntelligentTiering, s3:LifecycleExpiration:*, s3:LifecycleExpiration:Delete, s3:LifecycleExpiration:DeleteMarkerCreated, s3:LifecycleTransition, s3:ObjectAcl:Put, s3:ObjectCreated:*, s3:ObjectCreated:CompleteMultipartUpload, s3:ObjectCreated:Copy, s3:ObjectCreated:Post, s3:ObjectCreated:Put, s3:ObjectRemoved:*, s3:ObjectRemoved:Delete, s3:ObjectRemoved:DeleteMarkerCreated, s3:ObjectRestore:*, s3:ObjectRestore:Completed, s3:ObjectRestore:Delete, s3:ObjectRestore:Post, s3:ObjectTagging:*, s3:ObjectTagging:Delete, s3:ObjectTagging:Put, s3:ReducedRedundancyLostObject, s3:Replication:*, s3:Replication:OperationFailedReplication, s3:Replication:OperationMissedThreshold, s3:Replication:OperationNotTracked, s3:Replication:OperationReplicatedAfterThreshold, s3:TestEvent</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+            </table></div></div>
+ <p>This control checks whether S3 Event Notifications are enabled on an Amazon S3 general purpose bucket. 
+The control fails if S3 Event Notifications are not enabled on the bucket. If you provide custom values for 
+the <code class="code">eventTypes</code> parameter, the control passes only if event notifications are enabled for the specified
+types of events.</p>
+ <p>When you enable S3 Event Notifications, you receive alerts when specific
+    events occur that impact your S3 buckets. For example, you can be notified of object creation, object removal, and object
+    restoration. These notifications can alert relevant teams to
+    accidental or intentional modifications that may lead to unauthorized data access.</p>
+ 
+  
+  <h3 id="s3-11-remediation">Remediation</h3>
+  <p>For information about detecting changes to S3 buckets and objects, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html">Amazon S3 Event Notifications</a> in the <em>Amazon S3 User Guide</em>.</p>
+  
+
+ 
+ <h2 id="s3-12">[S3.12] ACLs should not be used to manage user access to S3 general purpose buckets</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(15), NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-6,
+     CRI Profile v2.2/PR.AA-05.01, CRI Profile v2.2/PR.DS-01.01</p>
+ <p><b>Category:</b>  Protect &gt; Secure access management &gt; Access control</p>
+ <p><b>Severity:</b> Medium</p>
+ <p><b>Resource type:</b>
+  <code class="code">AWS::S3::Bucket</code></p>
+ <p><b>AWS Config rule:</b>
+  <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-acl-prohibited.html">s3-bucket-acl-prohibited</a></p>
+ <p><b>Schedule type:</b> Change triggered</p>
+ <p><b>Parameters:</b> None</p>
+ <p>This control checks whether an Amazon S3 general purpose bucket provides user permissions with an access control list (ACL). 
+The control fails if an ACL is configured for managing user access on the bucket.</p>
+ <p>ACLs are legacy access control mechanisms that predate IAM. Instead of ACLs, 
+  we recommend using S3 bucket policies or AWS Identity and Access Management (IAM) policies to manage access to your S3 buckets.</p>
+ 
+  
+  <h3 id="s3-12-remediation">Remediation</h3>
+     <p>To pass this control, you should disable ACLs for your S3 buckets. For instructions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html">Controlling ownership of objects and disabling ACLs for your bucket</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p> 
+     <p>To create an S3 bucket policy, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/add-bucket-policy.html">Adding a bucket policy by using the Amazon S3 console</a>.
+         To create an IAM user policy on an S3 bucket, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/walkthrough1.html#walkthrough-grant-user1-permissions">Controlling access to a bucket with user policies</a>.</p>
+  
+
+ 
+  
+   <h2 id="s3-13">[S3.13] S3 general purpose buckets should have Lifecycle configurations</h2>
+ <p><b>Related requirements:</b> NIST.800-53.r5 CP-10, NIST.800-53.r5 CP-6(2), NIST.800-53.r5 CP-9, NIST.800-53.r5 SC-5(2), NIST.800-53.r5 SI-13(5),
+     CRI Profile v2.2/ID.AM-08.01</p>
+   <p><b>Category:</b> Protect &gt; Data protection </p>
+   <p><b>Severity:</b> Low</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::S3::Bucket</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-lifecycle-policy-check.html">s3-lifecycle-policy-check</a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b></p>
+   <div class="table-container"><div class="table-contents"><table id="d0e2"><thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Allowed custom values</th>
+                    <th>Security Hub CSPM default value</th>
+                </tr>
+            </thead>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">targetTransitionDays</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Number of days after object creation when objects are transitioned to a specified storage class</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Integer</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">1</code> to <code class="code">36500</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">targetExpirationDays</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Number of days after object creation when objects are deleted</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Integer</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">1</code> to <code class="code">36500</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">targetTransitionStorageClass</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Destination S3 storage class type</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Enum</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">STANDARD_IA,
+                            INTELLIGENT_TIERING,
+                            ONEZONE_IA,
+                            GLACIER,
+                            GLACIER_IR,
+                            DEEP_ARCHIVE</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+            </table></div></div>
+   <p>This control checks whether an Amazon S3 general purpose bucket has a Lifecycle configuration. The control fails if the 
+bucket doesn't have a Lifecycle configuration. If you provide custom values for one or more of the preceding parameters, the 
+control passes only if the policy includes the specified storage class, deletion time, or transition time.
+</p>
+   <p>Creating a Lifecycle configuration for your S3 bucket defines actions that you want Amazon S3 to take during an object's 
+lifetime. For example, you can transition objects to another storage class, archive them, or delete them after a specified period of time.</p>
+    
+    <h3 id="s3-13-remediation">Remediation</h3>
+    <p>For information about configuring lifecycle policies on an Amazon S3 bucket, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html">Setting lifecycle configuration on a bucket</a> and 
+     see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html">Managing your storage lifecycle</a> in the <em>Amazon S3 User Guide</em>.</p>
+    
+ 
+    <h2 id="s3-14">[S3.14] S3 general purpose buckets should have versioning enabled</h2>
+    <p><b>Category:</b> Protect &gt; Data protection &gt; Data deletion protection</p>
+    <p><b>Related requirements:</b> NIST.800-53.r5 AU-9(2),
+            NIST.800-53.r5 CP-10, NIST.800-53.r5 CP-6, NIST.800-53.r5 CP-6(1), NIST.800-53.r5
+            CP-6(2), NIST.800-53.r5 CP-9, NIST.800-53.r5 SC-5(2), NIST.800-53.r5 SI-12,
+            NIST.800-53.r5 SI-13(5), NIST.800-171.r2 3.3.8, CRI Profile v2.2/PR.AA-05.01, CRI Profile v2.2/PR.DS-01.01,
+        CRI Profile v2.2/PR.IR-03.01, CRI Profile v2.2/PR.PS-01.03</p>
+    <p><b>Severity:</b> Low</p>
+    <p><b>Resource type:</b>
+      <code class="code">AWS::S3::Bucket</code></p>
+    <p><b>AWS Config rule:</b>
+      <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-versioning-enabled.html">s3-bucket-versioning-enabled</a></p>
+    <p><b>Schedule type:</b> Change triggered</p>
+    <p><b>Parameters:</b> None</p>
+    <p>This control checks whether an Amazon S3 general purpose bucket has versioning enabled. The control fails if versioning is 
+        suspended for the bucket.</p>
+    <p>Versioning keeps multiple variants of an object in the same S3 bucket. You can use
+      versioning to preserve, retrieve, and restore all versions of all objects stored in your S3
+      bucket. Versioning helps you recover from both unintended user actions and application
+      failures.</p>
+    <div class="awsdocs-note awsdocs-tip"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><div class="awsdocs-block-title">Tip</div></div><div class="awsdocs-note-text"><p>Enabling versioning without lifecycle management can lead to unbounded storage growth and increased costs. 
+      Every object modification creates a new version that is retained indefinitely. Configure S3 Lifecycle 
+      rules to automatically transition noncurrent versions to cheaper storage classes or 
+      expire them after a defined retention period. For more information, see 
+        <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html#versioning-lifecycle">Using S3 Versioning with S3 Lifecycle</a> and 
+        <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html">Managing the lifecycle of objects</a>.</p></div></div>
+    
+     
+      <h3 id="s3-14-remediation">Remediation</h3>
+      <p>To use versioning on an S3 bucket, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-versioning-examples.html">Enabling versioning on buckets</a> in the <em>Amazon S3 User Guide</em>.</p>
+     
+   
+    <h2 id="s3-15">[S3.15] S3 general purpose buckets should have Object Lock enabled</h2>
+    <p><b>Category:</b> Protect &gt; Data protection &gt; Data deletion protection</p>
+    <p><b>Related requirements:</b> NIST.800-53.r5 CP-6(2), PCI DSS v4.0.1/10.5.1, CRI Profile v2.2/DE.CM-09.01, CRI Profile v2.2/DE.CM-09.03,
+        CRI Profile v2.2/PR.DS-11.01</p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+      <code class="code">AWS::S3::Bucket</code></p>
+    <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-default-lock-enabled.html">s3-bucket-default-lock-enabled</a></p>
+    <p><b>Schedule type:</b> Change triggered</p>
+    <p><b>Parameters:</b></p>
+    <div class="table-container"><div class="table-contents"><table id="d0e3"><thead>
+                  <tr>
+                      <th>Parameter</th>
+                      <th>Description</th>
+                      <th>Type</th>
+                      <th>Allowed custom values</th>
+                      <th>Security Hub CSPM default value</th>
+                  </tr>
+              </thead>
+                  <tr>
+                      <td tabindex="-1">
+                          <p><code class="code">mode</code></p>
+                      </td>
+                      <td tabindex="-1">
+                          <p>S3 Object Lock retention mode</p>
+                      </td>
+                      <td tabindex="-1">
+                          <p>Enum</p>
+                      </td>
+                      <td tabindex="-1">
+                          <p><code class="code">GOVERNANCE</code>, <code class="code">COMPLIANCE</code></p>
+                      </td>
+                      <td tabindex="-1">
+                          <p>No default value</p>
+                      </td>
+                  </tr>
+              </table></div></div>
+    <p>This control checks whether an Amazon S3 general purpose bucket has Object Lock enabled. The control fails if Object Lock 
+isn't enabled for the bucket. If you provide a custom value for the <code class="code">mode</code> parameter, the control passes only if 
+S3 Object Lock uses the specified retention mode.</p>
+    <p>You can use S3 Object Lock to store objects using a write-once-read-many (WORM) model. Object Lock can help prevent 
+      objects in S3 buckets from being deleted or overwritten for a fixed amount of time or indefinitely. You can use S3 Object 
+      Lock to meet regulatory requirements that require WORM storage, or add an extra layer of protection against object changes 
+      and deletion.</p>
+    
+     
+      <h3 id="s3-15-remediation">Remediation</h3>
+      <p>To configure Object Lock for new and existing S3 buckets, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock-configure.html">Configuring S3 Object Lock</a> in the <em>Amazon S3 User Guide</em>.
+    </p>
+     
+   
+        <h2 id="s3-17">[S3.17] S3 general purpose buckets should be encrypted at rest with AWS KMS keys</h2>
+    	<p><b>Category:</b> Protect &gt; Data Protection &gt; Encryption of data-at-rest</p>
+        <p><b>Related requirements:</b> NIST.800-53.r5 SC-12(2),
+            NIST.800-53.r5 CM-3(6), NIST.800-53.r5 SC-13, NIST.800-53.r5 SC-28, NIST.800-53.r5
+            SC-28(1), NIST.800-53.r5 SC-7(10), NIST.800-53.r5 CA-9(1), NIST.800-53.r5 SI-7(6),
+            NIST.800-53.r5 AU-9, NIST.800-171.r2 3.8.9, NIST.800-171.r2 3.13.11, NIST.800-171.r2
+            3.13.16, PCI DSS v4.0.1/3.5.1, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.PS-01.06, CRI Profile v2.2/PR.PS-01.07</p>
+        <p><b>Severity:</b> Medium</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::Bucket</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-default-encryption-kms.html">s3-default-encryption-kms</a></p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an Amazon S3 general purpose bucket is encrypted with an AWS KMS key (SSE-KMS or DSSE-KMS). 
+The control fails if the bucket is encrypted with default encryption (SSE-S3).</p>
+        <p>Server-side encryption (SSE) is the encryption of data at its destination by the application or service that 
+            receives it. Unless you specify otherwise, S3 buckets use Amazon S3 managed keys (SSE-S3) by default for server-side encryption. However, for 
+            added control, you can choose to configure buckets to use server-side encryption with AWS KMS keys (SSE-KMS or DSSE-KMS) instead. 
+            Amazon S3 encrypts your data at the object level as it writes it to disks in AWS data centers and decrypts it for you 
+            when you access it.</p>
+         
+            <h3 id="s3-17-remediation">Remediation</h3>
+            <p>To encrypt an S3 bucket using SSE-KMS, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/specifying-kms-encryption.html">Specifying server-side encryption with AWS KMS (SSE-KMS)</a> in the <em>Amazon S3 User Guide</em>. 
+                To encrypt an S3 bucket using DSSE-KMS, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/specifying-dsse-encryption.html">Specifying dual-layer server-side encryption with AWS KMS keys (DSSE-KMS)</a> 
+                in the <em>Amazon S3 User Guide</em>.</p>
+         
+     
+        <h2 id="s3-19">[S3.19] S3 access points should have block public access settings enabled</h2>
+        <p><b>Related requirements:</b> NIST.800-53.r5 AC-21,
+            NIST.800-53.r5 AC-3,
+            NIST.800-53.r5 AC-3(7),
+            NIST.800-53.r5 AC-4,
+            NIST.800-53.r5 AC-4(21),
+            NIST.800-53.r5 AC-6,
+            NIST.800-53.r5 SC-7,
+            NIST.800-53.r5 SC-7(11),
+            NIST.800-53.r5 SC-7(16),
+            NIST.800-53.r5 SC-7(20),
+            NIST.800-53.r5 SC-7(21),
+            NIST.800-53.r5 SC-7(3),
+            NIST.800-53.r5 SC-7(4),
+            NIST.800-53.r5 SC-7(9), PCI DSS v4.0.1/1.4.4, CRI Profile v2.2/PR.AA-01.02, CRI Profile v2.2/PR.AA-04.01,
+            CRI Profile v2.2/PR.AA-05.01, CRI Profile v2.2/PR.DS-01.01</p>
+        <p><b>Category:</b> Protect &gt; Secure access management &gt; Resource not publicly accessible</p>
+        <p><b>Severity:</b> Critical</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::AccessPoint</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-access-point-public-access-blocks.html">s3-access-point-public-access-blocks</a></p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an Amazon S3 access point has block public access settings enabled. The control fails if block 
+            public access settings aren't enabled for the access point.</p>
+        <p>The Amazon S3 Block Public Access feature helps you manage access to your S3 resources at three levels: the account, bucket, 
+            and access point levels. The settings at each level can be configured independently, allowing you to have different 
+            levels of public access restrictions for your data. The access point settings can't individually override the more 
+            restrictive settings at higher levels (account level or bucket assigned to the access point). Instead, the settings at 
+            the access point level are additive, meaning they complement and work alongside the settings at the other levels.
+            Unless you intend an S3 access point to be publicly accessible, you should enable block public access settings.</p>
+         
+            <h3 id="s3-19-remediation">Remediation</h3>
+            <p>Amazon S3 currently doesn't support changing an access point's block public access settings after the access point has 
+been created. All block public access settings are enabled by default when you create a new access point. We recommend that you 
+keep all settings enabled unless you know that you have a specific need to disable any of them. For more information, see 
+                <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-bpa-settings.html">Managing public access to access points</a> 
+            in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+        <h2 id="s3-20">[S3.20] S3 general purpose buckets should have MFA delete enabled</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/2.1.2, CIS AWS Foundations Benchmark v3.0.0/2.1.2, CIS AWS Foundations Benchmark v1.4.0/2.1.3, NIST.800-53.r5 CA-9(1),
+            NIST.800-53.r5 CM-2,
+            NIST.800-53.r5 CM-2(2),
+            NIST.800-53.r5 CM-3,
+            NIST.800-53.r5 SC-5(2), CRI Profile v2.2/PR.AA-03.01, CRI Profile v2.2/PR.AA-05.02, CRI Profile v2.2/PR.DS-01.01</p>
+        <p><b>Category:</b> Protect &gt; Data protection &gt; Data deletion protection</p>
+        <p><b>Severity:</b> Low</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::Bucket</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3-bucket-mfa-delete-enabled.html">s3-bucket-mfa-delete-enabled</a></p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether multi-factor authentication (MFA) delete is enabled for an
+            Amazon S3 general purpose bucket. The control fails if MFA delete is not enabled for the
+            bucket. The control doesn't produce findings for buckets that have a lifecycle
+            configuration.</p>
+        <p>If you enable versioning for an S3 general purpose bucket, you can optionally add
+            another layer of security by configuring MFA delete for the bucket. If you do this, the
+            bucket owner must include two forms of authentication in any request to delete a version
+            of an object in the bucket or change the versioning state of the bucket. MFA delete
+            provides added security if, for example, the bucket owner’s security credentials are
+            compromised. MFA delete can also help prevent accidental bucket deletions by requiring
+            the user who initiates the delete action to prove physical possession of an MFA device
+            with an MFA code, which adds an extra layer of friction and security to the delete
+            action.</p>
+<div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><div class="awsdocs-block-title">Note</div></div><div class="awsdocs-note-text"><p>This control produces a <code class="code">PASSED</code> finding only if MFA delete is enabled for the
+                S3 general purpose bucket. To enable MFA delete for a bucket, versioning must also
+                be enabled for the bucket. Bucket versioning is a method of storing multiple
+                variations of an S3 object in the same bucket. In addition, only the bucket owner
+                who is logged in as a root user can enable MFA delete and perform delete actions on
+                the bucket. You cannot use MFA delete with a bucket that has a lifecycle
+                configuration.</p></div></div>
+         
+            <h3 id="s3-20-remediation">Remediation</h3>
+            <p>For information about enabling versioning and configuring MFA delete for an S3
+                bucket, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/MultiFactorAuthenticationDelete.html">Configuring
+                    MFA delete</a> in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+        <h2 id="s3-22">[S3.22] S3 general purpose buckets should log object-level write events</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/3.8, CIS AWS Foundations Benchmark v3.0.0/3.8, PCI DSS v4.0.1/10.2.1, CRI Profile v2.2/DE.AE-03.01, CRI Profile v2.2/DE.CM-03.01,
+            CRI Profile v2.2/DE.CM-03.02, CRI Profile v2.2/PR.PS-04.02</p>
+        <p><b>Category:</b> Identify &gt; Logging</p>
+        <p><b>Severity:</b> Medium</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::::Account</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/cloudtrail-all-write-s3-data-event-check.html">cloudtrail-all-write-s3-data-event-check</a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an AWS account has at least one AWS CloudTrail multi-Region trail that logs all write data 
+events for Amazon S3 buckets. The control fails if the account doesn't have a multi-Region trail that logs write data events for S3 
+buckets.</p>
+        <p>S3 object-level operations, such as <code class="code">GetObject</code>, <code class="code">DeleteObject</code>, and <code class="code">PutObject</code>, 
+are called data events. By default, CloudTrail doesn't log data events, but you can configure trails to log data events for S3 buckets. 
+When you enable object-level logging for write data events, you can log each individual object (file) access within an S3 bucket. 
+Enabling object-level logging can help you meet data compliance requirements, perform comprehensive security analysis, monitor 
+specific patterns of user behavior in your AWS account, and take action on object-level API activity within your S3 buckets by 
+using Amazon CloudWatch Events. This control produces a <code class="code">PASSED</code> finding if you configure a multi-Region trail that logs write-only or 
+all types of data events for all S3 buckets.</p>
+         
+            <h3 id="s3-22-remediation">Remediation</h3>
+            <p>To enable object-level logging for S3 buckets, see 
+                <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html">Enabling CloudTrail event logging for S3 buckets and objects</a> 
+                in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+        <h2 id="s3-23">[S3.23] S3 general purpose buckets should log object-level read events</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/3.9, CIS AWS Foundations Benchmark v3.0.0/3.9, PCI DSS v4.0.1/10.2.1, CRI Profile v2.2/DE.AE-02.01, CRI Profile v2.2/DE.AE-03.02,
+            CRI Profile v2.2/DE.AE-07.02, CRI Profile v2.2/DE.CM-03.01, CRI Profile v2.2/DE.CM-03.02, CRI Profile v2.2/DE.CM-03.03,
+            CRI Profile v2.2/PR.PS-04.02, CRI Profile v2.2/PR.PS-04.03, CRI Profile v2.2/RS.AN-07.01, CRI Profile v2.2/RS.MA-02.01</p>
+        <p><b>Category:</b> Identify &gt; Logging</p>
+        <p><b>Severity:</b> Medium</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::::Account</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/cloudtrail-all-read-s3-data-event-check.html">cloudtrail-all-read-s3-data-event-check</a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an AWS account has at least one AWS CloudTrail multi-Region trail that logs all read data 
+            events for Amazon S3 buckets. The control fails if the account doesn't have a multi-Region trail that logs read data events for S3 
+            buckets.</p>
+        <p>S3 object-level operations, such as <code class="code">GetObject</code>, <code class="code">DeleteObject</code>, and <code class="code">PutObject</code>, 
+            are called data events. By default, CloudTrail doesn't log data events, but you can configure trails to log data events for S3 buckets. 
+            When you enable object-level logging for read data events, you can log each individual object (file) access within an S3 bucket. 
+            Enabling object-level logging can help you meet data compliance requirements, perform comprehensive security analysis, monitor 
+            specific patterns of user behavior in your AWS account, and take action on object-level API activity within your S3 buckets by 
+            using Amazon CloudWatch Events. This control produces a <code class="code">PASSED</code> finding if you configure a multi-Region trail that logs read-only or 
+            all types of data events for all S3 buckets.</p>
+         
+            <h3 id="s3-23-remediation">Remediation</h3>
+            <p>To enable object-level logging for S3 buckets, see 
+                <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html">Enabling CloudTrail event logging for S3 buckets and objects</a> 
+                in the <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+     
+        <h2 id="s3-24">[S3.24] S3 Multi-Region Access Points should have block public access settings enabled</h2>
+        <p><b>Related requirements:</b> PCI DSS v4.0.1/1.4.4, CRI Profile v2.2/PR.AA-03.02, CRI Profile v2.2/PR.AA-05.01, CRI Profile v2.2/PR.DS-01.01, CRI Profile v2.2/PR.IR-01.01</p>
+        <p><b>Category:</b> Protect &gt; Secure network configuration &gt; Resources not publicly accessible</p>
+        <p><b>Severity:</b> High</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3::MultiRegionAccessPoint</code></p>
+        <p><b>AWS Config rule:</b>
+            <code class="code">s3-mrap-public-access-blocked</code> (custom Security Hub CSPM rule)</p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an Amazon S3 Multi-Region Access Point has block public access settings enabled. The control 
+fails when the Multi-Region Access Point doesn't have block public access settings enabled.</p>
+        <p>Publicly accessible resources can be lead to unauthorized access, data breaches, or exploitation of vulnerabilities. 
+Restricting access through authentication and authorization measures helps to safeguard sensitive information and maintain the 
+integrity of your resources.</p>
+         
+            <h3 id="s3-24-remediation">Remediation</h3>
+            <p>By default, all Block Public Access settings are enabled for an S3 Multi-Region Access Point. For more 
+information , see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/multi-region-access-point-block-public-access.html">Blocking public access with Amazon S3 Multi-Region Access Points</a> in the <em>Amazon Simple Storage Service User Guide</em>. You 
+can't change the Block Public Access settings for a Multi-Region Access Point after it has been created.</p>
+         
+     
+        <h2 id="s3-25">[S3.25] S3 directory buckets should have lifecycle configurations</h2>
+        <p><b>Category:</b> Protect &gt; Data Protection</p>
+        <p><b>Severity:</b> Low</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::S3Express::DirectoryBucket</code></p>
+        <p><b>AWS Config rule:</b> <a href="https://docs.aws.amazon.com/config/latest/developerguide/s3express-dir-bucket-lifecycle-rules-check.html">s3express-dir-bucket-lifecycle-rules-check</a></p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b></p>
+        <div class="table-container"><div class="table-contents"><table id="d0e4"><thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Allowed custom values</th>
+                        <th>Security Hub CSPM default value</th>
+                    </tr>
+                </thead>
+                    <tr>
+                        <td tabindex="-1">
+                            <p><code class="code">targetExpirationDays</code></p>
+                        </td>
+                        <td tabindex="-1">
+                            <p>The number of days, after object creation, when objects should
+                                expire.</p>
+                        </td>
+                        <td tabindex="-1">
+                            <p>Integer</p>
+                        </td>
+                        <td tabindex="-1">
+                            <p><code class="code">1</code> to <code class="code">2147483647</code></p>
+                        </td>
+                        <td tabindex="-1">
+                            <p>No default value</p>
+                        </td>
+                    </tr>
+                </table></div></div>
+        
+        <p>This control checks whether lifecycle rules are configured for an S3 directory bucket.
+            The control fails if lifecycle rules aren't configured for the directory bucket, or a
+            lifecycle rule for the bucket specifies expiration settings that don't match the
+            parameter value that you optionally specify.</p>
+        <p>In Amazon S3, a lifecycle configuration is a set of rules that define actions for Amazon S3 to
+            apply to a group of objects in a bucket. For an S3 directory bucket, you can create a
+            lifecycle rule that specifies when objects expire based on age (in days). You can also
+            create a lifecycle rule that deletes incomplete multipart uploads. Unlike other types of
+            S3 buckets, such as general purpose buckets, directory buckets do not support other
+            types of actions for lifecycle rules, such as transitioning objects between storage
+            classes.</p>
+         
+            <h3 id="s3-25-remediation">Remediation</h3>
+            <p>To define a lifecycle configuration for an S3 directory bucket, create a lifecycle
+                rule for the bucket. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-create-lc.html">Creating and
+                    managing a lifecycle configuration for your directory bucket</a> in the
+                    <em>Amazon Simple Storage Service User Guide</em>.</p>
+         
+    <awsdocs-copyright class="copyright-print"></awsdocs-copyright><awsdocs-thumb-feedback right-edge="{{$ctrl.thumbFeedbackRightEdge}}"></awsdocs-thumb-feedback></div><noscript><div><div><div><div id="js_error_message"><p><img src="https://d1ge0kk1l5kms0.cloudfront.net/images/G/01/webservices/console/warning.png" alt="Warning" /> <strong>Javascript is disabled or is unavailable in your browser.</strong></p><p>To use the Amazon Web Services Documentation, Javascript must be enabled. Please refer to your browser's Help pages for instructions.</p></div></div></div></div></noscript><div id="main-col-footer" class="awsui-util-font-size-0"><div id="doc-conventions"><a target="_top" href="/general/latest/gr/docconventions.html">Document Conventions</a></div><div class="prev-next"><div id="previous" class="prev-link" accesskey="p" href="./route53-controls.html">Amazon Route 53 controls</div><div id="next" class="next-link" accesskey="n" href="./sagemaker-controls.html">Amazon SageMaker AI controls</div></div></div><awsdocs-page-utilities></awsdocs-page-utilities></div><div id="quick-feedback-yes" style="display: none;"><div class="title">Did this page help you? - Yes</div><div class="content"><p>Thanks for letting us know we're doing a good job!</p><p>If you've got a moment, please tell us what we did right so we can do more of it.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/s3-controls.html"></awsui-button></p></div></div><div id="quick-feedback-no" style="display: none;"><div class="title">Did this page help you? - No</div><div class="content"><p>Thanks for letting us know this page needs work. We're sorry we let you down.</p><p>If you've got a moment, please tell us how we can make the documentation better.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/s3-controls.html"></awsui-button></p></div></div></div></body></div></awsdocs-view><div class="page-loading-indicator" id="page-loading-indicator"><awsui-spinner size="large"></awsui-spinner></div></div><div id="tools-panel" dom-region="tools"><awsdocs-tools-panel id="awsdocs-tools-panel"></awsdocs-tools-panel></div></awsui-app-layout><awsdocs-cookie-banner class="doc-cookie-banner"></awsdocs-cookie-banner></div></body></html>

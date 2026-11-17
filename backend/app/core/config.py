@@ -42,9 +42,9 @@ class Settings(BaseSettings):
 
     # LLM providers
     llm_mode: str = Field("live", alias="TRACETEST_LLM_MODE")  # live | mock
-    primary_provider: str = Field("groq", alias="TRACETEST_PRIMARY_PROVIDER")
-    judge_provider: str = Field("gemini", alias="TRACETEST_JUDGE_PROVIDER")
-    judge_model: str = Field("gemini-3.1-flash-lite", alias="TRACETEST_JUDGE_MODEL")
+    primary_provider: str = Field("gemini", alias="TRACETEST_PRIMARY_PROVIDER")
+    judge_provider: str = Field("groq", alias="TRACETEST_JUDGE_PROVIDER")
+    judge_model: str = Field("openai/gpt-oss-120b", alias="TRACETEST_JUDGE_MODEL")
     groq_api_key: str | None = Field(None, alias="GROQ_API_KEY")
     groq_api_key2: str | None = Field(None, alias="GROQ_API_KEY2")
     groq_api_key3: str | None = Field(None, alias="GROQ_API_KEY3")
@@ -62,8 +62,8 @@ class Settings(BaseSettings):
     gemini_key: str | None = Field(None, alias="GEMINI_KEY")
     gemini_key2: str | None = Field(None, alias="GEMINI_KEY2")
     gemini_key3: str | None = Field(None, alias="GEMINI_KEY3")
-    gemini_model: str = Field("gemini-3.1-flash-lite", alias="GEMINI_MODEL")
-    gemini_fallback_model: str = Field("gemini-flash-lite-latest", alias="GEMINI_FALLBACK_MODEL")
+    gemini_model: str = Field("gemini-3.8-flash", alias="GEMINI_MODEL")
+    gemini_fallback_model: str = Field("gemini-3.1-pro-preview", alias="GEMINI_FALLBACK_MODEL")
 
     ollama_base_url: str | None = Field(None, alias="OLLAMA_BASE_URL")
     ollama_model: str = Field("llama3.1", alias="OLLAMA_MODEL")

@@ -1,0 +1,370 @@
+{
+  "metadata": {
+    "organization": "Amazon Web Services (AWS)",
+    "benchmark_version": "1.0.0",
+    "evaluation_phase": "Phase 7",
+    "created_at": "2026-11-17T21:40:00Z",
+    "total_assertions": 32,
+    "categories": {
+      "IAM & Access Control": 6,
+      "Detection & Monitoring": 6,
+      "Data Protection & S3 Security": 10,
+      "Incident Response & Infrastructure Protection": 5,
+      "Audit & Governance": 5
+    }
+  },
+  "assertions": [
+    {
+      "id": "AWS-SEC-GS-001",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC01: Manage identity and permissions",
+      "verbatim_quote": "Rely on a centralized identity provider: You should manage user identities centrally through an identity provider (IdP). This makes it easier to manage access across multiple applications and services.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that user credentials are not managed via local individual IAM users with static access keys, but federated through AWS IAM Identity Center or external SAML 2.0/OIDC IdP.",
+      "expected_test_type": "security",
+      "rationale": "Prevents credential sprawling and facilitates immediate single-point offboarding."
+    },
+    {
+      "id": "AWS-SEC-GS-002",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC02: Use temporary credentials",
+      "verbatim_quote": "Require multi-factor authentication (MFA): Require MFA for all identities in your organization. MFA adds an extra layer of protection on top of a user name and password.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that IAM users and federated sessions require hardware token, TOTP, or FIDO2/WebAuthn MFA to authenticate.",
+      "expected_test_type": "positive",
+      "rationale": "Eliminates account takeover risk resulting from single-factor password compromise."
+    },
+    {
+      "id": "AWS-SEC-GS-003",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC03: Grant least privilege access",
+      "verbatim_quote": "Grant least privilege: Enforce requirements across every interaction. Grant only the permissions required to perform a task.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that IAM policies do not use wildcard '*' actions or resources unless strictly scoped with conditions.",
+      "expected_test_type": "boundary",
+      "rationale": "Restricts the blast radius in the event an identity or application token is hijacked."
+    },
+    {
+      "id": "AWS-SEC-GS-004",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC02: Manage temporary credentials",
+      "verbatim_quote": "Use temporary credentials: Use temporary credentials instead of long-term access keys. AWS Security Token Service (AWS STS) provides short-term credentials.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that programmatic access across EC2, ECS, Lambda, and pipelines uses IAM roles and STS AssumeRole tokens with bounded session durations.",
+      "expected_test_type": "security",
+      "rationale": "Eliminates static secret leakage in source repositories or configuration files."
+    },
+    {
+      "id": "AWS-SEC-GS-005",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC01: Manage root user credentials",
+      "verbatim_quote": "Protect root credentials: The root user has complete access to all AWS resources in the account. Do not use the root user for everyday tasks, and secure it with multi-factor authentication.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that root account access keys do not exist and that console root login alerts trigger immediate security notifications.",
+      "expected_test_type": "negative",
+      "rationale": "Root user compromise leads to complete and unrecoverable account hijacking."
+    },
+    {
+      "id": "AWS-SEC-GS-006",
+      "category": "IAM & Access Control",
+      "document_id": "DOC-AWS-02",
+      "section": "Identity and access management for Amazon S3",
+      "verbatim_quote": "Use IAM roles for applications and AWS services that require Amazon S3 access: Do not embed AWS credentials in application code or on instances.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that application workloads interacting with S3 rely on IAM instance profiles or IAM roles for service accounts (IRSA).",
+      "expected_test_type": "security",
+      "rationale": "Prevents credential hardcoding and ensures automatic credential rotation."
+    },
+    {
+      "id": "AWS-SEC-GS-007",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC04: Configure service and application logging",
+      "verbatim_quote": "Enable AWS CloudTrail: Enable AWS CloudTrail across all Regions to capture management and data events. Store log files in an S3 bucket that is dedicated to log storage and protected from tampering.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that multi-Region CloudTrail is enabled in all accounts with log file validation and immutable S3 storage.",
+      "expected_test_type": "positive",
+      "rationale": "CloudTrail provides the foundational audit trail for all control plane interactions."
+    },
+    {
+      "id": "AWS-SEC-GS-008",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC04: Capture logs centrally",
+      "verbatim_quote": "Protect log storage: Prevent modification or deletion of log files by using access control mechanisms, encryption, and object locking.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that CloudTrail and VPC Flow Logs S3 buckets enforce MFA Delete or Object Lock WORM retention.",
+      "expected_test_type": "security",
+      "rationale": "Prevents an attacker from deleting evidence of an active breach or intrusion."
+    },
+    {
+      "id": "AWS-SEC-GS-009",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC05: Automate threat detection",
+      "verbatim_quote": "Enable automated threat detection: Use services like Amazon GuardDuty to continuously monitor for malicious activity and unauthorized behavior.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that Amazon GuardDuty is enabled across all active AWS accounts and Regions.",
+      "expected_test_type": "positive",
+      "rationale": "Applies machine learning and threat intelligence to identify compromised instances, keys, or S3 anomalies."
+    },
+    {
+      "id": "AWS-SEC-GS-010",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-02",
+      "section": "Logging and monitoring in Amazon S3",
+      "verbatim_quote": "Enable server access logging: Server access logging provides detailed records for the requests that are made to a bucket.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that sensitive and regulated S3 buckets have server access logging or CloudTrail S3 data events enabled.",
+      "expected_test_type": "positive",
+      "rationale": "Provides visibility into read, write, and delete operations on individual S3 objects."
+    },
+    {
+      "id": "AWS-SEC-GS-011",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.11] S3 buckets should have event notifications enabled",
+      "verbatim_quote": "This control checks whether an Amazon S3 bucket has event notifications enabled. The control fails if notifications are not configured.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that critical S3 buckets publish event notifications (SNS, SQS, EventBridge) upon ObjectCreated or ObjectRemoved events.",
+      "expected_test_type": "positive",
+      "rationale": "Enables real-time automated security ingestion and forensic pipelines."
+    },
+    {
+      "id": "AWS-SEC-GS-012",
+      "category": "Detection & Monitoring",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC04: Capture network telemetry",
+      "verbatim_quote": "Capture VPC Flow Logs: Enable VPC Flow Logs to monitor IP traffic going to and from network interfaces in your VPC.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that all active VPCs have flow logging enabled and routed to CloudWatch Logs or centralized S3 bucket.",
+      "expected_test_type": "positive",
+      "rationale": "Critical for detecting network port scans, unauthorized data egress, and C2 traffic."
+    },
+    {
+      "id": "AWS-SEC-GS-013",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Block Public Access (BPA)",
+      "verbatim_quote": "Use Amazon S3 Block Public Access: Amazon S3 Block Public Access settings override any other S3 permissions, allowing you to limit public access to your buckets and objects.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that all four Block Public Access flags (BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, RestrictPublicBuckets) are set to true at both account and bucket level.",
+      "expected_test_type": "security",
+      "rationale": "Provides a definitive barrier against accidental public data leaks caused by misconfigured bucket policies or ACLs."
+    },
+    {
+      "id": "AWS-SEC-GS-014",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.1] S3 general purpose buckets should have block public access settings enabled",
+      "verbatim_quote": "This control checks whether your Amazon S3 general purpose buckets have block public access settings enabled.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify automated compliance scan flags any general-purpose S3 bucket with BPA disabled.",
+      "expected_test_type": "negative",
+      "rationale": "Security Hub compliance baseline requirement across CIS and AWS FSBP benchmarks."
+    },
+    {
+      "id": "AWS-SEC-GS-015",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.5] S3 general purpose buckets should require requests to use TLS",
+      "verbatim_quote": "This control checks whether Amazon S3 general purpose buckets require requests to use Transport Layer Security (TLS). The control fails if the bucket policy does not require HTTPS.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify bucket policy contains an explicit Deny statement where 'aws:SecureTransport' condition equals 'false'.",
+      "expected_test_type": "security",
+      "rationale": "Enforces in-transit encryption and prevents plaintext HTTP sniffing or man-in-the-middle tampering."
+    },
+    {
+      "id": "AWS-SEC-GS-016",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Protecting data with encryption",
+      "verbatim_quote": "Encrypt data at rest: Encrypt data stored in Amazon S3 using server-side encryption with Amazon S3 managed keys (SSE-S3), AWS KMS keys (SSE-KMS), or customer-provided keys (SSE-C).",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that all S3 buckets have default server-side encryption enabled using AES-256 (SSE-S3) or AWS KMS.",
+      "expected_test_type": "positive",
+      "rationale": "Guarantees physical and media-level data confidentiality on underlying storage hardware."
+    },
+    {
+      "id": "AWS-SEC-GS-017",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.8] S3 general purpose buckets should block public write access",
+      "verbatim_quote": "This control checks whether your Amazon S3 general purpose buckets block public write access.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that anonymous or unauthenticated PUT/POST requests to S3 buckets are explicitly rejected with HTTP 403 Forbidden.",
+      "expected_test_type": "negative",
+      "rationale": "Prevents unauthorized actors from writing malicious content, ransomware, or untrusted payloads into the bucket."
+    },
+    {
+      "id": "AWS-SEC-GS-018",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Using Amazon S3 versioning",
+      "verbatim_quote": "Enable versioning: Versioning protects against accidental overwrites and deletions by keeping multiple variants of an object in the same bucket.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that S3 bucket versioning status is 'Enabled' for critical data repositories.",
+      "expected_test_type": "positive",
+      "rationale": "Enables instant point-in-time recovery from accidental data corruption or rogue delete operations."
+    },
+    {
+      "id": "AWS-SEC-GS-019",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Using MFA delete",
+      "verbatim_quote": "Enable MFA Delete: MFA Delete adds another layer of security if your bucket versioning is enabled. It requires authentication with an MFA device to change bucket versioning or permanently delete an object version.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that bucket configuration has 'MfaDelete: Enabled' on buckets containing regulated or non-reproducible records.",
+      "expected_test_type": "security",
+      "rationale": "Prevents rogue administrators or stolen root/admin keys from deleting backup versions without physical token."
+    },
+    {
+      "id": "AWS-SEC-GS-020",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Using Amazon S3 Object Lock",
+      "verbatim_quote": "Use Amazon S3 Object Lock: Object Lock can help you meet regulatory requirements that require Write Once, Read Many (WORM) storage, or add an extra layer of protection against object changes and deletions.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that compliance buckets have Object Lock enabled in Compliance or Governance mode with retention periods configured.",
+      "expected_test_type": "boundary",
+      "rationale": "Guarantees SEC Rule 17a-4, FINRA, and CFTC regulatory compliance for immutable financial and audit logs."
+    },
+    {
+      "id": "AWS-SEC-GS-021",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-02",
+      "section": "Managing access with ACLs",
+      "verbatim_quote": "Disable access control lists (ACLs): AWS recommends that you disable ACLs and use bucket policies to control access to your buckets and objects.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify bucket ownership controls have ObjectOwnership set to 'BucketOwnerEnforced'.",
+      "expected_test_type": "security",
+      "rationale": "Simplifies authorization by making IAM and Bucket Policies the single source of access truth."
+    },
+    {
+      "id": "AWS-SEC-GS-022",
+      "category": "Data Protection & S3 Security",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.17] S3 general purpose buckets should have cross-Region replication enabled",
+      "verbatim_quote": "This control checks whether cross-Region replication is enabled for your Amazon S3 general purpose buckets.",
+      "normative_strength": "Optional",
+      "verification_criteria": "Verify replication configuration specifies a target bucket in a geographically distinct AWS Region with KMS key re-encryption.",
+      "expected_test_type": "positive",
+      "rationale": "Ensures disaster recovery resilience against regional outages or disasters."
+    },
+    {
+      "id": "AWS-SEC-GS-023",
+      "category": "Incident Response & Infrastructure Protection",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC10: Prepare for incident response",
+      "verbatim_quote": "Develop incident response playbooks: Create step-by-step playbooks for your organization's most common security incidents to ensure consistent, effective response.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify documented, runnable playbooks exist for credential exposure, ransomware detection, and unauthorized access.",
+      "expected_test_type": "positive",
+      "rationale": "Reduces mean time to remediate (MTTR) and prevents chaotic ad-hoc triage during a critical breach."
+    },
+    {
+      "id": "AWS-SEC-GS-024",
+      "category": "Incident Response & Infrastructure Protection",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC10: Isolate compromised resources",
+      "verbatim_quote": "Automate containment: Use automated scripts or AWS Step Functions to quarantine compromised resources, revoke credentials, and isolate network segments.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify automated response can detach IAM policies, apply an isolating security group, and take forensic EBS snapshots upon GuardDuty high-severity finding.",
+      "expected_test_type": "security",
+      "rationale": "Stops lateral threat movement within seconds without waiting for human operator intervention."
+    },
+    {
+      "id": "AWS-SEC-GS-025",
+      "category": "Incident Response & Infrastructure Protection",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC06: Protect compute and network boundaries",
+      "verbatim_quote": "Implement layered defense: Apply security controls at multiple layers of your workload, such as edge networks, VPC endpoints, and compute instances.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that traffic to S3 from VPCs traverses AWS PrivateLink or VPC Endpoints without traversing the public internet.",
+      "expected_test_type": "security",
+      "rationale": "Eliminates exposure to internet routing vulnerabilities and DNS spoofing."
+    },
+    {
+      "id": "AWS-SEC-GS-026",
+      "category": "Incident Response & Infrastructure Protection",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC06: Reduce attack surface",
+      "verbatim_quote": "Enforce inspection and protection: Use network firewalls, such as AWS Network Firewall or web application firewalls like AWS WAF, to inspect incoming and outgoing traffic.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify internet-facing web endpoints are protected by AWS WAF with rate-limiting and OWASP Top 10 managed rule groups.",
+      "expected_test_type": "positive",
+      "rationale": "Shields applications against SQL injection, cross-site scripting, and automated bot scraping."
+    },
+    {
+      "id": "AWS-SEC-GS-027",
+      "category": "Incident Response & Infrastructure Protection",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC11: Simulate incident response",
+      "verbatim_quote": "Run game days: Regularly test your incident response procedures through simulated events and game days to identify gaps in tools and processes.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify that tabletop exercises and automated chaos/security game days are conducted and documented annually.",
+      "expected_test_type": "positive",
+      "rationale": "Validates that personnel, alerting channels, and automated playbooks operate as designed under pressure."
+    },
+    {
+      "id": "AWS-SEC-GS-028",
+      "category": "Audit & Governance",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC01: Manage identity lifecycle",
+      "verbatim_quote": "Regularly audit credentials: Audit and rotate credentials periodically. Identify and deactivate unused credentials to reduce the risk of compromised credentials.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify IAM credential report is generated regularly and keys older than 90 days or unused for 45 days are disabled.",
+      "expected_test_type": "boundary",
+      "rationale": "Reduces exposure window for forgotten, abandoned, or stale developer access tokens."
+    },
+    {
+      "id": "AWS-SEC-GS-029",
+      "category": "Audit & Governance",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.13] S3 general purpose buckets should have lifecycle policies configured",
+      "verbatim_quote": "This control checks whether an Amazon S3 general purpose bucket has a lifecycle configuration rule. The control fails if no lifecycle rules are active.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify S3 bucket has lifecycle rules transitioning stale data to Glacier or expiring incomplete multipart uploads.",
+      "expected_test_type": "positive",
+      "rationale": "Ensures adherence to corporate data retention periods and reduces attack surface of stale data."
+    },
+    {
+      "id": "AWS-SEC-GS-030",
+      "category": "Audit & Governance",
+      "document_id": "DOC-AWS-01",
+      "section": "SEC01: Enforce organizational policies",
+      "verbatim_quote": "Use service control policies (SCPs): Use SCPs in AWS Organizations to enforce central permission guardrails across all accounts in your organization.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify SCP attached to organizational root denies member accounts from disabling CloudTrail, GuardDuty, or S3 Block Public Access.",
+      "expected_test_type": "security",
+      "rationale": "Prevents member account administrators from disabling critical corporate security controls."
+    },
+    {
+      "id": "AWS-SEC-GS-031",
+      "category": "Audit & Governance",
+      "document_id": "DOC-AWS-02",
+      "section": "Classifying sensitive data with Amazon Macie",
+      "verbatim_quote": "Use Amazon Macie to discover sensitive data: Amazon Macie uses machine learning and pattern matching to discover and protect sensitive data in Amazon S3.",
+      "normative_strength": "Recommended",
+      "verification_criteria": "Verify automated discovery scans identify and alert on PII, PHI, financial records, or credentials stored in S3.",
+      "expected_test_type": "positive",
+      "rationale": "Prevents accidental exposure of regulated personal data and intellectual property."
+    },
+    {
+      "id": "AWS-SEC-GS-032",
+      "category": "Audit & Governance",
+      "document_id": "DOC-AWS-03",
+      "section": "[S3.12] S3 general purpose buckets should prohibit ACLs",
+      "verbatim_quote": "This control checks whether Amazon S3 general purpose buckets prohibit access control lists (ACLs). The control passes if Object Ownership is set to Bucket owner enforced.",
+      "normative_strength": "Mandatory",
+      "verification_criteria": "Verify that attempts to apply legacy S3 ACLs return an AccessControlListNotSupported error.",
+      "expected_test_type": "negative",
+      "rationale": "Eliminates legacy ACL misconfigurations that historically caused public data exposures."
+    }
+  ]
+}

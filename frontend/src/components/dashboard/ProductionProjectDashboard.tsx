@@ -52,7 +52,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
       api.get<ProjectDashboardData>(`/projects/${projectId}/dashboard`, {
         execution_id: selectedExId || undefined,
       }),
-    refetchInterval: 30_000,
+    refetchInterval: false,
   });
 
   const runMutation = useMutation({

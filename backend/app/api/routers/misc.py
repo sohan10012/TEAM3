@@ -51,9 +51,9 @@ router = APIRouter()
 @router.get("/traceability/matrix", tags=["traceability"])
 def matrix(project_id: int | None = None, requirement_id: int | None = None,
            p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    try:
+    if project_id is not None:
         ids = scoped_project_ids(db, p, project_id)
-    except AppError:
+    else:
         ids = scoped_project_ids(db, p, None)
     if project_id is None and requirement_id is None:
         ids = ids[:1]  # the full org matrix is too wide; default to first accessible project
@@ -113,18 +113,18 @@ def _dt(v: str | None) -> datetime | None:
 @router.get("/analytics/dashboard", tags=["analytics"])
 def dashboard(project_id: int | None = None, date_from: str | None = None, date_to: str | None = None,
               p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    try:
+    if project_id is not None:
         pids = scoped_project_ids(db, p, project_id)
-    except AppError:
+    else:
         pids = scoped_project_ids(db, p, None)
     return analytics.dashboard(db, pids, _dt(date_from), _dt(date_to))
 
 
 @router.get("/analytics/quality", tags=["analytics"])
 def quality(project_id: int | None = None, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    try:
+    if project_id is not None:
         pids = scoped_project_ids(db, p, project_id)
-    except AppError:
+    else:
         pids = scoped_project_ids(db, p, None)
     return analytics.quality_report(db, pids)
 

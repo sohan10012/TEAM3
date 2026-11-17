@@ -32,6 +32,8 @@ ALLOWED_EXTENSIONS = {
     ".md": "md",
     ".markdown": "md",
     ".csv": "csv",
+    ".html": "html",
+    ".htm": "html",
 }
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
@@ -452,6 +454,67 @@ def parse_txt(file_path: Path) -> dict[str, Any]:
     }
 
 
+def parse_html(file_path: Path) -> dict[str, Any]:
+    from html import unescape
+    raw_html = file_path.read_text(encoding="utf-8", errors="replace")
+    clean = re.sub(r"<(script|style)[^>]*>[\s\S]*?</\1>", "", raw_html, flags=re.IGNORECASE)
+    clean = re.sub(r"<h1[^>]*>(.*?)</h1>", r"\n# \1\n", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<h2[^>]*>(.*?)</h2>", r"\n## \1\n", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<h3[^>]*>(.*?)</h3>", r"\n### \1\n", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<li[^>]*>(.*?)</li>", r"\n- \1", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<p[^>]*>(.*?)</p>", r"\n\1\n", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<[^>]+>", " ", clean)
+    clean = unescape(clean)
+    lines = [re.sub(r"\s+", " ", l).strip() for l in clean.splitlines()]
+    cleaned_text = "\n".join(l for l in lines if l)
+
+    sections: list[dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
+    cur_title = "Overview"
+    cur_lines: list[str] = []
+
+    for idx, line in enumerate(cleaned_text.splitlines(), start=1):
+        if line.startswith("#"):
+            if cur_lines:
+                items.append({
+                    "content_type": "section",
+                    "content": "\n".join(cur_lines).strip(),
+                    "source_page": 1,
+                    "source_section": cur_title,
+                    "source_location": f"Section: {cur_title}",
+                    "metadata": {},
+                })
+                cur_lines = []
+            cur_title = line.lstrip("#").strip()
+            level = min(3, len(line) - len(line.lstrip("#")))
+            sections.append({
+                "title": cur_title,
+                "level": level,
+                "page": f"Section {len(sections) + 1}",
+                "line": idx,
+            })
+        else:
+            cur_lines.append(line)
+
+    if cur_lines:
+        items.append({
+            "content_type": "section",
+            "content": "\n".join(cur_lines).strip(),
+            "source_page": 1,
+            "source_section": cur_title,
+            "source_location": f"Section: {cur_title}",
+            "metadata": {},
+        })
+
+    return {
+        "extracted_text": cleaned_text,
+        "sections": sections,
+        "tables": [],
+        "items": items,
+        "warnings": [],
+    }
+
+
 def extract_document_content(file_path: Path, file_type: str) -> dict[str, Any]:
     """Route document to appropriate format parser."""
     ft = file_type.lower()
@@ -467,6 +530,8 @@ def extract_document_content(file_path: Path, file_type: str) -> dict[str, Any]:
         return parse_markdown(file_path)
     elif ft == "txt":
         return parse_txt(file_path)
+    elif ft in ("html", "htm"):
+        return parse_html(file_path)
     else:
         raise BadRequest(f"Unsupported format '{file_type}' for text extraction")
 

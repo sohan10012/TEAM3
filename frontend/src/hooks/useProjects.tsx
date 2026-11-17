@@ -20,15 +20,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         return await api.get<Page<Project>>("/projects", { page_size: 200, sort: "key", order: "asc" });
       }
     },
-    staleTime: 30_000,
+    staleTime: 5_000,
     retry: 2,
+    refetchOnWindowFocus: true,
   });
   const [projectId, setPid] = useState<number | null>(() => {
     try { const v = localStorage.getItem(KEY); return v ? Number(v) : null; } catch { return null; }
   });
   const projects = useMemo(() => q.data?.items ?? [], [q.data]);
   useEffect(() => {
-    if (projectId && projects.length && !projects.some((p) => p.id === projectId)) setPid(null);
+    if (projectId && projects.length && !projects.some((p) => p.id === projectId)) {
+      setPid(null);
+      try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+    }
     if (!projectId && projects.length) {
       const defaultProj = projects.find((p) => p.key === "ECHO");
       if (defaultProj) {

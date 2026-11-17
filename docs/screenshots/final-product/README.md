@@ -30,3 +30,4 @@ Evaluation Status: Ready for Phase 7 Independent Evaluation
 | **17** | `17_document_processing_progress_1440x900.png` | 1440×900 | New Evaluation Project | Document processing lifecycle stepper showing intake status, parsing progression, and transition to AI clause decomposition. |
 | **18** | `18_responsive_tablet_dashboard_1024x768.png` | 1024×768 | Project 11 (`EV_PAY`) | Responsive Tablet Layout (1024×768): verified adaptive grid, touch-friendly touch targets ($\ge 44\times 44\text{px}$), and zero horizontal overflow (`overflow-x: clip`). |
 | **19** | `19_responsive_mobile_dashboard_390x844.png` | 390×844 | Project 11 (`EV_PAY`) | Responsive Mobile Layout (390×844 iPhone 14/15/16): single-column fluid card layout, collapsible navigation, accessible touch targets, and mobile-stable viewport (`min-h-[100dvh]`). |
+

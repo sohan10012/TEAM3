@@ -69,7 +69,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
   const dashQuery = useQuery({
     queryKey: ["requirements_dashboard", projectId],
     queryFn: () => api.get<RequirementsDashboardData>(`/projects/${projectId}/requirements-dashboard`),
-    refetchInterval: 15_000,
+    refetchInterval: false,
   });
 
   const executionsQuery = useQuery({
@@ -82,7 +82,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
       order: "desc",
     }),
     enabled: isDashboard || activeTab === "runs",
-    refetchInterval: isDashboard ? 15_000 : false,
+    refetchInterval: false,
   });
 
   const docsQuery = useQuery({

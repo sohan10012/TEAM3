@@ -82,6 +82,42 @@ def dashboard(db: Session, project_ids: list[int], date_from: datetime | None, d
     tot = sum(c["total_clauses"] for c in cov)
     cvd = sum(c["covered_clauses"] for c in cov)
 
+    # Compute project-scoped requirement and clause coverage breakdown
+    clauses = _current_clauses(db, pids)
+    tests = db.execute(select(TestCase.project_id, TestCase.requirement_id, TestCase.clause_keys)
+                       .where(TestCase.project_id.in_(pids),
+                              TestCase.status.in_(ACTIVE_TEST))).all()
+    covered_keys: dict[int, set[str]] = defaultdict(set)
+    for _pid, rid, keys in tests:
+        covered_keys[rid].update(keys)
+    
+    req_clause_map: dict[int, list[int]] = defaultdict(lambda: [0, 0])
+    for c, r in clauses:
+        req_clause_map[r.id][0] += 1
+        if c.clause_key in covered_keys[r.id]:
+            req_clause_map[r.id][1] += 1
+    
+    total_reqs_in_map = len(req_clause_map)
+    fully_cov_reqs = sum(1 for rid, (t, cv) in req_clause_map.items() if t > 0 and cv == t)
+    partially_cov_reqs = sum(1 for rid, (t, cv) in req_clause_map.items() if 0 < cv < t)
+    uncovered_reqs = sum(1 for rid, (t, cv) in req_clause_map.items() if cv == 0)
+
+    cov_breakdown = {
+        "total_clauses": tot,
+        "covered_clauses": cvd,
+        "uncovered_clauses": tot - cvd,
+        "coverage_pct": round(100 * cvd / tot, 1) if tot else 0.0,
+        "total_requirements": total_reqs_in_map,
+        "fully_covered_requirements": fully_cov_reqs,
+        "partially_covered_requirements": partially_cov_reqs,
+        "uncovered_requirements": uncovered_reqs,
+        "categories": [
+            {"category": "Fully Covered", "count": fully_cov_reqs, "pct": round(100 * fully_cov_reqs / total_reqs_in_map, 1) if total_reqs_in_map else 0.0},
+            {"category": "Partially Covered", "count": partially_cov_reqs, "pct": round(100 * partially_cov_reqs / total_reqs_in_map, 1) if total_reqs_in_map else 0.0},
+            {"category": "Uncovered", "count": uncovered_reqs, "pct": round(100 * uncovered_reqs / total_reqs_in_map, 1) if total_reqs_in_map else 0.0},
+        ],
+    }
+
     trend: dict[str, Counter] = defaultdict(Counter)
     for e in executions:
         wk = (e.started_at - timedelta(days=e.started_at.weekday())).strftime("%Y-%m-%d")
@@ -125,6 +161,7 @@ def dashboard(db: Session, project_ids: list[int], date_from: datetime | None, d
             "execution_trend": [{"week": k, **v} for k, v in sorted(trend.items())],
             "result_distribution": [{"status": k, "count": v} for k, v in sorted(res_counts.items())],
             "coverage_by_project": cov,
+            "coverage_breakdown": cov_breakdown,
             "defect_severity": [{"severity": s, "count": sum(1 for d in open_defects if d.severity == s)}
                                 for s in ("critical", "high", "medium", "low")],
             "defect_resolution": [{"week": k, "opened": v["opened"], "resolved": v["resolved"]}

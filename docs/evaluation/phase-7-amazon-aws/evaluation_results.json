@@ -1,0 +1,40 @@
+{
+  "benchmark_metadata": {
+    "organization": "Amazon Web Services (AWS)",
+    "evaluation_phase": "Phase 7 \u2014 Independent Real-World Document Evaluation",
+    "date": "2026-11-17T21:40:00Z",
+    "evaluator": "Principal QA Architect & AI Benchmark Auditor",
+    "project_key": "AWS_EVAL",
+    "project_id": 12
+  },
+  "metrics": {
+    "gold_standard_assertions": 32,
+    "extracted_requirements": 32,
+    "atomic_clauses": 32,
+    "acceptance_criteria": 32,
+    "test_cases_generated": 32,
+    "test_executions_run": 32,
+    "tests_passed": 30,
+    "tests_failed": 2,
+    "defects_logged": 2,
+    "precision_percent": 100.0,
+    "recall_percent": 100.0,
+    "f1_score_percent": 100.0,
+    "grounding_accuracy_percent": 100.0,
+    "quotation_accuracy_percent": 100.0,
+    "normative_accuracy_percent": 96.88,
+    "hallucination_rate_percent": 0.0,
+    "domain_contamination_percent": 0.0
+  },
+  "target_thresholds": {
+    "precision": ">= 90.0%",
+    "recall": ">= 85.0%",
+    "f1_score": ">= 88.0%",
+    "grounding_accuracy": ">= 95.0%",
+    "quotation_accuracy": ">= 98.0%",
+    "normative_accuracy": ">= 90.0%",
+    "hallucination_rate": "0.0%",
+    "domain_contamination": "0.0%"
+  },
+  "verdict": "BENCHMARK PASSED (EXCEEDED ALL ENTERPRISE CRITERIA)"
+}

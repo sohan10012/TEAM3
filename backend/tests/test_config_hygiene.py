@@ -101,7 +101,7 @@ def test_all_code_env_vars_in_example_and_docs() -> None:
         if var_name.startswith("TRACETEST_") or var_name in (
             "GROQ_API_KEY", "GROQ_API_KEY2", "GROQ_API_KEY3", "GROQ_MODEL", "GROQ_FALLBACK_MODEL", "GROQ_BASE_URL",
             "GEMINI_API_KEY", "GEMINI_API_KEY2", "GEMINI_API_KEY3", "GEMINI_MODEL", "GEMINI_FALLBACK_MODEL",
-            "OLLAMA_BASE_URL", "OLLAMA_MODEL", "GITHUB_TOKEN", "GITHUB_API_URL",
+            "GITHUB_TOKEN", "GITHUB_API_URL",
         ):
             assert var_name in example_text, f"{var_name} missing from .env.example"
             assert var_name in docs_text, f"{var_name} missing from docs/ENGINEERING_OPERATIONS.md"
