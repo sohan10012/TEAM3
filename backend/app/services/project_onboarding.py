@@ -337,7 +337,7 @@ def calculate_rule_confidence(
     is_verified: bool,
     source_text: str,
 ) -> dict[str, Any]:
-    """Calculate deterministic, multi-factor calibrated confidence score for an extracted rule."""
+    """Calculate deterministic 5-factor evidence quality score (not a statistical probability) for an extracted rule."""
     q_norm = " ".join(quote.split()).lower()
     src_norm = " ".join(source_text.split()).lower()
 
@@ -406,6 +406,7 @@ def calculate_rule_confidence(
     final_conf = round(raw, 4)
 
     rationale = (
+        f"Evidence Quality Score: {int(final_conf*100)}% (non-probabilistic composite). "
         f"Quotation match: {int(q_score*100)}% ({'verbatim grounded' if is_verified else 'unverified'}). "
         f"Semantic support: {int(sem_score*100)}% ({'prescriptive normative requirement' if sem_score > 0.92 else 'standard guidance'}). "
         f"Context clarity: {int(ctx_score*100)}% with well-defined operational scope."
@@ -1300,8 +1301,18 @@ def commit_approved_onboarding_project(
             restrictions=json.dumps(r.get("restrictions", [])) if isinstance(r.get("restrictions"), list) else str(r.get("restrictions", "")),
         ))
 
-    # 5. Create BusinessScenarios
+    # 5. Create BusinessScenarios (filter out any rejected rules so they cannot remain approved dependencies)
+    approved_rule_ids = {r.get("rule_id") for r in approved_config.get("business_rules", []) if r.get("rule_id")}
     for sc in approved_config.get("business_scenarios", []):
+        raw_rules = sc.get("business_rules", [])
+        if isinstance(raw_rules, list):
+            active_rules = [r for r in raw_rules if r in approved_rule_ids]
+        elif isinstance(raw_rules, str):
+            rule_tokens = re.findall(r'BR-\d+|SEC-\d+|RULE-\d+', raw_rules)
+            active_rules = [r for r in rule_tokens if r in approved_rule_ids]
+        else:
+            active_rules = []
+
         db.add(BusinessScenario(
             project_id=proj.id,
             title=sc.get("title", ""),
@@ -1309,7 +1320,7 @@ def commit_approved_onboarding_project(
             actor=sc.get("actor", "User"),
             preconditions=json.dumps(sc.get("preconditions", [])) if isinstance(sc.get("preconditions"), list) else str(sc.get("preconditions", "")),
             expected_outcome=sc.get("expected_outcome", ""),
-            business_rules=json.dumps(sc.get("business_rules", [])) if isinstance(sc.get("business_rules"), list) else str(sc.get("business_rules", "")),
+            business_rules=json.dumps(active_rules),
             module=sc.get("module", "Core"),
         ))
 

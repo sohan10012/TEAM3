@@ -645,6 +645,28 @@ export function AiAssistedOnboardingView({
 
     setIsSubmitting(true);
     try {
+      const approvedRuleIds = new Set(
+        rulesList.filter((r) => r.approval_status !== "rejected").map((r) => r.rule_id)
+      );
+
+      // Prune rejected rules from scenarios so rejected rules cannot remain approved dependencies
+      const sanitizedScenarios = scenariosList.map((sc) => {
+        const raw = sc.business_rules;
+        let rulesArr: string[] = [];
+        if (Array.isArray(raw)) {
+          rulesArr = raw.flatMap((r) =>
+            typeof r === "string" ? r.match(/BR-\d+|SEC-\d+|RULE-\d+/g) || [r] : []
+          );
+        } else if (typeof raw === "string") {
+          rulesArr = raw.match(/BR-\d+|SEC-\d+|RULE-\d+/g) || [];
+        }
+        const activeRules = rulesArr.filter((id) => approvedRuleIds.has(id));
+        return {
+          ...sc,
+          business_rules: activeRules,
+        };
+      });
+
       const approvedPayload = {
         approved_configuration: {
           ...reviewConfig,
@@ -657,7 +679,7 @@ export function AiAssistedOnboardingView({
           },
           business_rules: rulesList.filter((r) => r.approval_status !== "rejected"),
           roles_and_responsibilities: rolesList,
-          business_scenarios: scenariosList,
+          business_scenarios: sanitizedScenarios,
           cross_document_insights: insightsList,
           staged_documents: stagedDocs,
         },
@@ -1553,7 +1575,7 @@ export function AiAssistedOnboardingView({
                                       setActiveConfidenceRuleId((prev) => (prev === rule.rule_id ? null : rule.rule_id));
                                     }}
                                     className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                    title="Click to inspect 5-factor scoring breakdown"
+                                    title="Click to inspect 5-factor evidence quality score (deterministic quality metric, not a statistical probability)"
                                   >
                                     <span>{confidencePercent}% Confidence</span>
                                     <Info className="h-2.5 w-2.5 opacity-70" />
@@ -1563,12 +1585,15 @@ export function AiAssistedOnboardingView({
                                     <div className="absolute left-0 top-full mt-1.5 z-30 w-80 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-xs space-y-2">
                                       <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                                         <span className="font-bold text-slate-900 text-[11px]">
-                                          5-Factor Confidence Scoring
+                                          5-Factor Evidence Quality Score
                                         </span>
                                         <span className="font-mono font-bold text-emerald-700 text-xs">
                                           {confidencePercent}%
                                         </span>
                                       </div>
+                                      <p className="text-[10px] text-slate-500">
+                                        Deterministic source-grounding metric (not a statistical or calibrated probability).
+                                      </p>
                                       {rule.confidence_breakdown ? (
                                         <div className="space-y-1.5 text-[11px]">
                                           <div className="flex justify-between text-slate-600">

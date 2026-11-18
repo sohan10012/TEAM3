@@ -24,3 +24,4 @@ artifacts/*
 !artifacts/.gitkeep
 test-results/
 playwright-report/
+scratch/

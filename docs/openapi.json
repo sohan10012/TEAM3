@@ -9051,7 +9051,7 @@
           "reasonx"
         ],
         "summary": "Reasonx Chat",
-        "description": "Send a question to ReasonX AI with active screen and project context.",
+        "description": "Send a query to ReasonX AI Autonomous Agent with active screen and project context.",
         "operationId": "reasonx_chat_api_v1_reasonx_chat_post",
         "requestBody": {
           "content": {
@@ -9063,6 +9063,239 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reasonx/chat/stream": {
+      "post": {
+        "tags": [
+          "reasonx"
+        ],
+        "summary": "Reasonx Chat Stream",
+        "description": "Server-Sent Events (SSE) streaming endpoint for ReasonX Autonomous Agent.",
+        "operationId": "reasonx_chat_stream_api_v1_reasonx_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonXChatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reasonx/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "reasonx"
+        ],
+        "summary": "Get Task",
+        "description": "Retrieve full task status, execution trace, and planned steps.",
+        "operationId": "get_task_api_v1_reasonx_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reasonx/tasks/{task_id}/approve": {
+      "post": {
+        "tags": [
+          "reasonx"
+        ],
+        "summary": "Approve Task Action",
+        "description": "Approve and execute a pending Level 3/4 action on a ReasonX task.",
+        "operationId": "approve_task_action_api_v1_reasonx_tasks__task_id__approve_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reasonx/tasks/{task_id}/cancel": {
+      "post": {
+        "tags": [
+          "reasonx"
+        ],
+        "summary": "Cancel Task Action",
+        "description": "Cancel a pending or running ReasonX task.",
+        "operationId": "cancel_task_action_api_v1_reasonx_tasks__task_id__cancel_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TaskCancelIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reasonx/projects/{project_id}/tasks": {
+      "get": {
+        "tags": [
+          "reasonx"
+        ],
+        "summary": "Get Project Tasks",
+        "description": "List recent ReasonX agent tasks for a project.",
+        "operationId": "get_project_tasks_api_v1_reasonx_projects__project_id__tasks_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 15,
+              "title": "Limit"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -9226,7 +9459,7 @@
           "reasonx"
         ],
         "summary": "Quick Prompts",
-        "description": "Get context-aware suggested quick prompts for the active screen.",
+        "description": "Get context-aware suggested quick prompts for the active screen and project.",
         "operationId": "quick_prompts_api_v1_reasonx_quick_prompts_get",
         "parameters": [
           {
@@ -9237,6 +9470,22 @@
               "type": "string",
               "default": "workspace",
               "title": "Page"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           }
         ],
@@ -9256,6 +9505,259 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/ai-usage": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Ai Usage Analytics",
+        "description": "Aggregate token usage, AI cost analytics, provider breakdown, and historical trend.",
+        "operationId": "get_ai_usage_analytics_api_v1_settings_ai_usage_get",
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(today|7d|30d|90d|all|custom)$",
+              "default": "all",
+              "title": "Range"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/ai-usage/export": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Export Ai Usage Report",
+        "description": "Export filtered AI token usage and cost accounting report as CSV or JSON.",
+        "operationId": "export_ai_usage_report_api_v1_settings_ai_usage_export_get",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(csv|json)$",
+              "default": "csv",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(today|7d|30d|90d|all|custom)$",
+              "default": "all",
+              "title": "Range"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/llm/health-check": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Live Provider Health Check",
+        "description": "Perform a live health probe against Gemini or Groq without exposing credentials or internal slot counts.",
+        "operationId": "live_provider_health_check_api_v1_settings_llm_health_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealthProbeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/providers": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Clean Providers Status",
+        "description": "Return clean provider summary for Settings page: role, provider, model, status (zero secrets, zero slot arrays).",
+        "operationId": "get_clean_providers_status_api_v1_settings_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -10444,6 +10946,20 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthProbeRequest": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "pattern": "^(gemini|groq)$",
+            "title": "Provider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "title": "HealthProbeRequest"
       },
       "ImportIn": {
         "properties": {
@@ -11738,6 +12254,17 @@
         ],
         "title": "SwitchOperatorIn"
       },
+      "TaskCancelIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": "User cancelled action"
+          }
+        },
+        "type": "object",
+        "title": "TaskCancelIn"
+      },
       "TestCommitIn": {
         "properties": {
           "test_cases": {
@@ -11763,7 +12290,7 @@
         "properties": {
           "provider": {
             "type": "string",
-            "pattern": "^(groq|gemini|ollama)$",
+            "pattern": "^(groq|gemini)$",
             "title": "Provider"
           }
         },

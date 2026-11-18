@@ -91,6 +91,7 @@ def test_multi_factor_confidence_calculation_no_static_92():
     assert score != 0.92
     assert 0.90 <= score <= 0.99
     assert "verbatim grounded" in rationale
+    assert "Evidence Quality Score" in rationale
 
     # Non-verbatim or inferred rule score must be capped and lower
     res_inferred = calculate_rule_confidence(
@@ -150,3 +151,97 @@ def test_synthesized_grounded_rules_and_scenario_traceability():
     assert "SEC03-BP03" in br7["clause_ref"] or "SEC03-BP03" in (br7["section_title"] or "")
     assert br7["physical_page_number"] == 73
     assert br7["printed_page_number"] == 67
+
+
+def test_rejected_rule_pruning_safeguard(admin):
+    from app.db.base import SessionLocal
+    from app.db.models import BusinessScenario, Requirement
+
+    # Setup approved configuration where BR-001 is accepted but BR-007 is REJECTED (not in business_rules)
+    approved_config = {
+        "project_metadata": {
+            "name": "Audit Safeguard Test",
+            "key": "SAFE_01",
+            "business_domain": "Cloud Security Architecture",
+            "description": "Verification of rejected rule pruning safeguard",
+            "project_type": "requirements_based",
+        },
+        "product_context": {
+            "product_overview": "Security verification",
+            "problem_statement": "Preventing rejected dependencies",
+            "product_modules": ["IAM", "Infrastructure"],
+        },
+        "business_rules": [
+            {
+                "rule_id": "BR-001",
+                "title": "Account-Level Workload Isolation",
+                "description": "Approved account isolation rule.",
+                "supporting_quote": "In AWS, accounts are a hard boundary.",
+                "confidence": 0.95,
+                "rule_type": "security_standard",
+            }
+            # Note: BR-007 was REJECTED by human reviewer, so it is omitted from business_rules!
+        ],
+        "roles_and_responsibilities": [
+            {
+                "role_name": "Cloud Architect",
+                "description": "Architects workload boundaries",
+                "permissions": ["iam:CreatePolicy"],
+            }
+        ],
+        "business_scenarios": [
+            {
+                "title": "Account Isolation Scenario",
+                "actor": "Cloud Architect",
+                "description": "Relies on approved BR-001",
+                "expected_outcome": "Given separate accounts, When tested, Then isolation holds.",
+                "business_rules": ["BR-001"],
+            },
+            {
+                "title": "Emergency Access Scenario",
+                "actor": "IAM Administrator",
+                "description": "Relies on rejected BR-007 and approved BR-001",
+                "expected_outcome": "Given outage, When break-glass triggered, Then access granted.",
+                "business_rules": ["BR-001", "BR-007"],
+            },
+            {
+                "title": "Standalone Emergency Scenario",
+                "actor": "IAM Administrator",
+                "description": "Relies exclusively on rejected BR-007",
+                "expected_outcome": "Given outage, When break-glass triggered, Then access granted.",
+                "business_rules": ["BR-007"],
+            },
+        ],
+        "staged_documents": [],
+    }
+
+    resp = admin.post("/projects/onboarding/create", json={"approved_configuration": approved_config})
+    assert resp.status_code == 201, resp.text
+    res = resp.json()
+    project_id = res["project_id"]
+
+    db_session = SessionLocal()
+    try:
+        # Verify BusinessScenarios in database
+        scenarios = db_session.query(BusinessScenario).filter(BusinessScenario.project_id == project_id).all()
+        assert len(scenarios) == 3
+
+        import json
+        for sc in scenarios:
+            rules = json.loads(sc.business_rules) if sc.business_rules else []
+            # BR-007 must NOT be in any persisted scenario dependencies because it was rejected!
+            assert "BR-007" not in rules, f"Rejected rule BR-007 leaked into scenario {sc.title}!"
+
+        # Scenario 1 must retain BR-001
+        sc1 = next(s for s in scenarios if s.title == "Account Isolation Scenario")
+        assert json.loads(sc1.business_rules) == ["BR-001"]
+
+        # Scenario 2 must retain ONLY BR-001 (BR-007 pruned)
+        sc2 = next(s for s in scenarios if s.title == "Emergency Access Scenario")
+        assert json.loads(sc2.business_rules) == ["BR-001"]
+
+        # Scenario 3 must have empty active rules (BR-007 pruned)
+        sc3 = next(s for s in scenarios if s.title == "Standalone Emergency Scenario")
+        assert json.loads(sc3.business_rules) == []
+    finally:
+        db_session.close()

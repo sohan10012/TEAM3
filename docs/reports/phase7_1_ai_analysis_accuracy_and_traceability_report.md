@@ -72,3 +72,4 @@ Executed `npx vitest run tests/project_creation_wizard.test.tsx`:
 - `screenshots.zip`: Updated with all new Phase 7.1 screenshots.
 - `docs/screenshots.zip`: Synchronized with latest visual evidence.
 - Local git commit: Applied on branch `main` (strictly no `git push`).
+

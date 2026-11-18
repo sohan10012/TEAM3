@@ -361,7 +361,7 @@ test("ProjectCreationWizard Step 4 renders accurate provenance, 5-factor confide
   fireEvent.click(confBadge);
 
   await waitFor(() => {
-    expect(screen.getByText(/5-Factor Confidence Scoring/i)).toBeInTheDocument();
+    expect(screen.getByText(/5-Factor Evidence Quality Score/i)).toBeInTheDocument();
     expect(screen.getByText(/Quotation Match \(35%\):/i)).toBeInTheDocument();
     expect(screen.getByText(/Semantic Support \(25%\):/i)).toBeInTheDocument();
   });

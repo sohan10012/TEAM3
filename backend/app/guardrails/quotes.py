@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 _QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-"})
 _WS = re.compile(r"\s+")
@@ -9,7 +10,8 @@ _EDGE = re.compile(r"^[\s\"'.,;:]+|[\s\"'.,;:]+$")
 
 
 def normalize(text: str) -> str:
-    text = (text or "").translate(_QUOTES).lower()
+    text = unicodedata.normalize("NFKD", text or "")
+    text = text.translate(_QUOTES).lower()
     text = text.replace("…", "...")
     return _WS.sub(" ", text).strip()
 
