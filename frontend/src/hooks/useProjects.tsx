@@ -26,6 +26,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   });
   const [projectId, setPid] = useState<number | null>(() => {
     try {
+      const sp = new URLSearchParams(window.location.search);
+      const urlPid = sp.get("project_id");
+      if (urlPid) {
+        const parsed = Number(urlPid);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
       const v = localStorage.getItem(KEY);
       if (v === "all") return null;
       return v ? Number(v) : null;
@@ -33,6 +39,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   });
   const projects = useMemo(() => q.data?.items ?? [], [q.data]);
   useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const urlPid = sp.get("project_id");
+      if (urlPid) {
+        const parsed = Number(urlPid);
+        if (!isNaN(parsed) && parsed > 0 && parsed !== projectId) {
+          setPid(parsed);
+          try { localStorage.setItem(KEY, String(parsed)); } catch { /* ignore */ }
+          return;
+        }
+      }
+    } catch { /* ignore */ }
     if (projectId && projects.length && !projects.some((p) => p.id === projectId)) {
       setPid(null);
       try { localStorage.setItem(KEY, "all"); } catch { /* ignore */ }

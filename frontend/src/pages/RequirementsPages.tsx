@@ -135,11 +135,16 @@ function CodeBasedRequirementsView({ projectId }: { projectId: number | null }) 
 }
 
 export function RequirementsPage() {
-  const { projectId, current } = useProjects();
-  if (projectId && current?.project_type === "requirements_based") {
-    return <RequirementsManagementView projectId={projectId} current={current} />;
+  const { projectId, current, projects } = useProjects();
+  const [searchParams] = useSearchParams();
+  const pidParam = searchParams.get("project_id");
+  const effectivePid = pidParam ? Number(pidParam) : projectId;
+  const effectiveProj = projects.find((p) => p.id === effectivePid) ?? current;
+
+  if (effectivePid && effectiveProj?.project_type === "requirements_based") {
+    return <RequirementsManagementView projectId={effectivePid} current={effectiveProj} />;
   }
-  return <CodeBasedRequirementsView projectId={projectId} />;
+  return <CodeBasedRequirementsView projectId={effectivePid} />;
 }
 
 function useProjectDetail(pid: number | null) {

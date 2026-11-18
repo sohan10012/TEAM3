@@ -147,6 +147,7 @@ export default function SimulationPage() {
   const [viewMode, setViewMode] = useState<"all" | "business" | "technical">("all");
   const [activeRcaCard, setActiveRcaCard] = useState<string | null>("pre-payroll");
   const [baseHourlyWage, setBaseHourlyWage] = useState<number>(35.0);
+  const [showRawYaml, setShowRawYaml] = useState<boolean>(true);
   const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { projectId, current, byId } = useProjects();
@@ -2421,6 +2422,15 @@ export default function SimulationPage() {
                   </span>
                   <button
                     type="button"
+                    onClick={() => setShowRawYaml(!showRawYaml)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-200 bg-white text-2xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    title={showRawYaml ? "Collapse raw YAML code" : "Expand raw YAML code"}
+                  >
+                    {showRawYaml ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    <span>{showRawYaml ? "Collapse" : "Expand"}</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleCopyYaml}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-200 bg-white text-2xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
@@ -2438,9 +2448,16 @@ export default function SimulationPage() {
                 </div>
               </div>
 
-              <pre className="p-4 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 select-all">
-                {activePolicy?.yaml_spec || "# No YAML loaded"}
-              </pre>
+              {showRawYaml ? (
+                <pre className="p-4 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 select-all">
+                  {activePolicy?.yaml_spec || "# No YAML loaded"}
+                </pre>
+              ) : (
+                <div className="p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                  <p className="font-medium text-slate-700">YAML Code Specification Collapsed</p>
+                  <p className="text-2xs text-slate-500 mt-1">Deterministic AST safety checks verified. Click Expand above to inspect raw specification.</p>
+                </div>
+              )}
             </Panel>
 
             {/* Right: Visual Rule Flow + Custom Upload */}

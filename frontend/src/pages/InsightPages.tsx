@@ -110,21 +110,21 @@ export function TraceabilityPage() {
 
       {q.error ? (
         <ErrorState error={q.error} onRetry={q.refetch} />
-      ) : sp.get("view") === "matrix" ? (
-        q.data ? (
-          <CoverageExplorerView
-            data={q.data}
-            projectId={pid}
-            onRefresh={() => {
-              q.refetch();
-              reqs.refetch();
-            }}
-          />
+      ) : sp.get("view") === "workspace" ? (
+        pid ? (
+          <TraceabilityIntelligenceWorkspace projectId={pid} />
         ) : (
           <LoadingBlock rows={10} />
         )
-      ) : pid ? (
-        <TraceabilityIntelligenceWorkspace projectId={pid} />
+      ) : q.data ? (
+        <CoverageExplorerView
+          data={q.data}
+          projectId={pid}
+          onRefresh={() => {
+            q.refetch();
+            reqs.refetch();
+          }}
+        />
       ) : (
         <LoadingBlock rows={10} />
       )}

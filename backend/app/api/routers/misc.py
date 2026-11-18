@@ -26,7 +26,9 @@ from app.db.base import get_db, utcnow
 from app.db.models import (
     AcceptanceCriterion,
     AuditLog,
+    BusinessScenario,
     Defect,
+    Document,
     Environment,
     EvalResult,
     EvalRun,
@@ -36,8 +38,10 @@ from app.db.models import (
     IntegrationEvent,
     Notification,
     Project,
+    ProjectIntelligenceReport,
     Requirement,
     TestCase,
+    TestSuite,
 )
 from app.execution.sandbox import _parse_junit
 from app.integrations import github
@@ -514,6 +518,99 @@ def search(
             "subtitle": f"Target: {e.hcm_version or 'Default'} · Passed: {e.passed} · Failed: {e.failed}",
             "project_id": e.project_id,
         })
+
+    # 7. Documents
+    for doc in db.execute(
+        select(Document)
+        .where(
+            Document.project_id.in_(ids),
+            Document.display_name.ilike(like) | Document.filename.ilike(like) | Document.description.ilike(like)
+        )
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "document",
+            "id": doc.id,
+            "key": doc.filename,
+            "title": doc.display_name or doc.filename,
+            "subtitle": f"Type: {doc.document_type or doc.purpose or 'Specification'} · Format: {(doc.file_type or 'PDF').upper()}",
+            "snippet": (doc.description or "")[:120] if doc.description else None,
+            "project_id": doc.project_id,
+        })
+
+    # 8. Business Rules / Scenarios
+    for sc in db.execute(
+        select(BusinessScenario)
+        .where(
+            BusinessScenario.project_id.in_(ids),
+            BusinessScenario.title.ilike(like) | BusinessScenario.description.ilike(like) | BusinessScenario.actor.ilike(like)
+        )
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "business_rule",
+            "id": sc.id,
+            "key": f"RULE-{sc.id}",
+            "title": sc.title,
+            "subtitle": f"Actor: {sc.actor or 'System'} · Module: {sc.module or 'Policy'}",
+            "snippet": (sc.description or "")[:120] if sc.description else None,
+            "project_id": sc.project_id,
+        })
+
+    # 9. Test Suites
+    for ts in db.execute(
+        select(TestSuite)
+        .where(
+            TestSuite.project_id.in_(ids),
+            TestSuite.key.ilike(like) | TestSuite.name.ilike(like) | TestSuite.description.ilike(like)
+        )
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "suite",
+            "id": ts.id,
+            "key": ts.key,
+            "title": ts.name,
+            "subtitle": f"Priority: {ts.priority or 'Normal'} · Suite #{ts.id}",
+            "snippet": (ts.description or "")[:120] if ts.description else None,
+            "project_id": ts.project_id,
+        })
+
+    # 10. Reports (Project Intelligence Dossier)
+    if any(term in query_str.lower() for term in ("report", "intel", "dossier", "readiness", "audit", "summary")) or not project_id:
+        for rep, prj_key, prj_name in db.execute(
+            select(ProjectIntelligenceReport, Project.key, Project.name)
+            .join(Project, ProjectIntelligenceReport.project_id == Project.id)
+            .where(
+                ProjectIntelligenceReport.project_id.in_(ids),
+                Project.key.ilike(like) | Project.name.ilike(like) | (ProjectIntelligenceReport.id > 0 if any(t in query_str.lower() for t in ("report", "intel", "dossier", "readiness")) else False)
+            )
+            .order_by(ProjectIntelligenceReport.id.desc())
+            .limit(limit)
+        ).all():
+            score_pct = int((rep.readiness_score or 0) * 100)
+            out.append({
+                "type": "report",
+                "id": rep.id,
+                "key": f"REP-{prj_key}",
+                "title": f"{prj_name} — Intelligence Dossier",
+                "subtitle": f"Readiness Score: {score_pct}% · Generated: {rep.generated_at.strftime('%Y-%m-%d') if rep.generated_at else 'Recent'}",
+                "project_id": rep.project_id,
+            })
+
+    # 11. Traceability Records
+    if any(term in query_str.lower() for term in ("trace", "matrix", "cover", "gap", "link")):
+        for prj in db.execute(
+            select(Project).where(Project.id.in_(ids)).limit(limit)
+        ).scalars():
+            out.append({
+                "type": "traceability",
+                "id": prj.id,
+                "key": f"TRACE-{prj.key}",
+                "title": f"{prj.name} — Traceability Matrix",
+                "subtitle": f"5-State Coverage & Verification Matrix for {prj.key}",
+                "project_id": prj.id,
+            })
 
     return {"results": out}
 

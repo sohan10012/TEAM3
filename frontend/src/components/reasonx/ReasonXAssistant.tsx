@@ -111,6 +111,18 @@ export function ReasonXAssistant() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Escape key closes open drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        e.preventDefault();
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   // Resize handler for desktop drawer
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -452,7 +464,7 @@ export function ReasonXAssistant() {
       {isOpen && mode !== "compact" && (
         <div
           role="dialog"
-          aria-label="ReasonX Workspace"
+          aria-label="ReasonX AI Assistant"
           style={{
             width: mode === "fullscreen" ? "100vw" : mode === "expanded" ? "760px" : `${panelWidth}px`,
           }}
@@ -482,7 +494,7 @@ export function ReasonXAssistant() {
             <div className="flex items-center gap-2.5 min-w-0">
               <ReasonXMark size={28} />
               <h2 className="text-sm font-semibold text-slate-900 tracking-tight select-none">
-                ReasonX
+                ReasonX Quality Intelligence
               </h2>
             </div>
 

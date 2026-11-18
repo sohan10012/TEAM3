@@ -37,10 +37,10 @@ export function ReasonXLauncher({
       <button
         type="button"
         onClick={onToggle}
-        aria-label={isOpen ? "Close ReasonX" : "Open ReasonX (Alt+R)"}
+        aria-label={isOpen ? "Close ReasonX AI Assistant" : "Open ReasonX AI Assistant"}
         title={isOpen ? "Close ReasonX (Alt+R)" : "Open ReasonX (Alt+R)"}
         className={cn(
-          "group relative flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer",
+          "group relative flex h-14 w-14 items-center justify-center rounded-full transition-all duration-200 cursor-pointer",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
           "active:scale-95 shadow-md hover:shadow-lg",
           isOpen

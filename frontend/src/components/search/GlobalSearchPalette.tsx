@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
+  BarChart3,
   Bug,
   ClipboardCheck,
   CornerDownLeft,
+  FileCode,
   FileText,
   Layers,
   ListChecks,
   Loader2,
   PlayCircle,
   Search,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
@@ -18,7 +21,18 @@ import { api } from "@/services/api";
 import { cn } from "@/utils/format";
 
 export interface SearchResultItem {
-  type: "project" | "requirement" | "acceptance_criterion" | "test" | "defect" | "execution";
+  type:
+    | "project"
+    | "requirement"
+    | "acceptance_criterion"
+    | "test"
+    | "defect"
+    | "execution"
+    | "document"
+    | "business_rule"
+    | "suite"
+    | "report"
+    | "traceability";
   id: number;
   key: string;
   title: string;
@@ -32,7 +46,10 @@ interface GlobalSearchPaletteProps {
   onClose: () => void;
 }
 
-const TYPE_CONFIG = {
+const TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: any; color: string; badge: string }
+> = {
   project: {
     label: "Project",
     icon: Layers,
@@ -69,9 +86,50 @@ const TYPE_CONFIG = {
     color: "bg-amber-50 text-amber-700 border-amber-200",
     badge: "Run",
   },
+  document: {
+    label: "Document",
+    icon: FileText,
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+    badge: "Doc",
+  },
+  business_rule: {
+    label: "Business Rule",
+    icon: FileCode,
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+    badge: "Rule",
+  },
+  suite: {
+    label: "Test Suite",
+    icon: Layers,
+    color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    badge: "Suite",
+  },
+  report: {
+    label: "Intelligence Report",
+    icon: BarChart3,
+    color: "bg-violet-50 text-violet-700 border-violet-200",
+    badge: "Report",
+  },
+  traceability: {
+    label: "Traceability Matrix",
+    icon: ShieldCheck,
+    color: "bg-sky-50 text-sky-700 border-sky-200",
+    badge: "Trace",
+  },
 };
 
-type FilterCategory = "all" | "project" | "requirement" | "acceptance_criterion" | "test" | "defect" | "execution";
+type FilterCategory =
+  | "all"
+  | "project"
+  | "requirement"
+  | "acceptance_criterion"
+  | "test"
+  | "defect"
+  | "execution"
+  | "document"
+  | "business_rule"
+  | "suite"
+  | "report";
 
 export function GlobalSearchPalette({ open, onClose }: GlobalSearchPaletteProps) {
   const navigate = useNavigate();
@@ -195,6 +253,21 @@ export function GlobalSearchPalette({ open, onClose }: GlobalSearchPaletteProps)
       case "execution":
         navigate(`/executions`);
         break;
+      case "document":
+        navigate(`/requirements`);
+        break;
+      case "business_rule":
+        navigate(`/simulation`);
+        break;
+      case "suite":
+        navigate(`/suites/${item.id}`);
+        break;
+      case "report":
+        navigate(`/intelligence-report`);
+        break;
+      case "traceability":
+        navigate(`/traceability`);
+        break;
       default:
         navigate("/");
     }
@@ -251,6 +324,10 @@ export function GlobalSearchPalette({ open, onClose }: GlobalSearchPaletteProps)
                 { id: "test", label: "Tests" },
                 { id: "defect", label: "Defects" },
                 { id: "execution", label: "Runs" },
+                { id: "document", label: "Docs" },
+                { id: "business_rule", label: "Rules" },
+                { id: "suite", label: "Suites" },
+                { id: "report", label: "Reports" },
                 { id: "project", label: "Projects" },
               ] as const
             ).map((tab) => (

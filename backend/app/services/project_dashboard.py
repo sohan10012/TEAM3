@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.errors import NotFound
 from app.db.base import utcnow
+from app.services.release_decision import evaluate_release_decision
 from app.db.models import (
     AuditLog,
     Clause,
@@ -491,6 +492,7 @@ def get_project_dashboard_data(
             "execution_mode": "bwrap_isolated",
             "test_on_commit": False,
         },
+        "release_decision": evaluate_release_decision(db, project_id),
     }
 
 

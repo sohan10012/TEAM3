@@ -148,6 +148,7 @@ def get_quick_prompts(page: str = "workspace", project_id: int | None = None, db
             {"label": "Traceability Governance Audit", "query": "Perform a traceability governance audit: check requirement-to-AC-to-test alignment."},
             {"label": "Analyze Coverage Gaps", "query": "Analyze clause-level coverage gaps and calculate residual risk score."},
             {"label": "Simulate Change Impact", "query": "Simulate the blast-radius impact of updating core requirements on existing test cases."},
+            {"label": "Explain Duplicate Tests", "query": "Identify overlapping or duplicate test cases that cover the exact same clauses and criteria."},
         ],
         "dashboard": [
             {"label": "Summarize Project Status", "query": "Summarize the overall quality status, pass rates, and release readiness of this project."},

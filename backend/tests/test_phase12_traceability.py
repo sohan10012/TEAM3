@@ -114,6 +114,27 @@ def test_traceability_matrix_api_reconciliation():
     assert len(data["tests"]) == 30
 
 
+def get_auth_session() -> tuple[requests.Session, str]:
+    session = requests.Session()
+    creds_path = Path(__file__).resolve().parents[2] / "var" / "initial_credentials.txt"
+    admin_email = "admin@northwind-hcm.example"
+    admin_pw = "test-admin-password-1"
+    if creds_path.exists():
+        for line in creds_path.read_text().splitlines():
+            if line.startswith("admin="):
+                parts = line.split("=", 1)[1].split(":", 1)
+                admin_email, admin_pw = parts[0], parts[1]
+                break
+    login_res = session.post(
+        f"{BASE_URL}/api/v1/auth/login",
+        json={"email": admin_email, "password": admin_pw},
+        timeout=10,
+    )
+    assert login_res.status_code == 200, f"Login failed: {login_res.text}"
+    csrf = session.cookies.get("tt_csrf") or ""
+    return session, csrf
+
+
 def test_generate_coverage_preview_mode():
     """Verify intelligent coverage generation in preview_only mode does not modify database."""
     # Dynamically find the first uncovered requirement in Project 11
@@ -129,7 +150,13 @@ def test_generate_coverage_preview_mode():
         "preview": True,
         "auto_approve": True,
     }
-    resp = requests.post(f"{BASE_URL}/api/v1/traceability/generate-coverage", json=payload, timeout=25)
+    session, csrf = get_auth_session()
+    resp = session.post(
+        f"{BASE_URL}/api/v1/traceability/generate-coverage",
+        headers={"x-csrf-token": csrf},
+        json=payload,
+        timeout=25,
+    )
     assert resp.status_code == 200, f"Coverage generation failed: {resp.text}"
     result = resp.json()
 
@@ -164,7 +191,13 @@ def test_reasonx_traceability_prompts_and_context():
         "page": "traceability",
         "project_id": 11,
     }
-    chat_resp = requests.post(f"{BASE_URL}/api/v1/reasonx/chat", json=chat_payload, timeout=25)
+    session, csrf = get_auth_session()
+    chat_resp = session.post(
+        f"{BASE_URL}/api/v1/reasonx/chat",
+        headers={"x-csrf-token": csrf},
+        json=chat_payload,
+        timeout=25,
+    )
     assert chat_resp.status_code == 200
     chat_data = chat_resp.json()
     content = chat_data.get("content", "").lower()

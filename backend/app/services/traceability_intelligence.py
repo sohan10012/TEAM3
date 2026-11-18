@@ -204,7 +204,7 @@ def get_project_traceability_overview(db: Session, project_id: int) -> dict[str,
         "fully_covered_requirements": fully_covered_reqs,
         "partially_covered_requirements": partially_covered_reqs,
         "not_covered_requirements": not_covered_reqs,
-        "untested_requirements": not_covered_reqs,
+        "untested_requirements": not_covered_reqs + pending_validation_reqs + not_applicable_reqs,
         "not_applicable_requirements": not_applicable_reqs,
         "pending_validation_requirements": pending_validation_reqs,
         "requirement_coverage_pct": req_cov_pct,
@@ -881,7 +881,7 @@ def get_requirement_change_impact_analysis(
             select(ExecutionResult)
             .join(Execution, Execution.id == ExecutionResult.execution_id)
             .where(
-                Execution.project_id == req.project_id,
+                Execution.project_id == r.project_id,
                 ExecutionResult.test_case_id.in_(test_ids or [-1])
             )
         ).scalars().all()
