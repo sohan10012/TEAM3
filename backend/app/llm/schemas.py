@@ -157,10 +157,21 @@ class OnboardingBusinessRuleOut(BaseModel):
     description: str = Field(default="")
     rule_type: str = Field(default="business_rule")
     source_document: str = Field(default="")
+    source_document_id: int | None = None
+    document_checksum: str = ""
+    physical_page_number: int = Field(default=1, ge=1)
+    printed_page_number: int | str = Field(default=1)
     page_number: int = Field(default=1, ge=1)
+    section_title: str = Field(default="")
+    subsection_title: str = Field(default="")
+    source_char_offset: int | None = None
     clause_ref: str = Field(default="")
     supporting_quote: str = Field(default="")
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    confidence_breakdown: dict[str, Any] = Field(default_factory=dict)
+    confidence_rationale: str = Field(default="")
+    evidence_type: Literal["verbatim", "inferred", "user_defined", "unsupported"] = "verbatim"
+    inference_rationale: str = Field(default="")
     is_inferred: bool = Field(default=False)
     approval_status: str = Field(default="suggested")
 
@@ -175,6 +186,17 @@ class OnboardingBusinessRuleOut(BaseModel):
             desc = str(data.get("description") or data.get("summary") or title).strip()
             data["description"] = desc or "Extracted business rule specification."
             data["supporting_quote"] = str(data.get("supporting_quote") or data.get("quote") or data.get("excerpt") or "").strip()
+            if "physical_page_number" not in data and "page_number" in data:
+                try:
+                    data["physical_page_number"] = int(data["page_number"])
+                except Exception:
+                    data["physical_page_number"] = 1
+            if "printed_page_number" not in data and "page_number" in data:
+                data["printed_page_number"] = data["page_number"]
+            if data.get("is_inferred"):
+                data["evidence_type"] = "inferred"
+            elif not data.get("evidence_type"):
+                data["evidence_type"] = "verbatim"
         return data
 
 
@@ -186,6 +208,9 @@ class OnboardingRoleOut(BaseModel):
     restrictions: list[str] = Field(default_factory=list)
     source_document: str = Field(default="")
     citation: str = Field(default="")
+    actor_type: Literal["source_defined", "inferred_persona", "user_defined"] = "inferred_persona"
+    evidence_type: Literal["verbatim", "inferred", "user_defined", "unsupported"] = "inferred"
+    approval_status: str = Field(default="pending")
 
     @model_validator(mode="before")
     @classmethod
@@ -229,9 +254,14 @@ class OnboardingScenarioOut(BaseModel):
     title: str = Field(default="Operational Scenario")
     description: str = Field(default="")
     regulatory_ref: str = Field(default="")
+    actor: str = Field(default="")
+    business_rules: list[str] = Field(default_factory=list)
     preconditions: list[str] = Field(default_factory=list)
     steps: list[str] = Field(default_factory=list)
     expected_outcome: str = Field(default="")
+    evidence_type: Literal["verbatim", "inferred", "user_defined", "unsupported"] = "inferred"
+    inference_rationale: str = Field(default="")
+    approval_status: str = Field(default="pending")
 
     @model_validator(mode="before")
     @classmethod
@@ -255,6 +285,8 @@ class OnboardingScenarioOut(BaseModel):
                 combined_text = " ".join(data.get("preconditions", []) + data.get("steps", []) + [data.get("expected_outcome", "")]).lower()
                 if "account" in combined_text or "isolate" in combined_text:
                     title = "Workload Account Separation & Environment Isolation"
+                elif "emergency" in combined_text or "break-glass" in combined_text or "break glass" in combined_text:
+                    title = "Emergency Access Management & Break-Glass Governance"
                 elif "incident" in combined_text or "remediation" in combined_text or "forensic" in combined_text:
                     title = "Automated Incident Investigation & Threat Containment"
                 elif "patch" in combined_text or "vulnerability" in combined_text or "update" in combined_text:
@@ -277,6 +309,8 @@ class OnboardingCrossDocInsightOut(BaseModel):
     reconciliation: str = Field(default="")
     source_citations: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    evidence_type: Literal["verbatim", "inferred", "user_defined", "unsupported"] = "inferred"
+    approval_status: str = Field(default="pending")
 
     @model_validator(mode="before")
     @classmethod

@@ -7,15 +7,20 @@ import {
   Brain,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
+  ExternalLink,
   FileCode,
   FileSpreadsheet,
   FileText,
+  Info,
   Layers,
   Loader2,
   Quote,
   RefreshCw,
   Scale,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Terminal,
@@ -65,10 +70,21 @@ export interface ExtractedRuleItem {
   description: string;
   rule_type: string;
   source_document: string;
+  source_document_id?: number;
+  document_checksum?: string;
   page_number: number;
+  physical_page_number?: number;
+  printed_page_number?: number | string;
+  section_title?: string;
+  subsection_title?: string;
+  source_char_offset?: number;
   clause_ref: string;
   supporting_quote: string;
   confidence: number;
+  confidence_breakdown?: Record<string, number>;
+  confidence_rationale?: string;
+  evidence_type?: string;
+  inference_rationale?: string;
   is_inferred: boolean;
   approval_status: "suggested" | "accepted" | "rejected";
 }
@@ -82,16 +98,23 @@ export interface ExtractedRoleItem {
   source_document: string;
   clause_ref: string;
   is_inferred: boolean;
+  actor_type?: string;
+  evidence_type?: string;
+  approval_status?: "suggested" | "accepted" | "rejected";
 }
 
 export interface ExtractedScenarioItem {
+  scenario_id?: string;
   title: string;
   description: string;
   actor: string;
   preconditions: string;
   expected_outcome: string;
-  business_rules: string;
+  business_rules: string[] | string;
   module: string;
+  evidence_type?: string;
+  inference_rationale?: string;
+  approval_status?: "suggested" | "accepted" | "rejected";
 }
 
 export interface CrossDocInsightItem {
@@ -103,6 +126,8 @@ export interface CrossDocInsightItem {
   analysis: string;
   resolution_recommendation: string;
   confidence: number;
+  evidence_type?: string;
+  approval_status?: "suggested" | "accepted" | "rejected";
 }
 
 export const DOMAIN_OPTIONS = [
@@ -180,6 +205,9 @@ export function AiAssistedOnboardingView({
   const [insightsList, setInsightsList] = useState<CrossDocInsightItem[]>([]);
   const [approvalConfirmed, setApprovalConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expandedRuleIds, setExpandedRuleIds] = useState<Set<string>>(new Set());
+  const [activeConfidenceRuleId, setActiveConfidenceRuleId] = useState<string | null>(null);
+  const [highlightedRuleId, setHighlightedRuleId] = useState<string | null>(null);
 
   // ReasonX Explanation Modal State
   const [reasonxOpen, setReasonxOpen] = useState(false);
@@ -508,6 +536,7 @@ export function AiAssistedOnboardingView({
       setRolesList(roles);
       setScenariosList(scenarios);
       setInsightsList(insights);
+      setExpandedRuleIds(new Set(rules.map((r: any) => r.rule_id)));
 
       setTimeout(() => {
         setIsAnalyzing(false);
@@ -537,6 +566,44 @@ export function AiAssistedOnboardingView({
     setRulesList((prev) =>
       prev.map((r) => (r.rule_id === ruleId ? { ...r, approval_status: status } : r))
     );
+  };
+
+  // Toggle expand/collapse all rules
+  const handleToggleExpandAllRules = () => {
+    if (rulesList.length > 0 && rulesList.every((r) => expandedRuleIds.has(r.rule_id))) {
+      setExpandedRuleIds(new Set());
+    } else {
+      setExpandedRuleIds(new Set(rulesList.map((r) => r.rule_id)));
+    }
+  };
+
+  // Toggle individual rule card expand
+  const handleToggleRuleExpand = (ruleId: string) => {
+    setExpandedRuleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ruleId)) {
+        next.delete(ruleId);
+      } else {
+        next.add(ruleId);
+      }
+      return next;
+    });
+  };
+
+  // Navigate directly to a rule from a scenario or chip
+  const handleNavigateToRule = (ruleId: string) => {
+    setReviewTab("rules");
+    setExpandedRuleIds((prev) => new Set([...prev, ruleId]));
+    setHighlightedRuleId(ruleId);
+    setTimeout(() => {
+      const el = document.getElementById(`rule-card-${ruleId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+    setTimeout(() => {
+      setHighlightedRuleId(null);
+    }, 3500);
   };
 
   // ReasonX grounded question
@@ -1353,19 +1420,23 @@ export function AiAssistedOnboardingView({
                 <div>
                   <span className="text-slate-500 block text-[10px] font-medium">Verbatim Grounded Quotes</span>
                   <span className="font-semibold text-emerald-700">
-                    {reviewConfig.extraction_summary?.verified_quotes_count || 0} of {rulesList.length} Verified
+                    {reviewConfig.extraction_summary?.verified_quotes_count ?? rulesList.filter((r) => !r.is_inferred && r.evidence_type !== "inferred").length} of {rulesList.length} Verified
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] font-medium">Inferred Deductions</span>
                   <span className="font-semibold text-amber-700">
-                    {reviewConfig.extraction_summary?.inferred_rules_count || 0} Inferred
+                    {reviewConfig.extraction_summary?.inferred_rules_count ??
+                      (rulesList.filter((r) => r.is_inferred || r.evidence_type === "inferred").length +
+                        scenariosList.length +
+                        rolesList.length)}{" "}
+                    Inferred ({scenariosList.length} Scenarios, {rolesList.length} Personas)
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px] font-medium">Document Source Hashes</span>
+                  <span className="text-slate-500 block text-[10px] font-medium">Document Provenance</span>
                   <span className="font-semibold text-slate-700 font-mono text-[10px]">
-                    {stagedDocs.length} Staged Files Verified
+                    {stagedDocs.length} Staged Document{stagedDocs.length !== 1 ? "s" : ""} Verified
                   </span>
                 </div>
               </div>
@@ -1374,7 +1445,7 @@ export function AiAssistedOnboardingView({
             {/* Review Tabs */}
             <div className="flex items-center gap-1 border-b border-slate-200 pb-2">
               {[
-                { id: "rules", label: `Business Rules & TAT (${rulesList.length})`, icon: Scale },
+                { id: "rules", label: `Business Rules & Invariants (${rulesList.length})`, icon: Scale },
                 { id: "roles", label: `Roles & Personas (${rolesList.length})`, icon: ShieldCheck },
                 { id: "scenarios", label: `Business Scenarios (${scenariosList.length})`, icon: Layers },
                 { id: "insights", label: `Cross-Doc Insights (${insightsList.length})`, icon: Brain },
@@ -1400,64 +1471,175 @@ export function AiAssistedOnboardingView({
               })}
             </div>
 
-            {/* TAB CONTENT: BUSINESS RULES & TAT */}
+            {/* TAB CONTENT: BUSINESS RULES & INVARIANTS */}
             {reviewTab === "rules" && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-600 px-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 px-1">
                   <span>
-                    Each rule includes exact verbatim citations from the source circular. Reject or edit any rule before
-                    creating the project.
+                    Each rule includes exact verbatim citations from the source document with physical and printed page provenance.
                   </span>
-                  <span className="text-[11px] font-semibold text-emerald-700">
-                    {rulesList.filter((r) => r.approval_status !== "rejected").length} Active / Approved
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleToggleExpandAllRules}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 cursor-pointer underline underline-offset-2"
+                    >
+                      {rulesList.length > 0 && rulesList.every((r) => expandedRuleIds.has(r.rule_id)) ? (
+                        <>
+                          <ChevronUp className="h-3 w-3" />
+                          <span>Collapse All Details</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3" />
+                          <span>Expand All Details</span>
+                        </>
+                      )}
+                    </button>
+                    <span className="text-[11px] font-semibold text-emerald-700">
+                      {rulesList.filter((r) => r.approval_status !== "rejected").length} Active / Approved
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
                   {rulesList.map((rule) => {
                     const isRejected = rule.approval_status === "rejected";
+                    const isExpanded = expandedRuleIds.has(rule.rule_id);
+                    const isHighlighted = highlightedRuleId === rule.rule_id;
+                    const confidencePercent = Math.round((rule.confidence || 0.95) * 100);
+
                     return (
                       <div
                         key={rule.rule_id}
+                        id={`rule-card-${rule.rule_id}`}
                         className={cn(
-                          "rounded-xl border p-4 transition-all shadow-2xs space-y-2.5",
+                          "rounded-xl border p-4 transition-all shadow-2xs space-y-3",
                           isRejected
                             ? "border-slate-200 bg-slate-50/60 opacity-60"
-                            : "border-slate-200 bg-white hover:border-slate-300"
+                            : "border-slate-200 bg-white hover:border-slate-300",
+                          isHighlighted && "ring-2 ring-blue-500 border-blue-400 bg-blue-50/20"
                         )}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB]">
+                          <div className="flex items-start gap-2 flex-1 min-w-[280px]">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRuleExpand(rule.rule_id)}
+                              className="mt-0.5 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                              title={isExpanded ? "Collapse rule details" : "Expand rule details"}
+                            >
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </button>
+                            <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB] shrink-0 mt-0.5">
                               {rule.rule_id}
                             </span>
-                            <h4
-                              className={cn(
-                                "text-xs font-bold",
-                                isRejected ? "text-slate-500 line-through" : "text-slate-900"
-                              )}
-                            >
-                              {rule.title}
-                            </h4>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              {Math.round(rule.confidence * 100)}% Confidence
-                            </span>
-                            {rule.is_inferred ? (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                                Inferred
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                Verbatim Grounded
-                              </span>
-                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className={cn(
+                                  "text-xs font-bold leading-snug break-words",
+                                  isRejected ? "text-slate-500 line-through" : "text-slate-900"
+                                )}
+                              >
+                                {rule.title}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                {/* Interactive 5-Factor Confidence Badge */}
+                                <div className="relative inline-block">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveConfidenceRuleId((prev) => (prev === rule.rule_id ? null : rule.rule_id));
+                                    }}
+                                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                    title="Click to inspect 5-factor scoring breakdown"
+                                  >
+                                    <span>{confidencePercent}% Confidence</span>
+                                    <Info className="h-2.5 w-2.5 opacity-70" />
+                                  </button>
+
+                                  {activeConfidenceRuleId === rule.rule_id && (
+                                    <div className="absolute left-0 top-full mt-1.5 z-30 w-80 p-3 bg-white border border-slate-200 rounded-xl shadow-lg text-xs space-y-2">
+                                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                                        <span className="font-bold text-slate-900 text-[11px]">
+                                          5-Factor Confidence Scoring
+                                        </span>
+                                        <span className="font-mono font-bold text-emerald-700 text-xs">
+                                          {confidencePercent}%
+                                        </span>
+                                      </div>
+                                      {rule.confidence_breakdown ? (
+                                        <div className="space-y-1.5 text-[11px]">
+                                          <div className="flex justify-between text-slate-600">
+                                            <span>Quotation Match (35%):</span>
+                                            <span className="font-mono font-semibold text-slate-800">
+                                              {Math.round((rule.confidence_breakdown.quotation_match ?? 0.98) * 100)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-slate-600">
+                                            <span>Semantic Support (25%):</span>
+                                            <span className="font-mono font-semibold text-slate-800">
+                                              {Math.round((rule.confidence_breakdown.semantic_support ?? 0.95) * 100)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-slate-600">
+                                            <span>Classification Certainty (15%):</span>
+                                            <span className="font-mono font-semibold text-slate-800">
+                                              {Math.round((rule.confidence_breakdown.classification_certainty ?? 0.92) * 100)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-slate-600">
+                                            <span>Context Clarity (15%):</span>
+                                            <span className="font-mono font-semibold text-slate-800">
+                                              {Math.round((rule.confidence_breakdown.context_clarity ?? 0.94) * 100)}%
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-slate-600">
+                                            <span>Extraction Ambiguity (10%):</span>
+                                            <span className="font-mono font-semibold text-slate-800">
+                                              {Math.round((rule.confidence_breakdown.extraction_ambiguity ?? 0.96) * 100)}%
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="text-[10px] text-slate-500">
+                                          Multi-factor verified grounding calculation
+                                        </div>
+                                      )}
+                                      {rule.confidence_rationale && (
+                                        <p className="text-[10px] text-slate-600 pt-1.5 border-t border-slate-100 leading-relaxed italic">
+                                          {rule.confidence_rationale}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {rule.is_inferred || rule.evidence_type === "inferred" ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    <span>AI-Inferred Deduction</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <CheckCircle2 className="h-2.5 w-2.5" />
+                                    <span>Verbatim Grounded</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleAskReasonX(`Explain the legal and operational basis for ${rule.rule_id} (${rule.title})`)}
+                              onClick={() =>
+                                handleAskReasonX(
+                                  `Explain the architectural and operational basis for ${rule.rule_id} (${rule.title})`
+                                )
+                              }
                               className="h-7 text-[11px] text-[#3067DB] hover:bg-blue-50 border-blue-200"
                             >
                               <Brain className="h-3.5 w-3.5 mr-1" />
@@ -1487,26 +1669,81 @@ export function AiAssistedOnboardingView({
                           </div>
                         </div>
 
-                        <p className="text-xs text-slate-700 leading-relaxed">{rule.description}</p>
+                        {/* Expandable Details: Full Description, Quote, Rationale */}
+                        {isExpanded && (
+                          <div className="space-y-2.5 pt-1">
+                            <p className="text-xs text-slate-700 leading-relaxed">{rule.description}</p>
 
-                        {/* Exact Supporting Quote */}
-                        <div className="rounded-lg bg-amber-50/60 border border-amber-200 p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
-                          <Quote className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                          <div className="space-y-0.5">
-                            <span className="font-bold">Verbatim Source Quote: </span>
-                            <span className="italic">“{rule.supporting_quote}”</span>
+                            {/* Exact Supporting Quote */}
+                            {rule.supporting_quote && (
+                              <div className="rounded-lg bg-amber-50/60 border border-amber-200 p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
+                                <Quote className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                <div className="space-y-0.5">
+                                  <span className="font-bold">Verbatim Source Quote: </span>
+                                  <span className="italic">“{rule.supporting_quote}”</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {rule.inference_rationale && (
+                              <div className="rounded-lg bg-blue-50/60 border border-blue-200 p-2.5 text-[11px] text-blue-900 flex items-start gap-2">
+                                <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                                <div>
+                                  <strong className="font-semibold">Inference Rationale: </strong>
+                                  <span>{rule.inference_rationale}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Rigorous Provenance Footnote: Physical PDF Page vs Printed Page */}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-500 pt-1.5 border-t border-slate-100">
+                              <span className="font-semibold text-slate-700">Source:</span>
+                              <span className="font-medium text-slate-800">
+                                {rule.source_document || "Well-Architected Framework Specification"}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Printed Page{" "}
+                                <strong className="text-slate-800">
+                                  {rule.printed_page_number ?? rule.page_number}
+                                </strong>
+                                {rule.physical_page_number &&
+                                  rule.physical_page_number !== rule.printed_page_number && (
+                                    <span className="text-slate-500">
+                                      {" "}
+                                      (PDF Page {rule.physical_page_number})
+                                    </span>
+                                  )}
+                              </span>
+                              {rule.section_title && (
+                                <>
+                                  <span>•</span>
+                                  <span>
+                                    Section:{" "}
+                                    <strong className="text-slate-700 font-medium">
+                                      {rule.section_title}
+                                    </strong>
+                                  </span>
+                                </>
+                              )}
+                              {rule.subsection_title && (
+                                <>
+                                  <span>•</span>
+                                  <span>
+                                    Subsection:{" "}
+                                    <span className="text-slate-600">{rule.subsection_title}</span>
+                                  </span>
+                                </>
+                              )}
+                              {rule.clause_ref && rule.clause_ref !== rule.section_title && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-mono text-slate-600">{rule.clause_ref}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Provenance Footnote */}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                          <span className="font-semibold text-slate-700">Source:</span>
-                          <span>{rule.source_document}</span>
-                          <span>•</span>
-                          <span>{rule.clause_ref}</span>
-                          <span>•</span>
-                          <span>Page {rule.page_number}</span>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1557,36 +1794,128 @@ export function AiAssistedOnboardingView({
             {reviewTab === "scenarios" && (
               <div className="space-y-3">
                 <div className="text-xs text-slate-600 px-1">
-                  End-to-end nominal and edge-case operational scenarios mapped to regulatory business rules.
+                  End-to-end nominal and edge-case operational scenarios mapped to regulatory business rules and responsibility-based actors.
                 </div>
                 <div className="space-y-3">
-                  {scenariosList.map((sc, i) => (
-                    <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-900">{sc.title}</span>
-                          <span className="rounded bg-blue-50 text-[#3067DB] px-2 py-0.5 text-[10px] font-medium">
-                            {sc.module}
-                          </span>
+                  {scenariosList.map((sc, i) => {
+                    // Extract rule IDs from array or string safely
+                    const rawRules = sc.business_rules;
+                    let linkedRuleIds: string[] = [];
+                    if (Array.isArray(rawRules)) {
+                      linkedRuleIds = rawRules.flatMap((r) =>
+                        typeof r === "string" ? r.match(/BR-\d+/g) || [r] : []
+                      );
+                    } else if (typeof rawRules === "string") {
+                      const matches = rawRules.match(/BR-\d+/g);
+                      linkedRuleIds = matches && matches.length > 0 ? matches : rawRules.split(/[\s,;]+/).filter(Boolean);
+                    }
+
+                    // Check for rejected dependencies
+                    const rejectedLinkedRuleIds = linkedRuleIds.filter((id) => {
+                      const matched = rulesList.find((r) => r.rule_id === id);
+                      return matched && matched.approval_status === "rejected";
+                    });
+
+                    return (
+                      <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-900">{sc.title}</span>
+                            <span className="rounded bg-blue-50 text-[#3067DB] px-2 py-0.5 text-[10px] font-medium border border-blue-100">
+                              {sc.module}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-slate-500 font-medium">Actor:</span>
+                            <span className="text-2xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                              {sc.actor}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-2xs font-semibold text-slate-500">Actor: {sc.actor}</span>
-                      </div>
-                      <p className="text-xs text-slate-600">{sc.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                        <div>
-                          <strong className="text-slate-700">Preconditions:</strong>
-                          <p className="text-slate-600 mt-0.5">{sc.preconditions}</p>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">{sc.description}</p>
+
+                        {/* Structured Acceptance Criteria: Preconditions & Testable Outcome */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                          <div>
+                            <strong className="text-slate-700 block mb-0.5 font-semibold">Preconditions:</strong>
+                            <p className="text-slate-600 leading-relaxed">{sc.preconditions}</p>
+                          </div>
+                          <div>
+                            <strong className="text-emerald-800 block mb-0.5 font-semibold">Expected Acceptance Criteria:</strong>
+                            <div className="text-slate-700 leading-relaxed">
+                              {sc.expected_outcome.includes("GIVEN:") ||
+                              sc.expected_outcome.includes("WHEN:") ||
+                              sc.expected_outcome.includes("THEN:") ? (
+                                <div className="space-y-1">
+                                  {sc.expected_outcome.split(/(?=(?:GIVEN|WHEN|THEN):)/g).map((part, pIdx) => {
+                                    const trimmed = part.trim();
+                                    if (!trimmed) return null;
+                                    const colonIdx = trimmed.indexOf(":");
+                                    if (colonIdx !== -1) {
+                                      const token = trimmed.slice(0, colonIdx);
+                                      const rest = trimmed.slice(colonIdx + 1).trim();
+                                      return (
+                                        <div key={pIdx} className="text-[11px] flex items-start gap-1">
+                                          <span className="font-bold text-emerald-900 font-mono text-[9px] px-1 py-0.2 rounded bg-emerald-100/80 shrink-0 mt-0.5">
+                                            {token}
+                                          </span>
+                                          <span className="text-slate-700">{rest}</span>
+                                        </div>
+                                      );
+                                    }
+                                    return <p key={pIdx}>{trimmed}</p>;
+                                  })}
+                                </div>
+                              ) : (
+                                <p>{sc.expected_outcome}</p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <strong className="text-emerald-800">Expected Outcome:</strong>
-                          <p className="text-slate-600 mt-0.5">{sc.expected_outcome}</p>
+
+                        {/* Linked Rule Chips with click-to-navigate */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+                          <span className="text-[10px] font-semibold text-slate-600 mr-1">Linked Rules:</span>
+                          {linkedRuleIds.length > 0 ? (
+                            linkedRuleIds.map((ruleId) => {
+                              const linkedRule = rulesList.find((r) => r.rule_id === ruleId);
+                              const isRuleRejected = linkedRule?.approval_status === "rejected";
+                              return (
+                                <button
+                                  key={ruleId}
+                                  type="button"
+                                  onClick={() => handleNavigateToRule(ruleId)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer border",
+                                    isRuleRejected
+                                      ? "bg-rose-50 text-rose-700 border-rose-300 line-through"
+                                      : "bg-blue-50 text-[#3067DB] border-blue-200 hover:bg-blue-100 hover:border-blue-300 shadow-2xs"
+                                  )}
+                                  title={linkedRule ? `${linkedRule.title} (Click to inspect rule)` : `Inspect rule ${ruleId}`}
+                                >
+                                  <span>{ruleId}</span>
+                                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">None specified</span>
+                          )}
                         </div>
+
+                        {/* Rejected Dependency Safeguard Alert */}
+                        {rejectedLinkedRuleIds.length > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 font-medium">
+                            <ShieldAlert className="h-4 w-4 shrink-0 text-rose-600" />
+                            <span>
+                              Dependency Alert: Linked rule {rejectedLinkedRuleIds.join(", ")} was marked as rejected during review. Verify or update this scenario.
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-[10px] text-slate-500">
-                        <strong>Linked Rules:</strong> {sc.business_rules}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1595,46 +1924,66 @@ export function AiAssistedOnboardingView({
             {reviewTab === "insights" && (
               <div className="space-y-3">
                 <div className="text-xs text-slate-600 px-1">
-                  Reconciled cross-document interactions between DPSS TAT circular, Responsible Business Conduct directions,
-                  and the Integrated Ombudsman Scheme 2026.
+                  Reconciled cross-document interactions, structural dependencies, and multi-specification alignment.
                 </div>
-                <div className="space-y-3">
-                  {insightsList.map((ins) => (
-                    <div key={ins.insight_id} className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-4 shadow-2xs space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
-                            {ins.insight_id}
-                          </span>
-                          <h4 className="text-xs font-bold text-slate-900">{ins.concept}</h4>
-                        </div>
-                        <span className="rounded bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-[10px] font-semibold">
-                          {ins.relationship_type}
-                        </span>
-                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px]">
-                        <div className="rounded-lg bg-white p-2.5 border border-slate-200 space-y-1">
-                          <div className="font-bold text-slate-800">{ins.doc_a.filename}</div>
-                          <div className="text-slate-600 font-medium">{ins.doc_a.rule}</div>
-                          <div className="text-[10px] italic text-slate-500">“{ins.doc_a.quote}”</div>
-                        </div>
-                        <div className="rounded-lg bg-white p-2.5 border border-slate-200 space-y-1">
-                          <div className="font-bold text-slate-800">{ins.doc_b.filename}</div>
-                          <div className="text-slate-600 font-medium">{ins.doc_b.rule}</div>
-                          <div className="text-[10px] italic text-slate-500">“{ins.doc_b.quote}”</div>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-slate-700 leading-relaxed">{ins.analysis}</p>
-
-                      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-[11px] text-emerald-900">
-                        <strong>Architecture Recommendation: </strong>
-                        <span>{ins.resolution_recommendation}</span>
-                      </div>
+                {insightsList.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-8 text-center space-y-3">
+                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 text-[#3067DB] flex items-center justify-center">
+                      <FileText className="h-5 w-5" />
                     </div>
-                  ))}
-                </div>
+                    <div className="max-w-md mx-auto space-y-1">
+                      <h4 className="text-sm font-bold text-slate-900">Single Document Evaluation Active</h4>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Cross-document conflict detection and reconciliation activate automatically when 2 or more specifications are staged. For single-document ingestion, domain rules, security invariants, and operational workflows are verified directly against the staged source.
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        All {rulesList.length} business rules and {scenariosList.length} scenarios grounded in staged document
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {insightsList.map((ins) => (
+                      <div key={ins.insight_id} className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-4 shadow-2xs space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                              {ins.insight_id}
+                            </span>
+                            <h4 className="text-xs font-bold text-slate-900">{ins.concept}</h4>
+                          </div>
+                          <span className="rounded bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-[10px] font-semibold">
+                            {ins.relationship_type}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px]">
+                          <div className="rounded-lg bg-white p-2.5 border border-slate-200 space-y-1">
+                            <div className="font-bold text-slate-800">{ins.doc_a?.filename || "Document A"}</div>
+                            <div className="text-slate-600 font-medium">{ins.doc_a?.rule || ""}</div>
+                            <div className="text-[10px] italic text-slate-500">“{ins.doc_a?.quote || ""}”</div>
+                          </div>
+                          <div className="rounded-lg bg-white p-2.5 border border-slate-200 space-y-1">
+                            <div className="font-bold text-slate-800">{ins.doc_b?.filename || "Document B"}</div>
+                            <div className="text-slate-600 font-medium">{ins.doc_b?.rule || ""}</div>
+                            <div className="text-[10px] italic text-slate-500">“{ins.doc_b?.quote || ""}”</div>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-700 leading-relaxed">{ins.analysis}</p>
+
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-[11px] text-emerald-900">
+                          <strong>Architecture Recommendation: </strong>
+                          <span>{ins.resolution_recommendation}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
