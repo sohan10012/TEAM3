@@ -643,17 +643,19 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
         </div>
 
         {wizardMode === "ai_assisted" ? (
-          <AiAssistedOnboardingView
-            onSuccess={(data) => {
-              sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-              qc.invalidateQueries({ queryKey: ["projects"] });
-              setProjectId(data.project_id);
-              onOpenChange(false);
-              nav(data.redirect_url);
-            }}
-            onCancel={() => onOpenChange(false)}
-            onSwitchToManual={() => setWizardMode("manual")}
-          />
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <AiAssistedOnboardingView
+              onSuccess={(data) => {
+                sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+                qc.invalidateQueries({ queryKey: ["projects"] });
+                setProjectId(data.project_id);
+                onOpenChange(false);
+                nav(data.redirect_url);
+              }}
+              onCancel={() => onOpenChange(false)}
+              onSwitchToManual={() => setWizardMode("manual")}
+            />
+          </div>
         ) : (
           <>
             {/* Stepper Navigation */}

@@ -47,6 +47,17 @@ export interface StagedDocItem {
   fixture_label?: string;
 }
 
+export interface UploadingFileItem {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  fileType: string;
+  progress: number;
+  stageMessage: string;
+  status: "uploading" | "parsing" | "verifying" | "complete" | "error";
+  errorMessage?: string;
+}
+
 export interface ExtractedRuleItem {
   rule_id: string;
   title: string;
@@ -130,7 +141,7 @@ export function AiAssistedOnboardingView({
 
   // Step 2: Staged Documents State
   const [stagedDocs, setStagedDocs] = useState<StagedDocItem[]>([]);
-  const [isPreloadingUpi, setIsPreloadingUpi] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFileItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -218,35 +229,49 @@ export function AiAssistedOnboardingView({
     }
   };
 
-  // Preload UPI Regulatory Documents
-  const handlePreloadUpiDocs = async () => {
-    setIsPreloadingUpi(true);
-    try {
-      const res = await api.post<{ staged_documents: StagedDocItem[]; count: number }>(
-        "/projects/onboarding/preload-upi-documents"
-      );
-      setStagedDocs(res.staged_documents || []);
-      setName("UPI Dispute & Customer Protection Platform");
-      setKey("UPI_DISP");
-      setBusinessDomain("Fintech & Banking");
-      setDescription(
-        "Automated UPI failed transaction TAT reversal, ₹100/day compensation, and customer liability adjudication platform."
-      );
-      toast.ok(`Loaded ${res.count} demonstration test fixtures into staging.`);
-    } catch (err: any) {
-      toast.error(`Preload failed: ${err?.message || "Error"}`);
-    } finally {
-      setIsPreloadingUpi(false);
-    }
-  };
-
-  // Upload custom document
+  // Interactive Upload Custom Document with Live Pipeline Stages
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const fileArray = Array.from(files);
+    const newItems: UploadingFileItem[] = fileArray.map((f, idx) => ({
+      id: `up-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+      name: f.name,
+      sizeBytes: f.size,
+      fileType: f.name.split(".").pop()?.toLowerCase() || "txt",
+      progress: 15,
+      stageMessage: "Uploading document bytes...",
+      status: "uploading",
+    }));
+
+    setUploadingFiles((prev) => [...prev, ...newItems]);
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const item = newItems[i];
+
+      // Simulated progressive pipeline milestones for active visual feedback
+      const t1 = setTimeout(() => {
+        setUploadingFiles((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, progress: 45, stageMessage: "Extracting text & parsing paragraphs...", status: "parsing" }
+              : it
+          )
+        );
+      }, 200);
+
+      const t2 = setTimeout(() => {
+        setUploadingFiles((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, progress: 75, stageMessage: "Analyzing structure & verifying checksum...", status: "verifying" }
+              : it
+          )
+        );
+      }, 500);
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("display_name", file.name.replace(/\.[^/.]+$/, ""));
@@ -254,10 +279,35 @@ export function AiAssistedOnboardingView({
 
       try {
         const uploaded = await api.upload<StagedDocItem>("/projects/onboarding/upload", formData);
+        clearTimeout(t1);
+        clearTimeout(t2);
+
+        setUploadingFiles((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, progress: 100, stageMessage: "Staged & ready for AI analysis", status: "complete" }
+              : it
+          )
+        );
+
         setStagedDocs((prev) => [...prev, uploaded]);
         toast.ok(`Staged '${file.name}' for AI document analysis.`);
+
+        setTimeout(() => {
+          setUploadingFiles((prev) => prev.filter((it) => it.id !== item.id));
+        }, 600);
       } catch (err: any) {
-        toast.error(`Failed to stage ${file.name}: ${err?.message || "Upload failed"}`);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        const errMsg = err?.message || "Upload failed";
+        setUploadingFiles((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, progress: 100, stageMessage: `Upload failed: ${errMsg}`, status: "error", errorMessage: errMsg }
+              : it
+          )
+        );
+        toast.error(`Failed to stage ${file.name}: ${errMsg}`);
       }
     }
 
@@ -455,35 +505,49 @@ export function AiAssistedOnboardingView({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden h-full">
       {/* Mode A Progressive Stepper Nav */}
       <nav aria-label="AI Onboarding Steps" className="px-6 py-3 border-b border-slate-200 bg-white shrink-0">
         <div className="grid grid-cols-4 gap-2">
           {[
             { step: 1, title: "1. Project Details", sub: "Name, key & domain" },
-            { step: 2, title: "2. Document Intake", sub: "Upload or preload circulars" },
+            { step: 2, title: "2. Document Intake", sub: "Upload specifications" },
             { step: 3, title: "3. AI Document Analysis", sub: "Extraction & reconciliation" },
             { step: 4, title: "4. Human Review & Approval", sub: "Rules, roles & creation" },
           ].map((s) => {
             const isCurrent = currentStep === s.step;
             const isPast = currentStep > s.step;
+            const canNavigate =
+              !isAnalyzing &&
+              (s.step === 1 ||
+                (s.step === 2 && name.trim().length > 0 && keyValidation.status === "valid") ||
+                (s.step === 3 && stagedDocs.length > 0) ||
+                (s.step === 4 && Boolean(reviewConfig)));
             return (
               <button
                 key={s.step}
                 type="button"
-                disabled={isAnalyzing || (s.step === 3 && currentStep !== 3) || (s.step === 4 && !reviewConfig)}
+                disabled={!canNavigate && !isCurrent}
                 onClick={() => {
-                  if (s.step === 1 || s.step === 2 || (s.step === 4 && reviewConfig)) {
-                    setCurrentStep(s.step as any);
+                  if (s.step === 1) {
+                    setCurrentStep(1);
+                  } else if (s.step === 2 && name.trim().length > 0 && keyValidation.status === "valid") {
+                    setCurrentStep(2);
+                  } else if (s.step === 3 && stagedDocs.length > 0) {
+                    handleRunAnalysis();
+                  } else if (s.step === 4 && reviewConfig) {
+                    setCurrentStep(4);
                   }
                 }}
                 className={cn(
                   "flex items-center gap-2 text-left p-2 rounded-lg transition-all border text-xs",
                   isCurrent
-                    ? "bg-blue-50/80 border-[#3067DB] text-slate-900 shadow-2xs font-semibold"
+                    ? "bg-blue-50/80 border-[#3067DB] text-slate-900 shadow-2xs font-semibold cursor-default"
                     : isPast
-                    ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/60"
-                    : "border-transparent text-slate-400 opacity-60"
+                    ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/60 cursor-pointer"
+                    : canNavigate
+                    ? "border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                    : "border-transparent text-slate-400 opacity-60 cursor-not-allowed"
                 )}
               >
                 <div
@@ -602,36 +666,11 @@ export function AiAssistedOnboardingView({
                 />
               </div>
             </div>
-
-            {/* Step 1 Actions */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-3">
-                <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="text-xs">
-                  Cancel
-                </Button>
-                <button
-                  type="button"
-                  onClick={onSwitchToManual}
-                  className="text-xs text-slate-600 hover:text-slate-900 underline font-medium"
-                >
-                  Switch to Manual 5-Step Setup
-                </button>
-              </div>
-              <Button
-                variant="primary"
-                onClick={() => setCurrentStep(2)}
-                disabled={!name.trim() || keyValidation.status !== "valid"}
-                className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9"
-              >
-                <span>Next: Ingest Documents</span>
-                <ArrowRight className="h-4 w-4 ml-1.5" />
-              </Button>
-            </div>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 2: DOCUMENT INTAKE & PRELOAD */}
+        {/* STEP 2: DOCUMENT INTAKE */}
         {/* ========================================================================= */}
         {currentStep === 2 && (
           <div className="space-y-6 max-w-4xl mx-auto">
@@ -640,36 +679,6 @@ export function AiAssistedOnboardingView({
               <p className="text-xs text-slate-500 mt-1">
                 Upload your Product Requirements Documents (PRDs), Software Specs, or regulatory compliance policies for automated, source-grounded context generation.
               </p>
-            </div>
-
-            {/* Quick Action: Load Sample Fixture */}
-            <div className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/40 p-5 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-600 text-white shadow-2xs">
-                    <Scale className="h-3.5 w-3.5" />
-                  </span>
-                  <h4 className="text-xs font-bold text-slate-900">
-                    Sample Test Fixtures (Synthetic UPI Policy Simulation)
-                  </h4>
-                  <span className="rounded bg-amber-100 text-amber-900 text-[10px] font-bold px-1.5 py-0.2">
-                    Demonstration Fixture
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
-                  Loads 3 synthetic test fixture documents simulating UPI dispute policies for demonstration and automated testing.
-                  These are not official regulatory publications. To test authentic documents, upload original PDF/DOCX files below.
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={handlePreloadUpiDocs}
-                loading={isPreloadingUpi}
-                className="bg-white hover:bg-slate-50 text-slate-800 border-amber-300 font-medium shrink-0 shadow-2xs"
-              >
-                <Sparkles className="h-3.5 w-3.5 mr-1.5 text-amber-600" />
-                <span>Load Sample Fixture (Synthetic)</span>
-              </Button>
             </div>
 
             {/* Drag & Drop Upload Zone */}
@@ -686,9 +695,15 @@ export function AiAssistedOnboardingView({
               }}
               className={cn(
                 "rounded-xl border-2 border-dashed p-8 text-center transition-all bg-white cursor-pointer shadow-xs",
-                isDragOver ? "border-[#3067DB] bg-blue-50/30" : "border-slate-300 hover:border-slate-400"
+                isDragOver
+                  ? "border-[#3067DB] bg-blue-50/50 scale-[1.005] ring-4 ring-blue-500/10"
+                  : isUploading
+                  ? "border-blue-400 bg-blue-50/20"
+                  : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/30"
               )}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (!isUploading) fileInputRef.current?.click();
+              }}
             >
               <input
                 ref={fileInputRef}
@@ -696,29 +711,130 @@ export function AiAssistedOnboardingView({
                 multiple
                 accept=".pdf,.docx,.txt,.md"
                 className="hidden"
+                disabled={isUploading}
                 onChange={(e) => handleFileUpload(e.target.files)}
               />
-              <div className="flex flex-col items-center justify-center gap-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 shadow-2xs">
-                  {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-[#3067DB]" /> : <Upload className="h-5 w-5" />}
+              <div className="flex flex-col items-center justify-center gap-2.5">
+                <div
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full shadow-2xs transition-all",
+                    isUploading
+                      ? "bg-blue-100 text-[#3067DB] ring-4 ring-blue-200/50 animate-pulse"
+                      : isDragOver
+                      ? "bg-blue-500 text-white scale-110"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                  )}
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-[#3067DB]" />
+                  ) : (
+                    <Upload className="h-6 w-6" />
+                  )}
                 </div>
-                <h4 className="text-xs font-bold text-slate-800">
-                  {isUploading ? "Staging and parsing uploaded documents..." : "Click or drag documents here to stage"}
-                </h4>
-                <p className="text-[11px] text-slate-500">Supports PDF, DOCX, TXT, and Markdown files up to 50MB</p>
+
+                <div className="text-center">
+                  <h4 className="text-xs font-bold text-slate-800">
+                    {isUploading
+                      ? `Uploading and parsing ${uploadingFiles.length} document${uploadingFiles.length > 1 ? "s" : ""}...`
+                      : isDragOver
+                      ? "Drop specifications here to stage"
+                      : "Click or drag documents here to stage"}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {isUploading
+                      ? "Extracting raw paragraphs, tables, and clause hierarchies for AI analysis"
+                      : "Supports PDF, DOCX, TXT, and Markdown files up to 50MB"}
+                  </p>
+                </div>
+
+                {isUploading && (
+                  <div className="w-64 max-w-full bg-blue-100 rounded-full h-1.5 overflow-hidden mt-1">
+                    <div className="bg-[#3067DB] h-1.5 rounded-full animate-pulse w-3/4" />
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Staged Document Cards */}
-            <div className="space-y-2">
+            {/* Staged & In-Progress Document Cards */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 px-1">
-                <span>Staged Documents ({stagedDocs.length})</span>
-                <span className="text-[11px] text-slate-500">Ready for automated AI analysis</span>
+                <div className="flex items-center gap-2">
+                  <span>Staged Documents ({stagedDocs.length})</span>
+                  {uploadingFiles.length > 0 && (
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin text-[#3067DB]" />
+                      Processing {uploadingFiles.length} file{uploadingFiles.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500">
+                  {stagedDocs.length > 0
+                    ? `${stagedDocs.length} specification${stagedDocs.length > 1 ? "s" : ""} ready for automated AI analysis`
+                    : "Upload specifications to proceed to AI analysis"}
+                </span>
               </div>
 
-              {stagedDocs.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-400">
-                  No documents staged yet. Use the Quick-Load button above or drop custom PRD/SRS files.
+              {/* Active Uploading Cards */}
+              {uploadingFiles.map((up) => (
+                <div
+                  key={up.id}
+                  className="rounded-xl border border-blue-300 bg-blue-50/50 p-4 space-y-2.5 shadow-2xs transition-all animate-in fade-in slide-in-from-top-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-[#3067DB] shrink-0 border border-blue-200">
+                        {up.status === "error" ? (
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        ) : up.status === "complete" ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate text-xs">{up.name}</p>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                          <span className="uppercase font-mono font-semibold">{up.fileType}</span>
+                          <span>•</span>
+                          <span>{(up.sizeBytes / 1024).toFixed(1)} KB</span>
+                          <span>•</span>
+                          <span
+                            className={cn(
+                              "font-medium",
+                              up.status === "error" ? "text-red-600" : "text-blue-700"
+                            )}
+                          >
+                            {up.stageMessage}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="font-mono text-xs font-semibold text-[#3067DB]">
+                      {up.status === "error" ? "Error" : `${up.progress}%`}
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-blue-200/60 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-1.5 rounded-full transition-all duration-300 ease-out",
+                        up.status === "error" ? "bg-red-500 w-full" : "bg-[#3067DB]"
+                      )}
+                      style={up.status === "error" ? undefined : { width: `${up.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Staged Document Cards */}
+              {stagedDocs.length === 0 && uploadingFiles.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center text-slate-500 space-y-1">
+                  <FileText className="h-7 w-7 mx-auto text-slate-400 mb-2" />
+                  <p className="font-medium text-xs text-slate-700">No specifications staged yet</p>
+                  <p className="text-[11px] text-slate-400">
+                    Drag and drop or click above to upload PRD, SRS, or policy documents.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -738,24 +854,23 @@ export function AiAssistedOnboardingView({
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-900 truncate text-xs">{doc.display_name || doc.filename}</p>
+                          <p className="font-bold text-slate-900 truncate text-xs">
+                            {doc.display_name || doc.filename}
+                          </p>
                           <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-0.5">
                             <span className="uppercase font-mono font-semibold">{doc.file_type}</span>
                             <span>•</span>
                             <span>{(doc.size_bytes / 1024).toFixed(1)} KB</span>
                             <span>•</span>
                             <span>{doc.page_count} page(s)</span>
-                            {doc.is_synthetic_fixture ? (
-                              <span className="rounded bg-amber-100 text-amber-900 px-1.5 py-0.2 font-semibold">
-                                Synthetic Fixture
-                              </span>
-                            ) : (
-                              <span className="rounded bg-emerald-100 text-emerald-800 px-1.5 py-0.2 font-semibold">
-                                Authentic Document
-                              </span>
-                            )}
+                            <span className="rounded bg-emerald-100 text-emerald-800 px-1.5 py-0.2 font-semibold">
+                              Authentic Document
+                            </span>
                             {doc.sha256_hash && (
-                              <span className="font-mono text-[9px] text-slate-400" title={`SHA-256: ${doc.sha256_hash}`}>
+                              <span
+                                className="font-mono text-[9px] text-slate-400"
+                                title={`SHA-256: ${doc.sha256_hash}`}
+                              >
                                 SHA: {doc.sha256_hash.slice(0, 8)}...
                               </span>
                             )}
@@ -778,23 +893,6 @@ export function AiAssistedOnboardingView({
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Step 2 Actions */}
-            <div className="flex items-center justify-between pt-2">
-              <Button variant="secondary" onClick={() => setCurrentStep(1)} className="font-medium text-xs">
-                <ArrowLeft className="h-4 w-4 mr-1.5" />
-                <span>Back</span>
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleRunAnalysis}
-                disabled={stagedDocs.length === 0}
-                className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9 shadow-2xs"
-              >
-                <Brain className="h-4 w-4 mr-1.5" />
-                <span>Run AI Document Analysis ({stagedDocs.length})</span>
-              </Button>
             </div>
           </div>
         )}
@@ -1419,27 +1517,158 @@ export function AiAssistedOnboardingView({
                   regulatory provenance. Persist this configuration and trigger requirements analysis.
                 </span>
               </label>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                <Button variant="secondary" onClick={() => setCurrentStep(2)} className="font-medium text-xs">
-                  <ArrowLeft className="h-4 w-4 mr-1.5" />
-                  <span>Back to Documents</span>
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleApproveAndCreate}
-                  loading={isSubmitting}
-                  disabled={!approvalConfirmed}
-                  className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-6 h-9 shadow-2xs"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  <span>Approve & Create Project</span>
-                </Button>
-              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Mode A Persistent Wizard Footer */}
+      <footer className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+        <div>
+          {currentStep === 1 && (
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="text-xs">
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={onSwitchToManual}
+                className="text-xs text-slate-600 hover:text-slate-900 underline font-medium cursor-pointer"
+              >
+                Switch to Manual 5-Step Setup
+              </button>
+            </div>
+          )}
+
+          {currentStep === 2 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentStep(1)}
+              className="gap-1.5 font-medium text-xs text-slate-700 hover:bg-slate-100"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back: Project Details</span>
+            </Button>
+          )}
+
+          {currentStep === 3 && analysisError && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentStep(2)}
+              className="gap-1.5 font-medium text-xs text-slate-700 hover:bg-slate-100"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Documents</span>
+            </Button>
+          )}
+
+          {currentStep === 4 && (
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentStep(2)}
+                className="gap-1.5 font-medium text-xs text-slate-700 hover:bg-slate-100"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>Back to Documents</span>
+              </Button>
+              <button
+                type="button"
+                onClick={onSwitchToManual}
+                className="text-xs text-slate-600 hover:text-slate-900 underline font-medium cursor-pointer"
+              >
+                Switch to Manual Setup
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {currentStep === 1 && (
+            <Button
+              variant="primary"
+              onClick={() => setCurrentStep(2)}
+              disabled={!name.trim() || keyValidation.status !== "valid"}
+              className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
+            >
+              <span>Next: Document Intake</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
+
+          {currentStep === 2 && (
+            <div className="flex items-center gap-2">
+              {stagedDocs.length === 0 && !isUploading && (
+                <span className="text-[11px] text-slate-500 hidden sm:inline">
+                  Upload at least 1 document to proceed
+                </span>
+              )}
+              <Button
+                variant="primary"
+                onClick={handleRunAnalysis}
+                disabled={stagedDocs.length === 0 || isUploading}
+                loading={isUploading}
+                title={stagedDocs.length === 0 ? "Upload at least 1 document to run AI analysis" : undefined}
+                className={cn(
+                  "font-medium px-5 h-9 shadow-2xs gap-1.5 transition-all",
+                  stagedDocs.length > 0 && !isUploading
+                    ? "bg-[#3067DB] hover:bg-[#2554b5] text-white cursor-pointer"
+                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                )}
+              >
+                <Brain className="h-4 w-4" />
+                <span>
+                  {isUploading
+                    ? "Staging Documents..."
+                    : stagedDocs.length > 0
+                    ? `Next: Run AI Document Analysis (${stagedDocs.length})`
+                    : "Next: AI Document Analysis"}
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="flex items-center gap-2">
+              {analysisError ? (
+                <Button
+                  variant="primary"
+                  onClick={handleRunAnalysis}
+                  className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Retry Analysis</span>
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 font-medium">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3067DB]" />
+                  <span>AI Extraction Pipeline Active ({analysisElapsedSeconds}s)...</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep === 4 && (
+            <Button
+              variant="primary"
+              onClick={handleApproveAndCreate}
+              loading={isSubmitting}
+              disabled={!approvalConfirmed}
+              className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-6 h-9 shadow-2xs gap-1.5"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Approve & Create Project</span>
+            </Button>
+          )}
+        </div>
+      </footer>
 
       {/* ReasonX Explanation Interactive Modal */}
       {reasonxOpen && (
