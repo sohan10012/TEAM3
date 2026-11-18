@@ -298,7 +298,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
       return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-800 border border-amber-200">⚡ Edge Case</span>;
     }
     if (c.includes("val")) {
-      return <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-200">⌕ Validation</span>;
+      return <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] border border-blue-200">⌕ Validation</span>;
     }
     if (c.includes("rule")) {
       return <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-2xs font-semibold text-indigo-700 border border-indigo-200">⚖ Business Rule</span>;
@@ -423,7 +423,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
               variant="primary"
               size="sm"
               onClick={() => setIsAddTestOpen(true)}
-              className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
+              className="bg-[#1D63ED] hover:bg-[#1550C0] text-white"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               <span>Add Test Case</span>
@@ -445,7 +445,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
         {/* Card 1: Total Tests */}
         <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#3067DB]">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#1D63ED]">
               <FileText className="h-3.5 w-3.5" />
             </div>
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Tests</span>
@@ -541,7 +541,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "cases"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -554,7 +554,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "by_req"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -567,7 +567,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "by_category"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -588,7 +588,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "validation"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -610,7 +610,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-2xs text-slate-500 font-medium">
           <span className="uppercase tracking-wider font-semibold text-slate-600 flex items-center gap-1.5">
-            <Filter className="h-3 w-3 text-[#3067DB]" />
+            <Filter className="h-3 w-3 text-[#1D63ED]" />
             <span>Test Scenario Categories ({totalCount})</span>
           </span>
           {categoryFilter !== "all" && (
@@ -619,7 +619,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 setCategoryFilter("all");
                 setPage(1);
               }}
-              className="inline-flex items-center gap-1 text-xs text-[#3067DB] hover:underline font-medium"
+              className="inline-flex items-center gap-1 text-xs text-[#1D63ED] hover:underline font-medium"
             >
               <X className="h-3 w-3" />
               <span>Show All Categories</span>
@@ -638,7 +638,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-all border",
               categoryFilter === "all"
-                ? "bg-[#3067DB] text-white border-[#3067DB] shadow-xs font-semibold"
+                ? "bg-[#1D63ED] text-white border-[#1D63ED] shadow-xs font-semibold"
                 : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
             )}
           >
@@ -668,7 +668,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-all border",
                   isSelected
-                    ? "bg-[#3067DB] text-white border-[#3067DB] shadow-xs font-semibold"
+                    ? "bg-[#1D63ED] text-white border-[#1D63ED] shadow-xs font-semibold"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                 )}
                 title={info.description}
@@ -692,7 +692,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
         {categoryFilter !== "all" && TEST_CATEGORY_INFO[categoryFilter] && (
           <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 flex items-start justify-between gap-3 text-xs text-blue-900 transition-all">
             <div className="flex items-start gap-2.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#3067DB] font-bold text-xs mt-0.5">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#1D63ED] font-bold text-xs mt-0.5">
                 {TEST_CATEGORY_INFO[categoryFilter].icon}
               </span>
               <div>
@@ -705,7 +705,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="rounded bg-blue-100 px-2 py-0.5 text-2xs font-mono font-semibold text-[#3067DB]">
+              <span className="rounded bg-blue-100 px-2 py-0.5 text-2xs font-mono font-semibold text-[#1D63ED]">
                 {categoryCounts[categoryFilter] || 0} scenarios
               </span>
             </div>
@@ -909,7 +909,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                             onChange={() => toggleCheck(t.id)}
                           />
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium text-[#3067DB]">
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium text-[#1D63ED]">
                           {t.key}
                         </td>
                         <td className="truncate px-3 py-2.5 font-medium text-slate-900" title={t.title}>
@@ -926,7 +926,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                             <Link
                               to={`/requirements/${t.requirement_id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="font-mono text-xs text-[#3067DB] hover:underline inline-flex items-center gap-1 font-semibold"
+                              className="font-mono text-xs text-[#1D63ED] hover:underline inline-flex items-center gap-1 font-semibold"
                               title={`View requirement ${reqKey}`}
                             >
                               <span>{reqKey}</span>
@@ -958,7 +958,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                             <button
                               type="button"
                               onClick={() => nav(`/tests/${t.id}`)}
-                              className="p-1 text-slate-400 hover:text-[#3067DB] rounded hover:bg-slate-100"
+                              className="p-1 text-slate-400 hover:text-[#1D63ED] rounded hover:bg-slate-100"
                               title="Open full test case page"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
@@ -991,7 +991,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                   </button>
-                  <span className="px-2.5 py-0.5 rounded bg-[#3067DB] text-white font-semibold text-xs">
+                  <span className="px-2.5 py-0.5 rounded bg-[#1D63ED] text-white font-semibold text-xs">
                     {page}
                   </span>
                   {totalPages > 1 && (
@@ -1045,7 +1045,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
             <div className="p-4 border-b border-slate-200 bg-slate-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-[#3067DB]">{selectedTest.key}</span>
+                  <span className="font-mono text-xs font-bold text-[#1D63ED]">{selectedTest.key}</span>
                   {getStatusBadge(selectedTest.status)}
                 </div>
                 <button
@@ -1081,14 +1081,14 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
 
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Linked Requirement(s)</span>
-                  <span className="text-[#3067DB] font-mono text-xs font-semibold hover:underline block mt-0.5">
+                  <span className="text-[#1D63ED] font-mono text-xs font-semibold hover:underline block mt-0.5">
                     {selectedTest.requirement_key || "—"}
                   </span>
                 </div>
 
                 <div>
                   <span className="text-slate-500 text-[10px] block uppercase font-medium">Acceptance Criteria</span>
-                  <span className="text-[#3067DB] font-mono text-xs font-semibold hover:underline block mt-0.5">
+                  <span className="text-[#1D63ED] font-mono text-xs font-semibold hover:underline block mt-0.5">
                     {selectedTest.ac_keys?.length ? selectedTest.ac_keys.join(", ") : "—"}
                   </span>
                 </div>
@@ -1103,7 +1103,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     testSubTab === "spec"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -1114,7 +1114,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     testSubTab === "trace"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -1125,7 +1125,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     testSubTab === "exec"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -1165,7 +1165,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                   <div className="space-y-2">
                     {(selectedTest.steps_json || selectedTest.steps || []).map((step, idx) => (
                       <div key={idx} className="flex items-start gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#3067DB] font-bold text-[10px]">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#1D63ED] font-bold text-[10px]">
                           {idx + 1}
                         </span>
                         <div className="text-[11px] text-slate-800">
@@ -1238,7 +1238,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                         variant="primary"
                         size="sm"
                         onClick={() => nav(`/executions?project_id=${projectId}`)}
-                        className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
+                        className="bg-[#1D63ED] hover:bg-[#1550C0] text-white"
                       >
                         Run Simulation
                       </Button>

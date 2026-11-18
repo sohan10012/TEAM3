@@ -208,7 +208,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
   if (dashQuery.isLoading) {
     return (
       <div className="py-20 text-center space-y-3">
-        <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#3067DB]" />
+        <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#1D63ED]" />
         <p className="text-sm font-medium text-slate-600">Loading requirements quality telemetry...</p>
       </div>
     );
@@ -808,7 +808,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             className={cn(
               "pb-3 border-b-2 transition-colors",
               activeTab === "overview"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -819,7 +819,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             className={cn(
               "pb-3 border-b-2 transition-colors",
               activeTab === "documents"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -842,7 +842,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             className={cn(
               "pb-3 border-b-2 transition-colors",
               activeTab === "runs"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -853,7 +853,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             className={cn(
               "pb-3 border-b-2 transition-colors",
               activeTab === "traceability"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -864,7 +864,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             className={cn(
               "pb-3 border-b-2 transition-colors",
               activeTab === "reports"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -1015,7 +1015,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-[#3067DB]" />
+                      <FileText className="h-3.5 w-3.5 text-[#1D63ED]" />
                       Document Processing
                     </span>
                     <span className="font-medium text-slate-900">
@@ -1097,14 +1097,14 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
             <div className="lg:col-span-5 bg-white rounded-lg border border-slate-200 p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">Recent Activity</h3>
-                <Link to="/executions" className="text-2xs text-[#3067DB] hover:underline font-medium">
+                <Link to="/executions" className="text-2xs text-[#1D63ED] hover:underline font-medium">
                   View All &rarr;
                 </Link>
               </div>
               <div className="space-y-3.5 text-xs">
                 {activityItems.length ? activityItems.map((item) => (
                   <div key={item.id} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-blue-50 text-[#3067DB] flex items-center justify-center shrink-0 mt-0.5 border border-blue-200">
+                    <div className="h-6 w-6 rounded-full bg-blue-50 text-[#1D63ED] flex items-center justify-center shrink-0 mt-0.5 border border-blue-200">
                       {item.id.startsWith("document-")
                         ? <FileText className="h-3.5 w-3.5" />
                         : <PlayCircle className="h-3.5 w-3.5" />}
@@ -1126,7 +1126,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
               <div className="space-y-2">
                 <Button
                   variant="primary"
-                  className="w-full justify-start text-xs bg-[#3067DB] hover:bg-[#2554B8] gap-2 h-9"
+                  className="w-full justify-start text-xs bg-[#1D63ED] hover:bg-[#1550C0] gap-2 h-9"
                   onClick={() => setUploadModalOpen(true)}
                 >
                   <Upload className="h-3.5 w-3.5" />
@@ -1306,7 +1306,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
 
             {docsQuery.isLoading ? (
               <div className="py-12 text-center text-slate-500 text-xs">
-                <RefreshCw className="h-5 w-5 animate-spin mx-auto text-[#3067DB] mb-2" />
+                <RefreshCw className="h-5 w-5 animate-spin mx-auto text-[#1D63ED] mb-2" />
                 Loading documents...
               </div>
             ) : !docsQuery.data || docsQuery.data.length === 0 ? (
@@ -1673,7 +1673,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
 
             {contextQuery.isLoading ? (
               <div className="py-12 text-center text-slate-500 text-xs">
-                <RefreshCw className="h-5 w-5 animate-spin mx-auto text-[#3067DB] mb-2" />
+                <RefreshCw className="h-5 w-5 animate-spin mx-auto text-[#1D63ED] mb-2" />
                 Loading project context...
               </div>
             ) : (
@@ -1703,7 +1703,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                         ? contextQuery.data.target_users
                         : project.target_users_and_roles || []
                       ).map((u: string, idx: number) => (
-                        <span key={idx} className="px-2 py-0.5 rounded text-2xs font-medium bg-blue-50 text-[#3067DB] border border-blue-200">
+                        <span key={idx} className="px-2 py-0.5 rounded text-2xs font-medium bg-blue-50 text-[#1D63ED] border border-blue-200">
                           {u}
                         </span>
                       ))}
@@ -1795,7 +1795,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                       <div key={sc.id} className="p-4 rounded-lg border border-slate-200 bg-white space-y-2 shadow-2xs">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-2xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#3067DB] border border-blue-200">
+                            <span className="font-mono text-2xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#1D63ED] border border-blue-200">
                               #{idx + 1}
                             </span>
                             <span className="font-bold text-slate-900 text-xs">{sc.title}</span>
@@ -1847,7 +1847,7 @@ export function RequirementsProjectDashboard({ projectId, fallback, isDashboard 
                   href={`/api/v1/projects/${projectId}/quality-report.html`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#3067DB] text-white hover:bg-[#2554B8] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#1D63ED] text-white hover:bg-[#1550C0] transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Download HTML Report
@@ -2095,7 +2095,7 @@ function UploadDocumentModal({
                 setFile(e.target.files[0]);
               }
             }}
-            className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#3067DB] hover:file:bg-blue-100 cursor-pointer border border-slate-300 rounded p-1.5"
+            className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#1D63ED] hover:file:bg-blue-100 cursor-pointer border border-slate-300 rounded p-1.5"
           />
           <p className="text-2xs text-slate-400 mt-1">
             Supported formats: PDF, Microsoft Word (.docx), Excel (.xlsx), CSV, Markdown (.md), Plain Text (.txt)
@@ -2131,7 +2131,7 @@ function UploadDocumentModal({
             id="auto-process"
             checked={autoProcess}
             onChange={(e) => setAutoProcess(e.target.checked)}
-            className="rounded border-slate-300 text-[#3067DB] focus:ring-[#3067DB]"
+            className="rounded border-slate-300 text-[#1D63ED] focus:ring-[#1D63ED]"
           />
           <label htmlFor="auto-process" className="text-xs text-slate-700 font-medium cursor-pointer">
             Automatically extract text and analyze sections upon upload

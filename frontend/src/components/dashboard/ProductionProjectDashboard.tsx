@@ -76,7 +76,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
   if (query.isLoading) {
     return (
       <div className="py-20 text-center space-y-3">
-        <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#3067DB]" />
+        <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#1D63ED]" />
         <p className="text-sm font-medium text-slate-600">Loading project telemetry...</p>
       </div>
     );
@@ -204,7 +204,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                 href={repo.url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="font-medium text-[#3067DB] hover:underline flex items-center gap-1 truncate"
+                className="font-medium text-[#1D63ED] hover:underline flex items-center gap-1 truncate"
               >
                 <span className="truncate">{repo.repo_name}</span>
                 <ExternalLink className="h-3 w-3 shrink-0 text-slate-400" />
@@ -289,7 +289,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             {s.latest_run_id ? (
               <Link
                 to={`/executions/${s.latest_run_id}`}
-                className="text-xs font-medium text-[#3067DB] hover:underline inline-flex items-center gap-1"
+                className="text-xs font-medium text-[#1D63ED] hover:underline inline-flex items-center gap-1"
               >
                 <span>View Full Report</span>
                 <ArrowRight className="h-3 w-3" />
@@ -406,7 +406,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             className={cn(
               "py-3 px-3 text-xs font-semibold border-b-2 transition-colors -mb-px flex items-center gap-1.5 cursor-pointer",
               activeTab === "runs"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -423,7 +423,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             className={cn(
               "py-3 px-3 text-xs font-semibold border-b-2 transition-colors -mb-px flex items-center gap-1.5 cursor-pointer",
               activeTab === "requirements"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -438,7 +438,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             className={cn(
               "py-3 px-3 text-xs font-semibold border-b-2 transition-colors -mb-px flex items-center gap-1.5 cursor-pointer",
               activeTab === "defects"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -453,7 +453,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             className={cn(
               "py-3 px-3 text-xs font-semibold border-b-2 transition-colors -mb-px flex items-center gap-1.5 cursor-pointer",
               activeTab === "config"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
@@ -591,7 +591,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                 <tbody className="divide-y divide-slate-100">
                   {(data.requirements_tab?.items || []).map((req) => (
                     <tr key={req.id} className="hover:bg-slate-50/60">
-                      <td className="py-2 px-3 font-mono font-semibold text-[#3067DB]">
+                      <td className="py-2 px-3 font-mono font-semibold text-[#1D63ED]">
                         <Link to={`/requirements/${req.id}`} className="hover:underline">
                           {req.key}
                         </Link>
@@ -666,7 +666,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                           </span>
                         </td>
                         <td className="py-2 px-3 capitalize text-slate-600">{d.status}</td>
-                        <td className="py-2 px-3 font-mono text-[#3067DB]">{d.linked_requirement_key}</td>
+                        <td className="py-2 px-3 font-mono text-[#1D63ED]">{d.linked_requirement_key}</td>
                         <td className="py-2 px-3 font-mono text-slate-500">{d.detection_run_key}</td>
                       </tr>
                     ))}
@@ -740,7 +740,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                         </td>
                         <td className="py-2 px-3 text-right">
                           {e.is_default && (
-                            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-[#3067DB]">
+                            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-[#1D63ED]">
                               Default
                             </span>
                           )}
@@ -820,7 +820,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                   <a
                     href={latestEx.junit_url}
                     download
-                    className="text-[#3067DB] hover:underline inline-flex items-center gap-1 font-medium"
+                    className="text-[#1D63ED] hover:underline inline-flex items-center gap-1 font-medium"
                   >
                     <FileCode className="h-3.5 w-3.5" />
                     <span>JUnit (XML)</span>
@@ -829,7 +829,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                     href={latestEx.html_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#3067DB] hover:underline inline-flex items-center gap-1 font-medium"
+                    className="text-[#1D63ED] hover:underline inline-flex items-center gap-1 font-medium"
                   >
                     <FileText className="h-3.5 w-3.5" />
                     <span>HTML Report</span>
@@ -923,7 +923,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
           </h3>
           <Link
             to={`/defects?project_id=${projectId}`}
-            className="text-xs font-semibold text-[#3067DB] hover:underline inline-flex items-center gap-1"
+            className="text-xs font-semibold text-[#1D63ED] hover:underline inline-flex items-center gap-1"
           >
             <span>View All Defects</span>
             <ArrowRight className="h-3 w-3" />
@@ -951,7 +951,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
               <tbody className="divide-y divide-slate-100 font-medium">
                 {(data.defects_tab?.items || []).slice(0, 5).map((def) => (
                   <tr key={def.id} className="hover:bg-slate-50/60">
-                    <td className="py-2 px-3 font-mono font-semibold text-[#3067DB]">
+                    <td className="py-2 px-3 font-mono font-semibold text-[#1D63ED]">
                       <Link to={`/defects/${def.id}`} className="hover:underline">
                         {def.key}
                       </Link>
@@ -990,7 +990,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-3 font-mono text-[#3067DB]">
+                    <td className="py-2 px-3 font-mono text-[#1D63ED]">
                       {def.linked_requirement_key}
                     </td>
                     <td className="py-2 px-3 text-right font-mono text-slate-500">
@@ -1082,7 +1082,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
             <button
               onClick={() => runMutation.mutate()}
               disabled={runMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded bg-[#3067DB] hover:bg-[#2554B8] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded bg-[#1D63ED] hover:bg-[#1550C0] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
             >
               <Play className="h-3.5 w-3.5" />
               <span>{runMutation.isPending ? "Executing..." : "Start Test Run"}</span>
@@ -1104,7 +1104,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                   className={cn(
                     "flex items-center justify-between rounded-md border p-3 cursor-pointer transition-colors",
                     (selectedEnvId === e.id || (!selectedEnvId && e.is_default))
-                      ? "border-[#3067DB] bg-blue-50/30"
+                      ? "border-[#1D63ED] bg-blue-50/30"
                       : "border-slate-200 hover:bg-slate-50"
                   )}
                   onClick={() => setSelectedEnvId(e.id)}
@@ -1120,7 +1120,7 @@ export function ProductionProjectDashboard({ projectId, isDetailView = false, fa
                     name="env"
                     checked={selectedEnvId === e.id || (!selectedEnvId && e.is_default)}
                     onChange={() => setSelectedEnvId(e.id)}
-                    className="text-[#3067DB]"
+                    className="text-[#1D63ED]"
                   />
                 </label>
               ))}

@@ -44,7 +44,7 @@ import {
   Panel,
 } from "@/components/ui";
 import { useProjects } from "@/hooks/useProjects";
-import { AuditPage, EvaluationsPage, IntegrationsPage } from "@/pages/InsightPages";
+import { AuditPage, IntegrationsPage } from "@/pages/InsightPages";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
 
@@ -60,13 +60,23 @@ interface HealthProbeResult {
   error?: string | null;
 }
 
+type SettingsCategory =
+  | "all"
+  | "general"
+  | "providers"
+  | "usage"
+  | "integrations"
+  | "audit"
+  | "database"
+  | "advanced";
+
 export function SettingsPage() {
   const toast = useToast();
   const qc = useQueryClient();
   const { projects } = useProjects();
 
   // Top-level Settings Category Tab
-  const [settingsCategory, setSettingsCategory] = useState<"ai" | "integrations" | "audit" | "evaluations">("ai");
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>("all");
 
   // Filters
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
@@ -208,64 +218,92 @@ export function SettingsPage() {
       />
 
       {/* Settings Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
-        <button
-          onClick={() => setSettingsCategory("ai")}
-          className={cn(
-            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
-            settingsCategory === "ai"
-              ? "border-[#1D4ED8] text-[#1D4ED8]"
-              : "border-transparent text-slate-600 hover:text-slate-900"
-          )}
-        >
-          <Cpu className="h-3.5 w-3.5" />
-          <span>AI Intelligence & Telemetry</span>
-        </button>
-        <button
-          onClick={() => setSettingsCategory("integrations")}
-          className={cn(
-            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
-            settingsCategory === "integrations"
-              ? "border-[#1D4ED8] text-[#1D4ED8]"
-              : "border-transparent text-slate-600 hover:text-slate-900"
-          )}
-        >
-          <Layers className="h-3.5 w-3.5" />
-          <span>Integrations & CI</span>
-        </button>
-        <button
-          onClick={() => setSettingsCategory("audit")}
-          className={cn(
-            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
-            settingsCategory === "audit"
-              ? "border-[#1D4ED8] text-[#1D4ED8]"
-              : "border-transparent text-slate-600 hover:text-slate-900"
-          )}
-        >
-          <Activity className="h-3.5 w-3.5" />
-          <span>Audit Logs</span>
-        </button>
-        <button
-          onClick={() => setSettingsCategory("evaluations")}
-          className={cn(
-            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
-            settingsCategory === "evaluations"
-              ? "border-[#1D4ED8] text-[#1D4ED8]"
-              : "border-transparent text-slate-600 hover:text-slate-900"
-          )}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span>AI Evaluations</span>
-        </button>
+      <div className="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
+        {[
+          { id: "all", label: "All Settings", icon: Layers },
+          { id: "general", label: "General", icon: Sparkles },
+          { id: "providers", label: "AI Providers & Models", icon: Cpu },
+          { id: "usage", label: "AI Usage & Costs", icon: DollarSign },
+          { id: "integrations", label: "Integrations", icon: Layers },
+          { id: "audit", label: "Audit Logs", icon: Activity },
+          { id: "database", label: "Database & Backups", icon: Database },
+          { id: "advanced", label: "Advanced Configuration", icon: Terminal },
+        ].map((cat) => {
+          const Icon = cat.icon;
+          const isActive = settingsCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setSettingsCategory(cat.id as SettingsCategory)}
+              className={cn(
+                "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
+                isActive
+                  ? "border-[#1D63ED] text-[#1D4ED8]"
+                  : "border-transparent text-slate-600 hover:text-slate-900"
+              )}
+            >
+              <Icon className={cn("h-3.5 w-3.5", isActive ? "text-[#1D63ED]" : "text-slate-400")} />
+              <span>{cat.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {settingsCategory === "integrations" && <IntegrationsPage />}
       {settingsCategory === "audit" && <AuditPage />}
-      {settingsCategory === "evaluations" && <EvaluationsPage />}
 
-      {settingsCategory === "ai" && (
-        <>
-          {/* SECTION A: AI Providers & Health Probes */}
+      {/* GENERAL CATEGORY VIEW */}
+      {settingsCategory === "general" && (
+        <div className="space-y-6">
+          <Panel
+            title={
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#1D63ED]" />
+                <span>Platform Workspace & General Configuration</span>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                TraceTest enterprise quality verification platform overview. System runtime, active project scopes, and operational health.
+              </p>
+              <KV
+                items={[
+                  ["Platform Version", "v2.5.0-enterprise"],
+                  ["Execution Mode", configData?.environment ? configData.environment.toUpperCase() : "PRODUCTION"],
+                  ["Active Projects", `${projects.length} configured workspaces`],
+                  ["Default Project", projects[0]?.name ? `${projects[0].key} — ${projects[0].name}` : "None"],
+                  [
+                    "System Health",
+                    healthData?.database?.integrity === "ok" ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        All Services Operational
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-semibold">Degraded Telemetry</span>
+                    ),
+                  ],
+                  [
+                    "LLM Routing Topology",
+                    "Dual-Provider Primary (Google Gemini) → Secondary (Groq Cloud) with Circuit Breakers",
+                  ],
+                  [
+                    "Sandbox Isolation",
+                    configData?.sandbox?.isolation_level
+                      ? configData.sandbox.isolation_level.toUpperCase()
+                      : "BUBBLEWRAP + RLIMITS",
+                  ],
+                ]}
+              />
+            </div>
+          </Panel>
+        </div>
+      )}
+
+      {/* SECTION A: AI Providers & Health Probes */}
+      {(settingsCategory === "all" || settingsCategory === "providers") && (
       <Panel
         title={
           <div className="flex items-center gap-2">
@@ -435,8 +473,10 @@ export function SettingsPage() {
           )}
         </div>
       </Panel>
+      )}
 
       {/* SECTION B: AI Usage & Cost Analytics */}
+      {(settingsCategory === "all" || settingsCategory === "usage") && (
       <div className="space-y-6">
         {/* Controls Bar: Time Range, Project Filter, Export Actions */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-lg border border-slate-200">
@@ -1098,10 +1138,13 @@ export function SettingsPage() {
           </>
         )}
       </div>
+      )}
 
       {/* SECTION C & D: Execution Sandbox & Database Health */}
-      <div className="grid gap-6 xl:grid-cols-2">
+      {(settingsCategory === "all" || settingsCategory === "advanced" || settingsCategory === "database") && (
+      <div className={cn("grid gap-6", (settingsCategory === "all") ? "xl:grid-cols-2" : "grid-cols-1")}>
         {/* Section C: Execution Sandbox & Environment */}
+        {(settingsCategory === "all" || settingsCategory === "advanced") && (
         <Panel
           title={
             <div className="flex items-center gap-2">
@@ -1137,8 +1180,10 @@ export function SettingsPage() {
             </div>
           )}
         </Panel>
+        )}
 
         {/* Section D: Database & Workspace Health */}
+        {(settingsCategory === "all" || settingsCategory === "database") && (
         <Panel
           title={
             <div className="flex items-center gap-2">
@@ -1203,8 +1248,8 @@ export function SettingsPage() {
             </div>
           )}
         </Panel>
+        )}
       </div>
-        </>
       )}
     </div>
   );

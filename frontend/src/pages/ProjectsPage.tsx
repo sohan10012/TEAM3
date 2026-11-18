@@ -95,7 +95,7 @@ export function ProjectsPage() {
                   className={cn(
                     "px-2 py-0.5 rounded-full text-2xs font-medium border",
                     isReq
-                      ? "bg-blue-50 text-[#3067DB] border-blue-200"
+                      ? "bg-blue-50 text-[#1D63ED] border-blue-200"
                       : "bg-slate-100 text-slate-700 border-slate-200"
                   )}
                 >
@@ -846,7 +846,7 @@ export function ProjectDetailPage() {
   if (q.isLoading) {
     return (
       <div className="py-20 text-center space-y-3">
-        <div className="h-6 w-6 animate-spin mx-auto border-2 border-[#3067DB] border-t-transparent rounded-full" />
+        <div className="h-6 w-6 animate-spin mx-auto border-2 border-[#1D63ED] border-t-transparent rounded-full" />
         <p className="text-xs text-slate-500">Loading project configuration...</p>
       </div>
     );

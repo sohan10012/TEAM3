@@ -250,9 +250,9 @@ function ResultEvidence({
           ["Test Scenario", r.test_title || "—"],
           ["Version", `v${r.test_case_version}`],
           ["Duration", fmtDuration(r.duration_ms)],
-          ...((r as any).requirement_key ? ([["Requirement", <Link key="req" to={`/requirements/${(r as any).requirement_id}`} className="text-[#3067DB] hover:underline font-medium">{(r as any).requirement_key}</Link>]] as [string, React.ReactNode][]) : []),
+          ...((r as any).requirement_key ? ([["Requirement", <Link key="req" to={`/requirements/${(r as any).requirement_id}`} className="text-[#1D4ED8] hover:underline font-medium">{(r as any).requirement_key}</Link>]] as [string, React.ReactNode][]) : []),
         ]} />
-        <Link to={`/tests/${r.test_case_id}`} className="mt-2.5 inline-block text-xs font-medium text-[#3067DB] hover:underline">
+        <Link to={`/tests/${r.test_case_id}`} className="mt-2.5 inline-block text-xs font-medium text-[#1D4ED8] hover:underline">
           Open Test Case Details →
         </Link>
       </Panel>

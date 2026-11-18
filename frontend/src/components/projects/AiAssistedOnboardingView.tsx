@@ -733,7 +733,7 @@ export function AiAssistedOnboardingView({
                 className={cn(
                   "flex items-center gap-2 text-left p-2 rounded-lg transition-all border text-xs",
                   isCurrent
-                    ? "bg-blue-50/80 border-[#3067DB] text-slate-900 shadow-2xs font-semibold cursor-default"
+                    ? "bg-blue-50/80 border-[#1D63ED] text-slate-900 shadow-2xs font-semibold cursor-default"
                     : isPast
                     ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/60 cursor-pointer"
                     : canNavigate
@@ -745,7 +745,7 @@ export function AiAssistedOnboardingView({
                   className={cn(
                     "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
                     isCurrent
-                      ? "bg-[#3067DB] text-white"
+                      ? "bg-[#1D63ED] text-white"
                       : isPast
                       ? "bg-emerald-600 text-white"
                       : "bg-slate-200 text-slate-600"
@@ -771,8 +771,8 @@ export function AiAssistedOnboardingView({
         {currentStep === 1 && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#3067DB] border border-blue-200 font-semibold text-2xs mb-2">
-                <Sparkles className="h-3.5 w-3.5 text-[#3067DB]" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1D63ED] border border-blue-200 font-semibold text-2xs mb-2">
+                <Sparkles className="h-3.5 w-3.5 text-[#1D63ED]" />
                 Mode A: AI-Assisted Document-First Onboarding
               </div>
               <h3 className="text-base font-bold text-slate-900">Define Project Essentials</h3>
@@ -792,7 +792,7 @@ export function AiAssistedOnboardingView({
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. UPI Dispute & Customer Protection Platform"
-                  className="w-full h-10 px-3 font-medium text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white shadow-2xs"
+                  className="w-full h-10 px-3 font-medium text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white shadow-2xs"
                 />
               </div>
 
@@ -808,11 +808,11 @@ export function AiAssistedOnboardingView({
                       value={key}
                       onChange={(e) => setKey(e.target.value.toUpperCase())}
                       placeholder="e.g. UPI_DISP"
-                      className="w-full h-10 px-3 font-mono uppercase font-semibold text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white shadow-2xs"
+                      className="w-full h-10 px-3 font-mono uppercase font-semibold text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white shadow-2xs"
                     />
                     <div className="absolute right-3 top-3">
                       {keyValidation.status === "checking" && (
-                        <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />
+                        <Loader2 className="h-4 w-4 animate-spin text-[#1D63ED]" />
                       )}
                       {keyValidation.status === "valid" && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                       {keyValidation.status === "invalid" && <AlertCircle className="h-4 w-4 text-red-600" />}
@@ -835,7 +835,7 @@ export function AiAssistedOnboardingView({
                   <select
                     value={businessDomain}
                     onChange={(e) => setBusinessDomain(e.target.value)}
-                    className="w-full h-10 px-3 font-medium text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white shadow-2xs"
+                    className="w-full h-10 px-3 font-medium text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white shadow-2xs"
                   >
                     {DOMAIN_OPTIONS.map((d) => (
                       <option key={d} value={d}>
@@ -853,7 +853,7 @@ export function AiAssistedOnboardingView({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Summarize the core problem statement, mission, and regulatory or business goals..."
-                  className="w-full p-3 font-normal text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white shadow-2xs resize-none"
+                  className="w-full p-3 font-normal text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white shadow-2xs resize-none"
                 />
               </div>
             </div>
@@ -887,7 +887,7 @@ export function AiAssistedOnboardingView({
               className={cn(
                 "rounded-xl border-2 border-dashed p-8 text-center transition-all bg-white cursor-pointer shadow-xs",
                 isDragOver
-                  ? "border-[#3067DB] bg-blue-50/50 scale-[1.005] ring-4 ring-blue-500/10"
+                  ? "border-[#1D63ED] bg-blue-50/50 scale-[1.005] ring-4 ring-blue-500/10"
                   : isUploading
                   ? "border-blue-400 bg-blue-50/20"
                   : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/30"
@@ -910,14 +910,14 @@ export function AiAssistedOnboardingView({
                   className={cn(
                     "flex h-12 w-12 items-center justify-center rounded-full shadow-2xs transition-all",
                     isUploading
-                      ? "bg-blue-100 text-[#3067DB] ring-4 ring-blue-200/50 animate-pulse"
+                      ? "bg-blue-100 text-[#1D63ED] ring-4 ring-blue-200/50 animate-pulse"
                       : isDragOver
                       ? "bg-blue-500 text-white scale-110"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
                   )}
                 >
                   {isUploading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-[#3067DB]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-[#1D63ED]" />
                   ) : (
                     <Upload className="h-6 w-6" />
                   )}
@@ -940,7 +940,7 @@ export function AiAssistedOnboardingView({
 
                 {isUploading && (
                   <div className="w-64 max-w-full bg-blue-100 rounded-full h-1.5 overflow-hidden mt-1">
-                    <div className="bg-[#3067DB] h-1.5 rounded-full animate-pulse w-3/4" />
+                    <div className="bg-[#1D63ED] h-1.5 rounded-full animate-pulse w-3/4" />
                   </div>
                 )}
               </div>
@@ -953,7 +953,7 @@ export function AiAssistedOnboardingView({
                   <span>Staged Documents ({stagedDocs.length})</span>
                   {uploadingFiles.length > 0 && (
                     <span className="flex items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 animate-pulse">
-                      <Loader2 className="h-3 w-3 animate-spin text-[#3067DB]" />
+                      <Loader2 className="h-3 w-3 animate-spin text-[#1D63ED]" />
                       Processing {uploadingFiles.length} file{uploadingFiles.length > 1 ? "s" : ""}
                     </span>
                   )}
@@ -973,13 +973,13 @@ export function AiAssistedOnboardingView({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-[#3067DB] shrink-0 border border-blue-200">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-[#1D63ED] shrink-0 border border-blue-200">
                         {up.status === "error" ? (
                           <AlertCircle className="h-4 w-4 text-red-600" />
                         ) : up.status === "complete" ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         ) : (
-                          <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />
+                          <Loader2 className="h-4 w-4 animate-spin text-[#1D63ED]" />
                         )}
                       </div>
                       <div className="min-w-0">
@@ -1000,7 +1000,7 @@ export function AiAssistedOnboardingView({
                         </div>
                       </div>
                     </div>
-                    <span className="font-mono text-xs font-semibold text-[#3067DB]">
+                    <span className="font-mono text-xs font-semibold text-[#1D63ED]">
                       {up.status === "error" ? "Error" : `${up.progress}%`}
                     </span>
                   </div>
@@ -1010,7 +1010,7 @@ export function AiAssistedOnboardingView({
                     <div
                       className={cn(
                         "h-1.5 rounded-full transition-all duration-300 ease-out",
-                        up.status === "error" ? "bg-red-500 w-full" : "bg-[#3067DB]"
+                        up.status === "error" ? "bg-red-500 w-full" : "bg-[#1D63ED]"
                       )}
                       style={up.status === "error" ? undefined : { width: `${up.progress}%` }}
                     />
@@ -1035,7 +1035,7 @@ export function AiAssistedOnboardingView({
                       className="rounded-xl border border-slate-200 bg-white p-3.5 flex items-center justify-between shadow-2xs hover:border-slate-300 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[#3067DB] shrink-0 border border-blue-100">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[#1D63ED] shrink-0 border border-blue-100">
                           {doc.file_type === "pdf" ? (
                             <FileText className="h-4 w-4" />
                           ) : doc.file_type === "docx" ? (
@@ -1102,7 +1102,7 @@ export function AiAssistedOnboardingView({
                     ? "bg-rose-100 text-rose-600"
                     : analysisProgress === 100
                     ? "bg-emerald-100 text-emerald-600"
-                    : "bg-blue-100 text-[#3067DB]"
+                    : "bg-blue-100 text-[#1D63ED]"
                 )}
               >
                 {analysisError ? (
@@ -1111,8 +1111,8 @@ export function AiAssistedOnboardingView({
                   <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                 ) : (
                   <>
-                    <Brain className="h-6 w-6 text-[#3067DB] animate-pulse" />
-                    <div className="absolute -inset-1 rounded-xl border-2 border-[#3067DB]/40 animate-ping" />
+                    <Brain className="h-6 w-6 text-[#1D63ED] animate-pulse" />
+                    <div className="absolute -inset-1 rounded-xl border-2 border-[#1D63ED]/40 animate-ping" />
                   </>
                 )}
               </div>
@@ -1124,13 +1124,13 @@ export function AiAssistedOnboardingView({
 
               {/* Live Estimated Time Remaining Pill (replaces elapsed time per user requirement) */}
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-2xs font-mono shadow-2xs">
-                <Clock className="h-3.5 w-3.5 text-[#3067DB]" />
+                <Clock className="h-3.5 w-3.5 text-[#1D63ED]" />
                 <span>
                   {isAnalyzing ? (
                     <>
                       <span className="relative inline-flex h-2 w-2 mr-1">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3067DB]"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1D63ED]"></span>
                       </span>
                       <span className="text-slate-600">Estimated time: </span>
                       <strong className="text-blue-900 font-semibold">
@@ -1196,7 +1196,7 @@ export function AiAssistedOnboardingView({
                   <div
                     className={cn(
                       "h-full transition-all duration-300 rounded-full",
-                      analysisProgress === 100 ? "bg-emerald-600" : "bg-[#3067DB]"
+                      analysisProgress === 100 ? "bg-emerald-600" : "bg-[#1D63ED]"
                     )}
                     style={{ width: `${analysisProgress}%` }}
                   />
@@ -1255,7 +1255,7 @@ export function AiAssistedOnboardingView({
                             : isFailed
                             ? "bg-rose-600 text-white"
                             : isCurrent
-                            ? "bg-[#3067DB] text-white ring-4 ring-blue-500/20 animate-pulse"
+                            ? "bg-[#1D63ED] text-white ring-4 ring-blue-500/20 animate-pulse"
                             : "bg-slate-200 text-slate-500"
                         )}
                       >
@@ -1268,7 +1268,7 @@ export function AiAssistedOnboardingView({
                             isFailed
                               ? "text-rose-700"
                               : isCurrent
-                              ? "text-[#3067DB]"
+                              ? "text-[#1D63ED]"
                               : isComplete
                               ? "text-slate-800"
                               : "text-slate-400"
@@ -1282,7 +1282,7 @@ export function AiAssistedOnboardingView({
 
                     {isCurrent && (
                       <span className="shrink-0 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
-                        <Loader2 className="h-2.5 w-2.5 animate-spin text-[#3067DB]" />
+                        <Loader2 className="h-2.5 w-2.5 animate-spin text-[#1D63ED]" />
                         Active
                       </span>
                     )}
@@ -1337,7 +1337,7 @@ export function AiAssistedOnboardingView({
                   <div className="flex items-center gap-2 text-blue-400 animate-pulse pt-1 border-t border-slate-800/60 mt-1">
                     <span className="text-slate-500 font-mono">[{formatElapsed(analysisElapsedSeconds)}]</span>
                     <span className="flex items-center gap-1.5 text-blue-300 font-mono text-[10px]">
-                      <Loader2 className="h-3 w-3 animate-spin text-[#3067DB]" />
+                      <Loader2 className="h-3 w-3 animate-spin text-[#1D63ED]" />
                       {analysisStageText}
                     </span>
                   </div>
@@ -1371,7 +1371,7 @@ export function AiAssistedOnboardingView({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-slate-900">{name}</span>
-                  <span className="rounded bg-blue-100 text-[#3067DB] px-1.5 py-0.2 font-mono font-bold text-2xs">
+                  <span className="rounded bg-blue-100 text-[#1D63ED] px-1.5 py-0.2 font-mono font-bold text-2xs">
                     {key}
                   </span>
                 </div>
@@ -1382,15 +1382,15 @@ export function AiAssistedOnboardingView({
 
               <div className="flex items-center gap-3">
                 <div className="text-center bg-white px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
-                  <div className="text-xs font-bold text-[#3067DB]">{rulesList.length}</div>
+                  <div className="text-xs font-bold text-[#1D63ED]">{rulesList.length}</div>
                   <div className="text-[9px] text-slate-500">Business Rules</div>
                 </div>
                 <div className="text-center bg-white px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
-                  <div className="text-xs font-bold text-[#3067DB]">{rolesList.length}</div>
+                  <div className="text-xs font-bold text-[#1D63ED]">{rolesList.length}</div>
                   <div className="text-[9px] text-slate-500">Roles</div>
                 </div>
                 <div className="text-center bg-white px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
-                  <div className="text-xs font-bold text-[#3067DB]">{scenariosList.length}</div>
+                  <div className="text-xs font-bold text-[#1D63ED]">{scenariosList.length}</div>
                   <div className="text-[9px] text-slate-500">Scenarios</div>
                 </div>
                 <div className="text-center bg-white px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
@@ -1406,7 +1406,7 @@ export function AiAssistedOnboardingView({
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#3067DB] text-white shadow-2xs">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#1D63ED] text-white shadow-2xs">
                     <Brain className="h-3.5 w-3.5" />
                   </span>
                   <div>
@@ -1482,7 +1482,7 @@ export function AiAssistedOnboardingView({
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
                       isActive
-                        ? "bg-[#3067DB] text-white shadow-xs"
+                        ? "bg-[#1D63ED] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
@@ -1553,7 +1553,7 @@ export function AiAssistedOnboardingView({
                             >
                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </button>
-                            <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB] shrink-0 mt-0.5">
+                            <span className="font-mono text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#1D63ED] shrink-0 mt-0.5">
                               {rule.rule_id}
                             </span>
                             <div className="flex-1 min-w-0">
@@ -1665,7 +1665,7 @@ export function AiAssistedOnboardingView({
                                   `Explain the architectural and operational basis for ${rule.rule_id} (${rule.title})`
                                 )
                               }
-                              className="h-7 text-[11px] text-[#3067DB] hover:bg-blue-50 border-blue-200"
+                              className="h-7 text-[11px] text-[#1D63ED] hover:bg-blue-50 border-blue-200"
                             >
                               <Brain className="h-3.5 w-3.5 mr-1" />
                               <span>Ask ReasonX</span>
@@ -1804,7 +1804,7 @@ export function AiAssistedOnboardingView({
                       </div>
                       <div className="flex flex-wrap gap-1 pt-1">
                         {r.permissions.map((p) => (
-                          <span key={p} className="rounded bg-blue-50 text-[#3067DB] px-1.5 py-0.2 text-[9px] font-mono">
+                          <span key={p} className="rounded bg-blue-50 text-[#1D63ED] px-1.5 py-0.2 text-[9px] font-mono">
                             {p}
                           </span>
                         ))}
@@ -1846,7 +1846,7 @@ export function AiAssistedOnboardingView({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-xs text-slate-900">{sc.title}</span>
-                            <span className="rounded bg-blue-50 text-[#3067DB] px-2 py-0.5 text-[10px] font-medium border border-blue-100">
+                            <span className="rounded bg-blue-50 text-[#1D63ED] px-2 py-0.5 text-[10px] font-medium border border-blue-100">
                               {sc.module}
                             </span>
                           </div>
@@ -1915,7 +1915,7 @@ export function AiAssistedOnboardingView({
                                     "inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer border",
                                     isRuleRejected
                                       ? "bg-rose-50 text-rose-700 border-rose-300 line-through"
-                                      : "bg-blue-50 text-[#3067DB] border-blue-200 hover:bg-blue-100 hover:border-blue-300 shadow-2xs"
+                                      : "bg-blue-50 text-[#1D63ED] border-blue-200 hover:bg-blue-100 hover:border-blue-300 shadow-2xs"
                                   )}
                                   title={linkedRule ? `${linkedRule.title} (Click to inspect rule)` : `Inspect rule ${ruleId}`}
                                 >
@@ -1954,7 +1954,7 @@ export function AiAssistedOnboardingView({
 
                 {insightsList.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-8 text-center space-y-3">
-                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 text-[#3067DB] flex items-center justify-center">
+                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 text-[#1D63ED] flex items-center justify-center">
                       <FileText className="h-5 w-5" />
                     </div>
                     <div className="max-w-md mx-auto space-y-1">
@@ -2042,7 +2042,7 @@ export function AiAssistedOnboardingView({
                     <h4 className="text-xs font-bold text-slate-900">External Integrations</h4>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {reviewConfig.product_context.external_integrations?.map((intg: string) => (
-                        <span key={intg} className="rounded bg-blue-50 text-[#3067DB] px-2 py-0.5 text-2xs font-medium">
+                        <span key={intg} className="rounded bg-blue-50 text-[#1D63ED] px-2 py-0.5 text-2xs font-medium">
                           {intg}
                         </span>
                       ))}
@@ -2059,7 +2059,7 @@ export function AiAssistedOnboardingView({
                   type="checkbox"
                   checked={approvalConfirmed}
                   onChange={(e) => setApprovalConfirmed(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#3067DB] focus:ring-[#3067DB]"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1D63ED] focus:ring-[#1D63ED]"
                 />
                 <span className="text-xs text-slate-800 leading-normal font-medium">
                   I have reviewed, verified, and approved the AI-extracted project configuration, business rules, and
@@ -2144,7 +2144,7 @@ export function AiAssistedOnboardingView({
               variant="primary"
               onClick={() => setCurrentStep(2)}
               disabled={!name.trim() || keyValidation.status !== "valid"}
-              className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
+              className="bg-[#1D63ED] hover:bg-[#1550C0] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
             >
               <span>Next: Document Intake</span>
               <ArrowRight className="h-4 w-4" />
@@ -2167,7 +2167,7 @@ export function AiAssistedOnboardingView({
                 className={cn(
                   "font-medium px-5 h-9 shadow-2xs gap-1.5 transition-all",
                   stagedDocs.length > 0 && !isUploading
-                    ? "bg-[#3067DB] hover:bg-[#2554b5] text-white cursor-pointer"
+                    ? "bg-[#1D63ED] hover:bg-[#1550C0] text-white cursor-pointer"
                     : "bg-slate-200 text-slate-400 cursor-not-allowed"
                 )}
               >
@@ -2190,14 +2190,14 @@ export function AiAssistedOnboardingView({
                 <Button
                   variant="primary"
                   onClick={handleRunAnalysis}
-                  className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
+                  className="bg-[#1D63ED] hover:bg-[#1550C0] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
                 >
                   <RefreshCw className="h-4 w-4" />
                   <span>Retry Analysis</span>
                 </Button>
               ) : (
                 <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 font-medium">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3067DB]" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#1D63ED]" />
                   <span>
                     AI Extraction Pipeline Active ·{" "}
                     {analysisEstimatedRemaining > 3
@@ -2215,7 +2215,7 @@ export function AiAssistedOnboardingView({
               onClick={handleApproveAndCreate}
               loading={isSubmitting}
               disabled={!approvalConfirmed}
-              className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium px-6 h-9 shadow-2xs gap-1.5"
+              className="bg-[#1D63ED] hover:bg-[#1550C0] text-white font-medium px-6 h-9 shadow-2xs gap-1.5"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>Approve & Create Project</span>
@@ -2234,7 +2234,7 @@ export function AiAssistedOnboardingView({
           <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85dvh] animate-in zoom-in-95 duration-150">
             <div className="px-5 py-3.5 border-b border-slate-200 bg-blue-50/60 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#3067DB] text-white shadow-2xs">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1D63ED] text-white shadow-2xs">
                   <Brain className="h-4 w-4" />
                 </div>
                 <div>
@@ -2259,7 +2259,7 @@ export function AiAssistedOnboardingView({
 
               {reasonxLoading ? (
                 <div className="py-8 flex flex-col items-center justify-center gap-2 text-slate-500">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#3067DB]" />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#1D63ED]" />
                   <span>ReasonX is parsing circular clauses and legal precedents...</span>
                 </div>
               ) : reasonxResult ? (

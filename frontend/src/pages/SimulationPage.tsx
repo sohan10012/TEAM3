@@ -618,7 +618,7 @@ export default function SimulationPage() {
               onClick={handleRunSimulation}
               loading={isSimulating}
               disabled={stages.length === 0 || isSimulating}
-              className="bg-[#3067DB] hover:bg-[#2554b5] text-white font-medium"
+              className="bg-[#1D63ED] hover:bg-[#1550C0] text-white font-medium"
             >
               <Play className="h-3.5 w-3.5 mr-1 fill-white" />
               Run Simulation
@@ -634,7 +634,7 @@ export default function SimulationPage() {
             onClick={() => setViewMode("all")}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
-              viewMode === "all" ? "bg-white text-[#3067DB] shadow-xs" : "text-slate-600 hover:text-slate-900"
+              viewMode === "all" ? "bg-white text-[#1D63ED] shadow-xs" : "text-slate-600 hover:text-slate-900"
             )}
           >
             <Layers className="h-3.5 w-3.5" />
@@ -644,7 +644,7 @@ export default function SimulationPage() {
             onClick={() => setViewMode("business")}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
-              viewMode === "business" ? "bg-white text-[#3067DB] shadow-xs" : "text-slate-600 hover:text-slate-900"
+              viewMode === "business" ? "bg-white text-[#1D63ED] shadow-xs" : "text-slate-600 hover:text-slate-900"
             )}
           >
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
@@ -654,7 +654,7 @@ export default function SimulationPage() {
             onClick={() => setViewMode("technical")}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
-              viewMode === "technical" ? "bg-white text-[#3067DB] shadow-xs" : "text-slate-600 hover:text-slate-900"
+              viewMode === "technical" ? "bg-white text-[#1D63ED] shadow-xs" : "text-slate-600 hover:text-slate-900"
             )}
           >
             <Cpu className="h-3.5 w-3.5 text-purple-600" />
@@ -663,7 +663,7 @@ export default function SimulationPage() {
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] border border-blue-200">
             <Sparkles className="h-3 w-3" />
             Active Policy: {activePolicy?.policy_id}
           </span>
@@ -676,8 +676,8 @@ export default function SimulationPage() {
       <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-[#3067DB]">
-              <Info className="h-4 w-4 text-[#3067DB]" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-[#1D63ED]">
+              <Info className="h-4 w-4 text-[#1D63ED]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -957,7 +957,7 @@ export default function SimulationPage() {
                       setCustomShifts("12, 10, 8, 8, 8");
                       handleEvaluateCustomShifts();
                     }}
-                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
+                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
                     <span>{isPayments ? "TAT SLA Breach Log (T+1 Mandate)" : "Retroactive Payments"}</span>
@@ -967,7 +967,7 @@ export default function SimulationPage() {
                       setCustomShifts("8, 8, 8, 8, 4");
                       handleEvaluateCustomShifts();
                     }}
-                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
+                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
                     <span>{isPayments ? "Automated ₹100/Day Compensation Ledger" : "Off-Cycle Checks"}</span>
@@ -977,7 +977,7 @@ export default function SimulationPage() {
                       setCustomShifts("10, 10, 10, 10, 10");
                       handleEvaluateCustomShifts();
                     }}
-                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#3067DB] transition-colors cursor-pointer"
+                    className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
                     <span>{isPayments ? "RBI Integrated Ombudsman Dossier (RB-IOS)" : "Supplemental Pay"}</span>
@@ -1003,7 +1003,7 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-slate-500 font-mono text-xs">▷</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
                           {isPayments ? "Parallel Settlement Validator" : "Parallel Run Validator"}
                         </div>
                         <div className="text-[11px] text-slate-500">
@@ -1022,7 +1022,7 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-amber-500 font-mono text-xs font-bold">!</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
                           {isPayments ? "Dispute Scenario Sandbox" : "Sandbox Simulator"}
                         </div>
                         <div className="text-[11px] text-slate-500">
@@ -1044,7 +1044,7 @@ export default function SimulationPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-emerald-600 font-mono text-xs font-bold">$</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">
+                        <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
                           {isPayments ? "Compensation Audit Checker" : "Costing Checker"}
                         </div>
                         <div className="text-[11px] text-slate-500">
@@ -1566,7 +1566,7 @@ export default function SimulationPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-[#3067DB]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-[#1D63ED]">
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
@@ -1616,7 +1616,7 @@ export default function SimulationPage() {
                   value={customShifts}
                   onChange={(e) => setCustomShifts(e.target.value)}
                   placeholder="e.g. 10, 10, 10, 10, 8"
-                  className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#3067DB] focus:outline-none focus:ring-1 focus:ring-[#3067DB]"
+                  className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#1D63ED] focus:outline-none focus:ring-1 focus:ring-[#1D63ED]"
                 />
               </div>
 
@@ -1629,7 +1629,7 @@ export default function SimulationPage() {
                   step="0.5"
                   value={baseHourlyWage}
                   onChange={(e) => setBaseHourlyWage(parseFloat(e.target.value) || 0)}
-                  className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#3067DB] focus:outline-none focus:ring-1 focus:ring-[#3067DB]"
+                  className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#1D63ED] focus:outline-none focus:ring-1 focus:ring-[#1D63ED]"
                 />
               </div>
 
@@ -1637,7 +1637,7 @@ export default function SimulationPage() {
                 <Button
                   variant="primary"
                   onClick={handleEvaluateCustomShifts}
-                  className="w-full bg-[#3067DB] hover:bg-[#2554B8] text-white font-semibold text-xs h-9"
+                  className="w-full bg-[#1D63ED] hover:bg-[#1550C0] text-white font-semibold text-xs h-9"
                 >
                   <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                   Calculate & Verify Pay
@@ -1655,7 +1655,7 @@ export default function SimulationPage() {
                   </div>
                   <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-200">
                     <span className="text-2xs text-blue-700 block">Regular Hours (1.0x)</span>
-                    <span className="text-base font-bold text-[#3067DB]">{customEvalResult.regular} hrs</span>
+                    <span className="text-base font-bold text-[#1D63ED]">{customEvalResult.regular} hrs</span>
                     <span className="text-[10px] text-slate-500 block mt-0.5">
                       \${(customEvalResult.regular * baseHourlyWage).toFixed(2)}
                     </span>
@@ -1727,7 +1727,7 @@ export default function SimulationPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mr-1">
-              <BookOpen className="h-3.5 w-3.5 text-[#3067DB]" />
+              <BookOpen className="h-3.5 w-3.5 text-[#1D63ED]" />
               Golden HCM Policy:
             </span>
             {goldenPolicies.map((p) => {
@@ -1744,7 +1744,7 @@ export default function SimulationPage() {
                   className={cn(
                     "px-3 py-1.5 rounded-md text-xs font-medium transition-all text-left flex items-center gap-1.5",
                     active
-                      ? "bg-blue-50 text-[#3067DB] border border-blue-200 shadow-2xs"
+                      ? "bg-blue-50 text-[#1D63ED] border border-blue-200 shadow-2xs"
                       : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
                   )}
                 >
@@ -1768,7 +1768,7 @@ export default function SimulationPage() {
                 ? "—"
                 : `${Math.round(tracesQuery.data.ast_allowlist_scan_rate * 100)}%`}
             </span>
-            <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-200">
+            <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] border border-blue-200">
               <Zap className="h-3 w-3" />
               No-Code Engine
             </span>
@@ -1841,7 +1841,7 @@ export default function SimulationPage() {
         <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-2xs">
           <div className="flex items-center justify-between text-2xs text-slate-500 font-medium">
             <span>Red-to-Green Test</span>
-            <Sparkles className="h-4 w-4 text-[#3067DB]" />
+            <Sparkles className="h-4 w-4 text-[#1D63ED]" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-xl font-bold text-emerald-600">
@@ -1873,7 +1873,7 @@ export default function SimulationPage() {
       <Panel className="p-5 bg-white border-slate-200 shadow-2xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-[#3067DB]" />
+            <Layers className="h-4 w-4 text-[#1D63ED]" />
             <h2 className="text-sm font-semibold text-slate-900">Multi-Agent Verification Pipeline Graph</h2>
             <span className="text-2xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
               {stages.length} Agent Stages
@@ -1898,7 +1898,7 @@ export default function SimulationPage() {
                 className={cn(
                   "relative rounded-lg p-2.5 text-left border transition-all flex flex-col justify-between h-28 select-none focus:outline-none",
                   isSelected
-                    ? "border-[#3067DB] ring-2 ring-[#3067DB]/20 bg-blue-50/40"
+                    ? "border-[#1D63ED] ring-2 ring-[#1D63ED]/20 bg-blue-50/40"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50",
                   isProcessing && "animate-pulse border-blue-400 bg-blue-50/70"
                 )}
@@ -1935,7 +1935,7 @@ export default function SimulationPage() {
           <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 text-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-[#3067DB] bg-blue-100 px-1.5 py-0.5 rounded text-2xs">
+                <span className="font-mono font-bold text-[#1D63ED] bg-blue-100 px-1.5 py-0.5 rounded text-2xs">
                   STAGE {selectedStage.id}
                 </span>
                 <span className="font-semibold text-slate-900">{selectedStage.agent}</span>
@@ -1946,7 +1946,7 @@ export default function SimulationPage() {
                 <button
                   type="button"
                   onClick={() => setShowStageExplain(!showStageExplain)}
-                  className="inline-flex items-center gap-1 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] hover:bg-blue-100 transition-colors"
+                  className="inline-flex items-center gap-1 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] hover:bg-blue-100 transition-colors"
                   title="Explain how this autonomous agent works and what enterprise safeguards it enforces"
                 >
                   <HelpCircle className="h-3 w-3" />
@@ -1956,7 +1956,7 @@ export default function SimulationPage() {
                   className={cn(
                     "px-2 py-0.5 rounded text-2xs font-semibold uppercase tracking-wider",
                     (isSimulating && simulatedStageIndex === selectedStage.id - 1)
-                      ? "bg-blue-100 text-[#3067DB]"
+                      ? "bg-blue-100 text-[#1D63ED]"
                       : selectedStage.status === "VERIFIED"
                       ? "bg-emerald-100 text-emerald-800"
                       : selectedStage.status === "FLAGGED"
@@ -1974,7 +1974,7 @@ export default function SimulationPage() {
             {showStageExplain && STAGE_EXPLANATIONS[selectedStage.id] && (
               <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-md space-y-2 text-xs">
                 <div className="flex items-center gap-1.5 text-blue-900 font-semibold">
-                  <Info className="h-4 w-4 text-[#3067DB]" />
+                  <Info className="h-4 w-4 text-[#1D63ED]" />
                   <span>{STAGE_EXPLANATIONS[selectedStage.id].title} — Architecture Guide</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
@@ -2013,7 +2013,7 @@ export default function SimulationPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("clauses")}
-                    className="text-2xs font-medium text-[#3067DB] hover:underline"
+                    className="text-2xs font-medium text-[#1D63ED] hover:underline"
                   >
                     View in Clauses Tab →
                   </button>
@@ -2028,7 +2028,7 @@ export default function SimulationPage() {
                         </span>
                       </div>
                       <p className="text-slate-700 text-[11px] leading-tight">{a.issue}</p>
-                      <p className="text-[#3067DB] text-2xs font-medium font-mono">Suggestion: {a.suggestion}</p>
+                      <p className="text-[#1D63ED] text-2xs font-medium font-mono">Suggestion: {a.suggestion}</p>
                     </div>
                   ))}
                 </div>
@@ -2095,7 +2095,7 @@ export default function SimulationPage() {
             className={cn(
               "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5",
               activeTab === "pipeline"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             )}
           >
@@ -2108,7 +2108,7 @@ export default function SimulationPage() {
             className={cn(
               "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5",
               activeTab === "yaml"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             )}
           >
@@ -2121,7 +2121,7 @@ export default function SimulationPage() {
             className={cn(
               "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5",
               activeTab === "clauses"
-                ? "border-[#3067DB] text-[#3067DB]"
+                ? "border-[#1D63ED] text-[#1D63ED]"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             )}
           >
@@ -2244,7 +2244,7 @@ export default function SimulationPage() {
             <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Terminal className="h-4 w-4 text-[#3067DB]" />
+                  <Terminal className="h-4 w-4 text-[#1D63ED]" />
                   <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Detailed Verification Scenarios ({activePolicy?.test_matrix?.length || 0})
                   </h3>
@@ -2327,7 +2327,7 @@ export default function SimulationPage() {
                       <div key={idx} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-slate-900">{ec.name}</span>
-                          <span className="font-mono text-2xs px-1.5 py-0.5 rounded bg-blue-100 text-[#3067DB]">
+                          <span className="font-mono text-2xs px-1.5 py-0.5 rounded bg-blue-100 text-[#1D63ED]">
                             Shifts: [{ec.shifts.join(", ")}]h
                           </span>
                         </div>
@@ -2345,7 +2345,7 @@ export default function SimulationPage() {
             <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-[#3067DB]" />
+                  <Zap className="h-4 w-4 text-[#1D63ED]" />
                   <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Interactive Timesheet Calculator (Zero Latency)
                   </h3>
@@ -2363,14 +2363,14 @@ export default function SimulationPage() {
                     value={customShifts}
                     onChange={(e) => setCustomShifts(e.target.value)}
                     placeholder="e.g. 8, 10, 12, 8, 8"
-                    className="w-full h-8 px-2.5 rounded border border-slate-200 font-mono text-xs text-slate-900 focus:border-[#3067DB] focus:outline-none"
+                    className="w-full h-8 px-2.5 rounded border border-slate-200 font-mono text-xs text-slate-900 focus:border-[#1D63ED] focus:outline-none"
                   />
                 </div>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleQuickShiftsEval}
-                  className="bg-[#3067DB] hover:bg-[#2554b5] text-white mt-auto h-8 px-4 font-medium"
+                  className="bg-[#1D63ED] hover:bg-[#1550C0] text-white mt-auto h-8 px-4 font-medium"
                 >
                   Calculate Pay Hours
                 </Button>
@@ -2411,7 +2411,7 @@ export default function SimulationPage() {
             <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <FileCode className="h-4 w-4 text-[#3067DB]" />
+                  <FileCode className="h-4 w-4 text-[#1D63ED]" />
                   <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Compiled YAML Specification
                   </h3>
@@ -2440,7 +2440,7 @@ export default function SimulationPage() {
                   <button
                     type="button"
                     onClick={handleDownloadYaml}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#3067DB] text-white text-2xs font-medium hover:bg-[#2554B8] transition-colors shadow-2xs cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#1D63ED] text-white text-2xs font-medium hover:bg-[#1550C0] transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="h-3 w-3" />
                     <span>Download</span>
@@ -2465,7 +2465,7 @@ export default function SimulationPage() {
               <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-[#3067DB]" />
+                    <Zap className="h-4 w-4 text-[#1D63ED]" />
                     <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                       Visual Rule Flow ({activePolicy?.parsed_rules?.length || 0})
                     </h3>
@@ -2480,7 +2480,7 @@ export default function SimulationPage() {
                     <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-bold text-slate-900 text-xs">{r.rule_id}</span>
-                        <span className="px-2 py-0.5 rounded text-2xs font-semibold uppercase bg-blue-50 text-[#3067DB] border border-blue-200">
+                        <span className="px-2 py-0.5 rounded text-2xs font-semibold uppercase bg-blue-50 text-[#1D63ED] border border-blue-200">
                           {r.rule_type?.replace(/_/g, " ")}
                         </span>
                       </div>
@@ -2502,7 +2502,7 @@ export default function SimulationPage() {
               {/* Upload Scenario Custom Box */}
               <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
                 <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                  <Upload className="h-3.5 w-3.5 text-[#3067DB]" />
+                  <Upload className="h-3.5 w-3.5 text-[#1D63ED]" />
                   Upload / Paste Custom Policy Scenario:
                 </span>
                 <div className="flex flex-wrap gap-1.5 pb-1">
@@ -2545,7 +2545,7 @@ export default function SimulationPage() {
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
                   placeholder="Paste policy document text (e.g. Employees working over 8 hours daily or 40 weekly receive 1.5x overtime...)"
-                  className="w-full p-2.5 rounded border border-slate-200 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-[#3067DB] focus:outline-none"
+                  className="w-full p-2.5 rounded border border-slate-200 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-[#1D63ED] focus:outline-none"
                 />
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 pb-0.5">
                   <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700">
@@ -2553,7 +2553,7 @@ export default function SimulationPage() {
                       type="checkbox"
                       checked={useLiveAI}
                       onChange={(e) => setUseLiveAI(e.target.checked)}
-                      className="rounded border-slate-300 text-[#3067DB] focus:ring-[#3067DB]"
+                      className="rounded border-slate-300 text-[#1D63ED] focus:ring-[#1D63ED]"
                     />
                     <span className="font-semibold text-slate-800 flex items-center gap-1">
                       <Sparkles className="h-3.5 w-3.5 text-purple-600" />
@@ -2569,7 +2569,7 @@ export default function SimulationPage() {
                   size="sm"
                   onClick={handleCustomIngest}
                   loading={ingestMutation.isPending}
-                  className="w-full text-xs font-medium bg-[#3067DB] hover:bg-[#2554b5] text-white"
+                  className="w-full text-xs font-medium bg-[#1D63ED] hover:bg-[#1550C0] text-white"
                 >
                   <Play className="h-3.5 w-3.5 mr-1 fill-white" />
                   Compile Custom Policy to YAML & Run
@@ -2586,7 +2586,7 @@ export default function SimulationPage() {
             <Panel className="p-4 bg-white border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#3067DB]" />
+                  <FileText className="h-4 w-4 text-[#1D63ED]" />
                   <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                     Atomic Clauses ({activePolicy?.clauses?.length || 0})
                   </h3>
@@ -2598,7 +2598,7 @@ export default function SimulationPage() {
                 {(activePolicy?.clauses || []).map((c) => (
                   <div key={c.clause_key} className="p-2.5 rounded border border-slate-200 bg-slate-50 text-xs space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-[#3067DB] text-2xs">{c.clause_key}</span>
+                      <span className="font-mono font-bold text-[#1D63ED] text-2xs">{c.clause_key}</span>
                       <span className="px-1.5 py-0.5 rounded text-2xs font-semibold uppercase bg-slate-200 text-slate-700">
                         {c.category}
                       </span>
@@ -2639,7 +2639,7 @@ export default function SimulationPage() {
                         </span>
                       </div>
                       <p className="text-slate-700 text-xs">{a.issue}</p>
-                      <p className="text-2xs text-[#3067DB] font-medium">Recommendation: {a.suggestion}</p>
+                      <p className="text-2xs text-[#1D63ED] font-medium">Recommendation: {a.suggestion}</p>
                     </div>
                   ))}
                 </div>

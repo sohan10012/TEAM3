@@ -135,7 +135,7 @@ export function ReviewWorkspacePage() {
       <TestTabsNav />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-[#3067DB]" />
+          <Sparkles className="h-4 w-4 text-[#1D63ED]" />
           <span><strong>LLM-as-a-Judge Audit Active:</strong> All pending tests have been evaluated for statutory grounding, AST syntax safety, and verbatim quote verification before reaching your approval queue.</span>
         </div>
         <span className="font-semibold text-accent">Dual-Control Governance</span>

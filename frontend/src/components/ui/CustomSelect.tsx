@@ -50,7 +50,7 @@ export const CustomSelect = forwardRef<HTMLSelectElement, CustomSelectProps>(
           className={cn(
             "h-9 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-8 text-xs font-medium text-slate-800 shadow-2xs transition-colors",
             "hover:border-slate-300 hover:bg-slate-50/50",
-            "focus:border-[#3067DB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3067DB]/20",
+            "focus:border-[#1D63ED] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D63ED]/20",
             "disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400",
             triggerClassName
           )}

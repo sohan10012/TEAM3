@@ -534,7 +534,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3067DB] border border-blue-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#1D63ED] border border-blue-100">
               <FileText className="h-5 w-5" />
             </div>
             <div>
@@ -576,13 +576,13 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-2.5 mb-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-2xs font-semibold uppercase tracking-wider text-slate-500">Business Quality Lifecycle</span>
-            <span className="rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-100">
+            <span className="rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] border border-blue-100">
               6 Guided Stages
             </span>
           </div>
           <button
             onClick={() => setShowGuide(!showGuide)}
-            className="inline-flex items-center gap-1 text-2xs font-medium text-[#3067DB] hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-2xs font-medium text-[#1D63ED] hover:underline cursor-pointer"
           >
             <BookOpen className="h-3 w-3" />
             <span>{showGuide ? "Hide Lifecycle Guide" : "How Requirements Verification Works"}</span>
@@ -652,7 +652,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
               )}
             >
               <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-2xs font-mono font-medium text-slate-400 group-hover:text-[#3067DB]">
+                <span className="text-2xs font-mono font-medium text-slate-400 group-hover:text-[#1D63ED]">
                   0{s.num}
                 </span>
                 {s.done ? (
@@ -661,7 +661,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                   <div className="h-2 w-2 rounded-full bg-slate-300" />
                 )}
               </div>
-              <span className="text-xs font-semibold text-slate-900 group-hover:text-[#3067DB]">{s.name}</span>
+              <span className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">{s.name}</span>
               <span className="text-[11px] text-slate-500 truncate mt-0.5">{s.detail}</span>
             </button>
           ))}
@@ -672,7 +672,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
           <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
             <div className="rounded border border-slate-200 bg-slate-50/80 p-3 space-y-1">
               <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                <UploadCloud className="h-4 w-4 text-[#3067DB]" />
+                <UploadCloud className="h-4 w-4 text-[#1D63ED]" />
                 <span>1. Multi-Format Intake</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-normal">
@@ -756,7 +756,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "intake"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -769,7 +769,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "extracted"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -782,7 +782,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "insights"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -795,7 +795,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "clarifications"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -808,7 +808,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "traceability"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -852,17 +852,17 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
               className={cn(
                 "rounded-lg border-2 border-dashed p-6 text-center transition-all",
                 isDragging
-                  ? "border-[#3067DB] bg-blue-50/70 ring-4 ring-blue-100"
+                  ? "border-[#1D63ED] bg-blue-50/70 ring-4 ring-blue-100"
                   : "border-slate-300 bg-white hover:border-blue-400"
               )}
             >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[#3067DB] mb-3">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[#1D63ED] mb-3">
                 <UploadCloud className={cn("h-6 w-6 transition-transform", isDragging && "scale-110 text-blue-700")} />
               </div>
               <h3 className="text-xs font-semibold text-slate-900">Upload Requirement Documents</h3>
               <p className="text-[11px] text-slate-500 mt-1">
                 Drag & drop files here or{" "}
-                <label className="text-[#3067DB] hover:underline font-medium cursor-pointer">
+                <label className="text-[#1D63ED] hover:underline font-medium cursor-pointer">
                   Browse Files
                   <input
                     type="file"
@@ -978,7 +978,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "rounded-lg border p-3.5 bg-white cursor-pointer transition-all flex items-center justify-between",
                         isSelected
-                          ? "border-[#3067DB] ring-1 ring-[#3067DB] bg-blue-50/20"
+                          ? "border-[#1D63ED] ring-1 ring-[#1D63ED] bg-blue-50/20"
                           : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                       )}
                     >
@@ -1055,7 +1055,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors",
                         docSubTab === "overview"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1066,7 +1066,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors flex items-center gap-1.5",
                         docSubTab === "original"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1078,7 +1078,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors",
                         docSubTab === "content"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1089,7 +1089,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors",
                         docSubTab === "requirements"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1100,7 +1100,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors",
                         docSubTab === "analysis"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1111,7 +1111,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       className={cn(
                         "py-2.5 border-b-2 transition-colors",
                         docSubTab === "metadata"
-                          ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                          ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                           : "border-transparent text-slate-600 hover:text-slate-900"
                       )}
                     >
@@ -1166,7 +1166,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
 
                       {/* Extracted Stats */}
                       <div className="md:col-span-4 rounded-lg bg-blue-50/40 border border-blue-100 p-3.5 space-y-2">
-                        <span className="text-2xs font-bold uppercase tracking-wider text-[#3067DB] block">
+                        <span className="text-2xs font-bold uppercase tracking-wider text-[#1D63ED] block">
                           Ingestion Provenance
                         </span>
                         <div className="space-y-1 text-xs">
@@ -1358,7 +1358,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                               setViewerTargetExcerpt(r.evidence_excerpt || null);
                               setDocSubTab("original");
                             }}
-                            className="inline-flex items-center gap-1 text-2xs font-medium text-[#3067DB] hover:bg-blue-50 px-2 py-1 rounded border border-blue-200 transition-colors"
+                            className="inline-flex items-center gap-1 text-2xs font-medium text-[#1D63ED] hover:bg-blue-50 px-2 py-1 rounded border border-blue-200 transition-colors"
                             title="Open in Document Viewer"
                           >
                             <FileText className="h-3 w-3" />
@@ -1574,7 +1574,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                       setSelectedCoverageFilter("all");
                       setReqPage(1);
                     }}
-                    className="inline-flex items-center gap-1 text-[#3067DB] hover:underline font-medium"
+                    className="inline-flex items-center gap-1 text-[#1D63ED] hover:underline font-medium"
                   >
                     <X className="h-3 w-3" />
                     <span>Reset filters</span>
@@ -1679,7 +1679,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                               aria-expanded={isExpanded}
                             >
                               {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-[#3067DB]" />
+                                <ChevronDown className="h-4 w-4 text-[#1D63ED]" />
                               ) : (
                                 <ChevronRight className="h-4 w-4 text-slate-400" />
                               )}
@@ -1745,7 +1745,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                               className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-semibold border",
                                 testCount > 0
-                                  ? "bg-blue-50 text-[#3067DB] border-blue-200"
+                                  ? "bg-blue-50 text-[#1D63ED] border-blue-200"
                                   : "bg-amber-50 text-amber-800 border-amber-200"
                               )}
                               title={`${testCount} test cases covering this requirement`}
@@ -1799,7 +1799,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                                     setActiveTab("intake");
                                     setDocSubTab("original");
                                   }}
-                                  className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-2xs font-medium text-[#3067DB] hover:bg-blue-100 transition-colors"
+                                  className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-2xs font-medium text-[#1D63ED] hover:bg-blue-100 transition-colors"
                                   title="Open PDF source passage"
                                 >
                                   <FileText className="h-3 w-3" />
@@ -1822,7 +1822,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
                               <button
                                 type="button"
                                 onClick={() => nav(`/requirements/${r.id}`)}
-                                className="inline-flex items-center gap-1 rounded p-1 text-slate-400 hover:text-[#3067DB] hover:bg-slate-100 transition-colors"
+                                className="inline-flex items-center gap-1 rounded p-1 text-slate-400 hover:text-[#1D63ED] hover:bg-slate-100 transition-colors"
                                 title="Open full requirement page"
                               >
                                 <ExternalLink className="h-3.5 w-3.5" />
@@ -1958,7 +1958,7 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
                 <div
-                  className="bg-[#3067DB] h-2 rounded-full"
+                  className="bg-[#1D63ED] h-2 rounded-full"
                   style={{ width: `${requirementsTotal ? (functionalCount / requirementsTotal) * 100 : 0}%` }}
                 />
               </div>
@@ -2277,13 +2277,13 @@ export function RequirementsManagementView({ projectId, current }: RequirementsM
             {resolvingClar.suggested_resolution && (
               <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#3067DB] uppercase tracking-wider">
+                  <span className="text-[11px] font-semibold text-[#1D63ED] uppercase tracking-wider">
                     AI Suggested Business Resolution:
                   </span>
                   <button
                     type="button"
                     onClick={() => setResolveText(resolvingClar.suggested_resolution || "")}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3067DB] hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D63ED] hover:underline"
                   >
                     <Check className="h-3 w-3" />
                     <span>Apply Suggested Answer</span>

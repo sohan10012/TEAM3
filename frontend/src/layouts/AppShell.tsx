@@ -37,7 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "WORKSPACE",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+      { to: "/", label: "Overview", icon: LayoutDashboard, end: true },
       { to: "/projects", label: "Projects", icon: Layers },
     ],
   },
@@ -54,15 +54,15 @@ const NAV_SECTIONS: NavSection[] = [
       { to: "/tests", label: "Test Cases", icon: ClipboardCheck },
       { to: "/executions", label: "Test Runs", icon: PlayCircle },
       { to: "/defects", label: "Defects", icon: Bug },
-      { to: "/traceability", label: "Traceability Matrix", icon: Layers },
+      { to: "/traceability", label: "Traceability", icon: Layers },
     ],
   },
   {
     title: "INSIGHTS & OPERATIONS",
     items: [
       { to: "/intelligence-report", label: "Project Intelligence", icon: BarChart3 },
-      { to: "/analytics", label: "Monitoring", icon: Activity },
-      { to: "/simulation", label: "Policy & Scenario Validation", icon: Sparkles },
+      { to: "/analytics", label: "Quality Analytics", icon: Activity },
+      { to: "/simulation", label: "Policy Simulation", icon: Sparkles },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -200,6 +200,7 @@ export function AppShell() {
                         key={n.to}
                         to={n.to}
                         end={n.end}
+                        aria-label={n.to === "/" ? "Dashboard" : undefined}
                         onClick={() => setMobileDrawerOpen(false)}
                         className={({ isActive }) =>
                           cn(
@@ -260,6 +261,7 @@ export function AppShell() {
                     key={n.to}
                     to={n.to}
                     end={n.end}
+                    aria-label={n.to === "/" ? "Dashboard" : undefined}
                     title={collapsed ? n.label : undefined}
                     className={({ isActive }) =>
                       cn(
@@ -334,14 +336,14 @@ export function AppShell() {
             <button
               type="button"
               onClick={() => setSearchPaletteOpen(true)}
-              className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 sm:px-3 text-xs text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              aria-label="Open global search palette (Command+K)"
-              title="Global Search (⌘K / Ctrl+K)"
+              className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 sm:px-3 text-xs text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1D63ED]"
+              aria-label="Open global search palette (Ctrl+K or Command+K)"
+              title="Global Search (Ctrl+K / ⌘K)"
             >
               <Search className="h-4 w-4 text-slate-400" />
               <span className="hidden md:inline font-normal text-slate-600">Search platform...</span>
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
-                ⌘K
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500 font-medium">
+                {typeof window !== "undefined" && /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || "") ? "⌘K" : "Ctrl+K"}
               </kbd>
             </button>
 

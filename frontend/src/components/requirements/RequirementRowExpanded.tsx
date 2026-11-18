@@ -123,7 +123,7 @@ export function RequirementRowExpanded({
       {/* 1. TOP HEADER & PROVENANCE BAR */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2.5">
-          <span className="font-mono text-xs font-bold text-[#3067DB] px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
+          <span className="font-mono text-xs font-bold text-[#1D63ED] px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
             {r.key}
           </span>
           <span className="text-slate-300">|</span>
@@ -174,7 +174,7 @@ export function RequirementRowExpanded({
               Original Extracted Text & Citation
             </span>
             {r.source_page && (
-              <span className="text-2xs font-mono text-[#3067DB] font-medium">
+              <span className="text-2xs font-mono text-[#1D63ED] font-medium">
                 {r.source_page} {r.source_section ? `· § ${r.source_section}` : ""}
               </span>
             )}
@@ -188,7 +188,7 @@ export function RequirementRowExpanded({
               <button
                 type="button"
                 onClick={() => onOpenDocument(r.document_id as number, parsePageNum(r.source_page), r.evidence_excerpt || undefined)}
-                className="inline-flex items-center gap-1 text-2xs text-[#3067DB] hover:underline font-medium"
+                className="inline-flex items-center gap-1 text-2xs text-[#1D63ED] hover:underline font-medium"
               >
                 <FileText className="h-3 w-3" />
                 <span>Jump to Source in PDF Viewer</span>
@@ -298,13 +298,13 @@ export function RequirementRowExpanded({
       <div className="space-y-2 pt-2 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <span className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-            <FileCheck className="h-3.5 w-3.5 text-[#3067DB]" />
+            <FileCheck className="h-3.5 w-3.5 text-[#1D63ED]" />
             <span>Linked Test Scenarios ({testList.length})</span>
           </span>
           <button
             type="button"
             onClick={() => nav(`/tests?project_id=${r.project_id}&requirement_id=${r.id}`)}
-            className="text-2xs text-[#3067DB] hover:underline font-medium inline-flex items-center gap-1"
+            className="text-2xs text-[#1D63ED] hover:underline font-medium inline-flex items-center gap-1"
           >
             <span>Open in Test Suite</span>
             <ArrowRight className="h-3 w-3" />
@@ -318,9 +318,9 @@ export function RequirementRowExpanded({
                 key={t.id || tIdx}
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-100 transition-colors"
               >
-                <span className="font-mono text-2xs font-semibold text-[#3067DB]">{t.key}</span>
+                <span className="font-mono text-2xs font-semibold text-[#1D63ED]">{t.key}</span>
                 <span className="text-[11px] text-slate-800 truncate max-w-[240px]">{t.title}</span>
-                <span className="rounded bg-blue-100 text-[#3067DB] px-1 py-0.2 text-[9px] font-medium uppercase">
+                <span className="rounded bg-blue-100 text-[#1D63ED] px-1 py-0.2 text-[9px] font-medium uppercase">
                   {t.category || t.test_category || "test"}
                 </span>
                 <span className="rounded bg-slate-200 text-slate-700 px-1 py-0.2 text-[9px] font-mono">

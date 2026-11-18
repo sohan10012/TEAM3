@@ -64,7 +64,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
   if (!run) {
     return (
       <div className="flex items-center gap-2.5 p-4 text-xs text-slate-600 bg-slate-50 rounded border border-slate-200">
-        <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />
+        <Loader2 className="h-4 w-4 animate-spin text-[#1D63ED]" />
         <span>Initializing LangGraph checkpoint session...</span>
       </div>
     );
@@ -86,7 +86,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
         <div className="flex items-center gap-3">
           <div className="w-36 h-2 overflow-hidden rounded-full bg-slate-200">
             <div
-              className="h-full bg-[#3067DB] transition-all duration-300"
+              className="h-full bg-[#1D63ED] transition-all duration-300"
               style={{ width: `${Math.round((run.progress ?? 0) * 100)}%` }}
             />
           </div>
@@ -115,7 +115,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
 
           if (isRunning) {
             statusBadge = (
-              <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-[#3067DB] border border-blue-200 animate-pulse">
+              <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-[#1D63ED] border border-blue-200 animate-pulse">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 RUNNING
               </span>
@@ -200,7 +200,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
       {run.status === "awaiting_review" && (
         <Notice>
           <div className="flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-[#3067DB] shrink-0 mt-0.5" />
+            <Sparkles className="h-4 w-4 text-[#1D63ED] shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-xs text-slate-900">Dual-Control Human Review Required</p>
               <p className="text-xs text-slate-600">
@@ -248,7 +248,7 @@ export function RunProgress({ runId, onDone }: RunProgressProps) {
                   {item.clause_keys && item.clause_keys.length > 0 && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-medium text-slate-500">Cited Clauses:</span>
-                      <span className="font-mono text-[10px] text-[#3067DB] bg-blue-50 px-1 rounded">
+                      <span className="font-mono text-[10px] text-[#1D63ED] bg-blue-50 px-1 rounded">
                         {Array.isArray(item.clause_keys) ? item.clause_keys.join(", ") : String(item.clause_keys)}
                       </span>
                     </div>

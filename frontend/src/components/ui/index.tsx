@@ -302,3 +302,12 @@ export function Notice({ tone: t = "info", children }: { tone?: "info" | "warn" 
     t === "info" && "border-blue-200 bg-blue-50 text-blue-900", t === "warn" && "border-amber-200 bg-amber-50 text-amber-900",
     t === "danger" && "border-red-200 bg-red-50 text-red-900")} role={t === "danger" ? "alert" : "status"}>{children}</div>;
 }
+
+export { MetricCard } from "@/components/common/MetricCard";
+export { StatusBadge } from "@/components/common/StatusBadge";
+export { SearchInput } from "@/components/common/SearchInput";
+export { FilterBar } from "@/components/common/FilterBar";
+export { SectionCard } from "@/components/common/SectionCard";
+export { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
+export { DetailDrawer } from "@/components/common/DetailDrawer";
+

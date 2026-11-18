@@ -174,7 +174,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     }
     if (type === "specification_validation" || type === "validation") {
       return (
-        <span className="inline-flex rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#3067DB] border border-blue-200">
+        <span className="inline-flex rounded bg-blue-50 px-2 py-0.5 text-2xs font-semibold text-[#1D63ED] border border-blue-200">
           Validation
         </span>
       );
@@ -213,7 +213,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
     }
     if (type === "specification_validation" || type === "validation") {
       return (
-        <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#3067DB]">
+        <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-[#1D63ED]">
           <Monitor className="h-3.5 w-3.5" />
         </div>
       );
@@ -256,8 +256,8 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3067DB] border border-blue-100">
-              <Play className="h-5 w-5 fill-[#3067DB]" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#1D63ED] border border-blue-100">
+              <Play className="h-5 w-5 fill-[#1D63ED]" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">Test Runs</h1>
@@ -282,7 +282,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
               variant="primary"
               size="sm"
               onClick={() => setIsNewRunOpen(true)}
-              className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
+              className="bg-[#1D63ED] hover:bg-[#1550C0] text-white"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               <span>New Run</span>
@@ -369,7 +369,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "all"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -382,7 +382,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "validation"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -395,7 +395,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "simulation"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -408,7 +408,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
             className={cn(
               "flex items-center gap-2 py-3 border-b-2 transition-colors",
               activeTab === "external"
-                ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                 : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             )}
           >
@@ -513,7 +513,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                       )}
                     >
                       <td className="whitespace-nowrap px-3 py-2.5">
-                        <div className="flex items-center gap-1.5 font-mono text-[#3067DB] font-medium">
+                        <div className="flex items-center gap-1.5 font-mono text-[#1D63ED] font-medium">
                           {getRunIcon(runType)}
                           <span>{r.key}</span>
                         </div>
@@ -577,7 +577,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                       className={cn(
                         "px-2.5 py-0.5 rounded text-xs",
                         page === pNum
-                          ? "bg-[#3067DB] text-white font-semibold"
+                          ? "bg-[#1D63ED] text-white font-semibold"
                           : "border border-slate-200 hover:bg-slate-50"
                       )}
                     >
@@ -670,7 +670,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     runSubTab === "overview"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -681,7 +681,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     runSubTab === "results"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -692,7 +692,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     runSubTab === "logs"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -703,7 +703,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   className={cn(
                     "py-2.5 border-b-2 transition-colors",
                     runSubTab === "artifacts"
-                      ? "border-[#3067DB] text-[#3067DB] font-semibold"
+                      ? "border-[#1D63ED] text-[#1D63ED] font-semibold"
                       : "border-transparent text-slate-600 hover:text-slate-900"
                   )}
                 >
@@ -811,7 +811,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 {/* Simulation Details Table */}
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-1.5 font-semibold text-slate-900 text-xs">
-                    <Database className="h-3.5 w-3.5 text-[#3067DB]" />
+                    <Database className="h-3.5 w-3.5 text-[#1D63ED]" />
                     <span>Execution Details</span>
                   </div>
 
@@ -830,7 +830,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                     </div>
                     <div className="flex justify-between py-0.5">
                       <span className="text-slate-500">Commit</span>
-                      <span className="font-mono text-[#3067DB]">{selectedRun.commit_sha || "—"}</span>
+                      <span className="font-mono text-[#1D63ED]">{selectedRun.commit_sha || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -838,7 +838,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                 {/* Key Findings matching Screenshot 4 */}
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-1.5 font-semibold text-slate-900 text-xs">
-                    <FileText className="h-3.5 w-3.5 text-[#3067DB]" />
+                    <FileText className="h-3.5 w-3.5 text-[#1D63ED]" />
                     <span>Key Findings</span>
                   </div>
 
@@ -864,7 +864,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                     size="sm"
                     onClick={() => rerunMutation.mutate()}
                     loading={rerunMutation.isPending}
-                    className="bg-[#3067DB] hover:bg-[#2554B8] text-white"
+                    className="bg-[#1D63ED] hover:bg-[#1550C0] text-white"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
                     <span>Rerun Simulation</span>
@@ -881,7 +881,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                   : detailedRun?.results?.length ? detailedRun.results.map((result) => (
                     <div key={result.id} className="p-2.5 rounded border border-slate-200 bg-white flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <span className="font-mono text-[#3067DB] font-semibold">{result.test_key || `Test ${result.test_case_id}`}</span>
+                        <span className="font-mono text-[#1D63ED] font-semibold">{result.test_key || `Test ${result.test_case_id}`}</span>
                         <p className="text-slate-800 truncate">{result.test_title || result.message || "—"}</p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -913,7 +913,7 @@ export function TestRunsManagementView({ projectId, current }: TestRunsManagemen
                     <a key={artifact.id} href={downloadUrl(`/executions/${selectedRun.id}/artifacts/${artifact.id}`)}
                       className="flex items-center justify-between gap-3 rounded border border-slate-200 bg-slate-50 p-3 hover:bg-slate-100">
                       <span className="flex min-w-0 items-center gap-2">
-                        <FileText className="h-4 w-4 shrink-0 text-[#3067DB]" />
+                        <FileText className="h-4 w-4 shrink-0 text-[#1D63ED]" />
                         <span className="truncate font-mono text-slate-800">{artifact.name}</span>
                       </span>
                       <span className="shrink-0 text-slate-500">{artifact.kind}</span>

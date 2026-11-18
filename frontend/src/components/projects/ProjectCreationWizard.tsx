@@ -573,7 +573,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
         <header className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-[#3067DB] px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
+              <span className="font-mono text-xs font-bold text-[#1D63ED] px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
                 CREATE PROJECT
               </span>
               <h2 id="wizard-title" className="text-base font-bold text-slate-900">
@@ -614,7 +614,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
                 wizardMode === "ai_assisted"
-                  ? "bg-[#3067DB] text-white shadow-2xs"
+                  ? "bg-[#1D63ED] text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
               )}
             >
@@ -627,7 +627,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
                 wizardMode === "manual"
-                  ? "bg-[#3067DB] text-white shadow-2xs"
+                  ? "bg-[#1D63ED] text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
               )}
             >
@@ -674,7 +674,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                 className={cn(
                   "flex items-center gap-2 text-left p-2 rounded-lg transition-all border",
                   isCurrent
-                    ? "bg-blue-50/80 border-[#3067DB] text-slate-900 shadow-2xs"
+                    ? "bg-blue-50/80 border-[#1D63ED] text-slate-900 shadow-2xs"
                     : isPast
                     ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/60"
                     : "border-transparent text-slate-400 hover:bg-slate-50"
@@ -684,7 +684,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   className={cn(
                     "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
                     isCurrent
-                      ? "bg-[#3067DB] text-white"
+                      ? "bg-[#1D63ED] text-white"
                       : isPast
                       ? "bg-emerald-600 text-white"
                       : "bg-slate-200 text-slate-600"
@@ -720,16 +720,16 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   className={cn(
                     "cursor-pointer p-4 rounded-lg border-2 transition-all space-y-2",
                     projectType === "requirements_based"
-                      ? "border-[#3067DB] bg-blue-50/30 shadow-2xs"
+                      ? "border-[#1D63ED] bg-blue-50/30 shadow-2xs"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm text-slate-900 flex items-center gap-1.5">
-                      <Layers className="h-4 w-4 text-[#3067DB]" />
+                      <Layers className="h-4 w-4 text-[#1D63ED]" />
                       Requirements-Based Quality
                     </span>
-                    <span className="text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB]">
+                    <span className="text-2xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#1D63ED]">
                       Recommended
                     </span>
                   </div>
@@ -743,7 +743,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   className={cn(
                     "cursor-pointer p-4 rounded-lg border-2 transition-all space-y-2",
                     projectType === "code_based"
-                      ? "border-[#3067DB] bg-blue-50/30 shadow-2xs"
+                      ? "border-[#1D63ED] bg-blue-50/30 shadow-2xs"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   )}
                 >
@@ -775,10 +775,10 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                       value={key}
                       onChange={(e) => setKey(e.target.value.toUpperCase())}
                       placeholder="e.g. BANKCORE"
-                      className="w-full h-9 px-3 font-mono uppercase font-semibold text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white"
+                      className="w-full h-9 px-3 font-mono uppercase font-semibold text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white"
                     />
                     <div className="absolute right-2.5 top-2.5">
-                      {keyValidation.status === "checking" && <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />}
+                      {keyValidation.status === "checking" && <Loader2 className="h-4 w-4 animate-spin text-[#1D63ED]" />}
                       {keyValidation.status === "valid" && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                       {keyValidation.status === "invalid" && <AlertCircle className="h-4 w-4 text-red-600" />}
                     </div>
@@ -818,7 +818,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                       }
                     }}
                     placeholder="e.g. NextGen Core Banking Engine"
-                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white"
+                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white"
                   />
                 </div>
               </div>
@@ -831,7 +831,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="High-throughput distributed ledger and payment engine powering retail, commercial, and correspondent bank settlements..."
-                  className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] focus:border-transparent bg-white leading-relaxed"
+                  className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white leading-relaxed"
                 />
               </div>
 
@@ -842,7 +842,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   <select
                     value={businessDomain}
                     onChange={(e) => setBusinessDomain(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] bg-white"
+                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] bg-white"
                   >
                     {DOMAIN_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>
@@ -857,7 +857,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   <select
                     value={productType}
                     onChange={(e) => setProductType(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] bg-white"
+                    className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] bg-white"
                   >
                     {PRODUCT_TYPE_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>
@@ -876,7 +876,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   value={businessGoal}
                   onChange={(e) => setBusinessGoal(e.target.value)}
                   placeholder="e.g. Settle 50,000 TPS with sub-10ms API response time, zero financial drift, and automated AML compliance."
-                  className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] bg-white"
+                  className="w-full h-9 px-3 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] bg-white"
                 />
               </div>
 
@@ -945,7 +945,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                     value={productOverview}
                     onChange={(e) => setProductOverview(e.target.value)}
                     placeholder="Detailed explanation of what the system does, key workflows, and supported lifecycle operations..."
-                    className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] bg-white leading-relaxed"
+                    className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] bg-white leading-relaxed"
                   />
                 </div>
                 <div>
@@ -955,7 +955,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                     value={problemStatement}
                     onChange={(e) => setProblemStatement(e.target.value)}
                     placeholder="Legacy mainframes cannot scale beyond 2,000 TPS or handle real-time cross-border settlements with instant AML checks..."
-                    className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3067DB] bg-white leading-relaxed"
+                    className="w-full p-2.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] bg-white leading-relaxed"
                   />
                 </div>
               </div>
@@ -967,7 +967,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   {targetUsers.map((u, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-[#3067DB] border border-blue-200 text-xs font-medium"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-[#1D63ED] border border-blue-200 text-xs font-medium"
                     >
                       {u}
                       <button
@@ -1152,7 +1152,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                         className={cn(
                           "px-3 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5",
                           isSelected
-                            ? "bg-blue-50 text-[#3067DB] border-[#3067DB]"
+                            ? "bg-blue-50 text-[#1D63ED] border-[#1D63ED]"
                             : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                         )}
                       >
@@ -1263,7 +1263,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                             setRoles(roles.map((item) => (item.id === r.id ? { ...item, role_name: val } : item)));
                           }}
                           placeholder="Role Name"
-                          className="font-semibold text-xs text-slate-900 bg-transparent border-b border-slate-300 focus:border-[#3067DB] outline-none"
+                          className="font-semibold text-xs text-slate-900 bg-transparent border-b border-slate-300 focus:border-[#1D63ED] outline-none"
                         />
                         <button
                           type="button"
@@ -1283,7 +1283,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                             setRoles(roles.map((item) => (item.id === r.id ? { ...item, description: val } : item)));
                           }}
                           placeholder="Role description"
-                          className="w-full text-2xs text-slate-600 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                          className="w-full text-2xs text-slate-600 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                         />
                       </div>
 
@@ -1298,7 +1298,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setRoles(roles.map((item) => (item.id === r.id ? { ...item, responsibilities: val } : item)));
                             }}
                             placeholder="Responsibilities"
-                            className="w-full text-slate-700 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-slate-700 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                         <div>
@@ -1311,7 +1311,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setRoles(roles.map((item) => (item.id === r.id ? { ...item, restrictions: val } : item)));
                             }}
                             placeholder="Restrictions"
-                            className="w-full text-red-700 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-red-700 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                       </div>
@@ -1355,7 +1355,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                     <div key={sc.id} className="p-3.5 rounded-lg border border-slate-200 bg-white space-y-2.5 shadow-2xs">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-1">
-                          <span className="font-mono text-2xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#3067DB] border border-blue-200">
+                          <span className="font-mono text-2xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#1D63ED] border border-blue-200">
                             SCENARIO #{idx + 1}
                           </span>
                           <input
@@ -1366,7 +1366,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setScenarios(scenarios.map((item) => (item.id === sc.id ? { ...item, title: val } : item)));
                             }}
                             placeholder="Scenario Title"
-                            className="font-semibold text-xs text-slate-900 flex-1 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="font-semibold text-xs text-slate-900 flex-1 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                         <button
@@ -1402,7 +1402,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setScenarios(scenarios.map((item) => (item.id === sc.id ? { ...item, actor: val } : item)));
                             }}
                             placeholder="Actor"
-                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                         <div>
@@ -1415,7 +1415,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setScenarios(scenarios.map((item) => (item.id === sc.id ? { ...item, preconditions: val } : item)));
                             }}
                             placeholder="Preconditions"
-                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                         <div>
@@ -1428,7 +1428,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setScenarios(scenarios.map((item) => (item.id === sc.id ? { ...item, expected_outcome: val } : item)));
                             }}
                             placeholder="Expected Outcome"
-                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                         <div>
@@ -1441,7 +1441,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               setScenarios(scenarios.map((item) => (item.id === sc.id ? { ...item, module: val } : item)));
                             }}
                             placeholder="Module"
-                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#3067DB] outline-none"
+                            className="w-full text-slate-800 bg-transparent border-b border-slate-200 focus:border-[#1D63ED] outline-none"
                           />
                         </div>
                       </div>
@@ -1472,7 +1472,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                 className={cn(
                   "p-8 border-2 border-dashed rounded-xl text-center space-y-3 transition-colors",
                   isUploading
-                    ? "border-[#3067DB] bg-blue-50/50"
+                    ? "border-[#1D63ED] bg-blue-50/50"
                     : "border-slate-300 bg-slate-50 hover:bg-slate-100/60"
                 )}
               >
@@ -1485,7 +1485,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                   className="hidden"
                 />
 
-                <div className="h-12 w-12 rounded-full bg-blue-100 text-[#3067DB] flex items-center justify-center mx-auto">
+                <div className="h-12 w-12 rounded-full bg-blue-100 text-[#1D63ED] flex items-center justify-center mx-auto">
                   {isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
                 </div>
 
@@ -1549,7 +1549,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                               type="text"
                               value={doc.display_name}
                               onChange={(e) => handleUpdateDocument(doc.id, { display_name: e.target.value })}
-                              className="font-semibold text-xs text-slate-900 border-b border-transparent hover:border-slate-300 focus:border-[#3067DB] outline-none flex-1 truncate"
+                              className="font-semibold text-xs text-slate-900 border-b border-transparent hover:border-slate-300 focus:border-[#1D63ED] outline-none flex-1 truncate"
                               title="Click to rename display title"
                             />
                             <span className="text-2xs font-mono uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
@@ -1664,12 +1664,12 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
               <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold px-2 py-0.5 rounded bg-white text-[#3067DB] border border-blue-200">
+                    <span className="font-mono text-sm font-bold px-2 py-0.5 rounded bg-white text-[#1D63ED] border border-blue-200">
                       {key || "KEY"}
                     </span>
                     <h4 className="text-sm font-bold text-slate-900">{name || "Untitled Project"}</h4>
                   </div>
-                  <span className="text-2xs font-semibold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB]">
+                  <span className="text-2xs font-semibold px-2 py-0.5 rounded bg-blue-100 text-[#1D63ED]">
                     {projectType === "requirements_based" ? "Requirements-Based Platform" : "Code-Based"}
                   </span>
                 </div>
@@ -1738,7 +1738,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                       type="checkbox"
                       checked={autoExtract}
                       onChange={(e) => setAutoExtract(e.target.checked)}
-                      className="mt-0.5 rounded text-[#3067DB] focus:ring-[#3067DB]"
+                      className="mt-0.5 rounded text-[#1D63ED] focus:ring-[#1D63ED]"
                     />
                     <div>
                       <span className="font-semibold text-xs text-slate-900 block">
@@ -1755,7 +1755,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                       type="checkbox"
                       checked={autoGenerateCriteria}
                       onChange={(e) => setAutoGenerateCriteria(e.target.checked)}
-                      className="mt-0.5 rounded text-[#3067DB] focus:ring-[#3067DB]"
+                      className="mt-0.5 rounded text-[#1D63ED] focus:ring-[#1D63ED]"
                     />
                     <div>
                       <span className="font-semibold text-xs text-slate-900 block">
@@ -1772,7 +1772,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                       type="checkbox"
                       checked={autoGenerateTests}
                       onChange={(e) => setAutoGenerateTests(e.target.checked)}
-                      className="mt-0.5 rounded text-[#3067DB] focus:ring-[#3067DB]"
+                      className="mt-0.5 rounded text-[#1D63ED] focus:ring-[#1D63ED]"
                     />
                     <div>
                       <span className="font-semibold text-xs text-slate-900 block">

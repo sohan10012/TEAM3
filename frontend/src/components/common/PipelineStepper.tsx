@@ -61,7 +61,7 @@ export function PipelineStepper({ steps, currentStepId, className }: PipelineSte
             >
               <div className="flex items-start gap-3 min-w-0">
                 <div className="mt-0.5 shrink-0">
-                  {isRunning && <Loader2 className="h-4 w-4 animate-spin text-[#3067DB]" />}
+                  {isRunning && <Loader2 className="h-4 w-4 animate-spin text-[#1D63ED]" />}
                   {isDone && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                   {isFailed && <XCircle className="h-4 w-4 text-red-600" />}
                   {isPending && <Circle className="h-4 w-4 text-slate-300" />}
@@ -92,7 +92,7 @@ export function PipelineStepper({ steps, currentStepId, className }: PipelineSte
                   </span>
                 )}
                 {isRunning && (
-                  <span className="inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-[#3067DB] animate-pulse">
+                  <span className="inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-[#1D63ED] animate-pulse">
                     RUNNING
                   </span>
                 )}

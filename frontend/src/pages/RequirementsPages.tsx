@@ -325,7 +325,7 @@ export function RequirementDetailPage() {
               <Panel className="p-4 bg-white border-slate-200">
                 <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-[#3067DB]" />
+                    <FileText className="h-4 w-4 text-[#1D63ED]" />
                     <span className="text-xs font-semibold text-slate-900">Original Document Source</span>
                     {r.source_page && (
                       <span className="rounded bg-blue-50 px-2 py-0.5 text-2xs font-mono text-blue-700 border border-blue-200">
@@ -408,7 +408,7 @@ function ClausesTab({ r, onOpenDocument }: { r: Requirement; onOpenDocument?: ()
                 <button
                   type="button"
                   onClick={onOpenDocument}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded bg-[#3067DB] hover:bg-[#2554B8] text-white px-3 py-1.5 text-xs font-medium shadow-xs transition-colors mt-2"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded bg-[#1D63ED] hover:bg-[#1550C0] text-white px-3 py-1.5 text-xs font-medium shadow-xs transition-colors mt-2"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   <span>Inspect in Embedded PDF Viewer</span>

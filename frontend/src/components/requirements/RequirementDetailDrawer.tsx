@@ -156,7 +156,7 @@ export function RequirementDetailDrawer({
           {/* Top Bar / Header */}
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#3067DB] border border-blue-200">
+              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-[#1D63ED] border border-blue-200">
                 {r?.key || `REQ-${requirementId}`}
               </span>
               <span className="text-slate-300">|</span>
@@ -225,7 +225,7 @@ export function RequirementDetailDrawer({
                     <button
                       type="button"
                       onClick={() => setEditModalOpen(true)}
-                      className="inline-flex items-center gap-1 text-2xs text-[#3067DB] hover:underline font-medium"
+                      className="inline-flex items-center gap-1 text-2xs text-[#1D63ED] hover:underline font-medium"
                     >
                       <Edit3 className="h-3 w-3" />
                       <span>Edit</span>
@@ -280,7 +280,7 @@ export function RequirementDetailDrawer({
                       <span>Source Evidence & Grounded Provenance</span>
                     </span>
                     {r.source_page && (
-                      <span className="text-2xs font-mono font-medium text-[#3067DB]">
+                      <span className="text-2xs font-mono font-medium text-[#1D63ED]">
                         {r.source_page} {r.source_section ? `· § ${r.source_section}` : ""}
                       </span>
                     )}
@@ -324,7 +324,7 @@ export function RequirementDetailDrawer({
                           onOpenDocument(r.document_id as number, pageNum, r.evidence_excerpt || undefined);
                           onClose();
                         }}
-                        className="text-xs h-7 border-blue-200 bg-blue-50/50 text-[#3067DB] hover:bg-blue-100"
+                        className="text-xs h-7 border-blue-200 bg-blue-50/50 text-[#1D63ED] hover:bg-blue-100"
                       >
                         <FileText className="h-3 w-3 mr-1" />
                         <span>Inspect in PDF Viewer</span>
@@ -466,7 +466,7 @@ export function RequirementDetailDrawer({
                 <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span className="text-2xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                      <FileCheck className="h-3.5 w-3.5 text-[#3067DB]" />
+                      <FileCheck className="h-3.5 w-3.5 text-[#1D63ED]" />
                       <span>Linked Test Cases ({tests.length})</span>
                     </span>
                     <button
@@ -475,7 +475,7 @@ export function RequirementDetailDrawer({
                         nav(`/tests?project_id=${r.project_id}&requirement_id=${r.id}`);
                         onClose();
                       }}
-                      className="text-2xs text-[#3067DB] hover:underline font-medium inline-flex items-center gap-1"
+                      className="text-2xs text-[#1D63ED] hover:underline font-medium inline-flex items-center gap-1"
                     >
                       <span>View in Tests</span>
                       <ArrowRight className="h-3 w-3" />
@@ -491,13 +491,13 @@ export function RequirementDetailDrawer({
                         >
                           <div className="min-w-0 pr-2">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-2xs font-bold text-[#3067DB]">{tc.key}</span>
+                              <span className="font-mono text-2xs font-bold text-[#1D63ED]">{tc.key}</span>
                               <span className="text-slate-900 text-xs font-medium truncate max-w-[280px]">
                                 {tc.title}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 mt-1">
-                              <span className="rounded bg-blue-100 text-[#3067DB] px-1.5 py-0.2 text-[9px] font-semibold uppercase">
+                              <span className="rounded bg-blue-100 text-[#1D63ED] px-1.5 py-0.2 text-[9px] font-semibold uppercase">
                                 {tc.test_category || tc.test_type || "functional"}
                               </span>
                               <span className="text-[10px] text-slate-400 font-mono">

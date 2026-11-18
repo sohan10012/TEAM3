@@ -374,7 +374,7 @@ export function EmbeddedDocumentViewer({
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-200 bg-slate-50/90 px-3.5 py-2">
         {/* Left: Document info & Page Navigation */}
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[#3067DB] shrink-0" />
+          <FileText className="h-4 w-4 text-[#1D63ED] shrink-0" />
           <span className="text-xs font-semibold text-slate-800 truncate max-w-[180px] md:max-w-[280px]" title={filename}>
             {filename}
           </span>
@@ -418,7 +418,7 @@ export function EmbeddedDocumentViewer({
               placeholder="Search in document…"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full h-8 pl-8 pr-16 rounded border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#3067DB] focus:border-[#3067DB]"
+              className="w-full h-8 pl-8 pr-16 rounded border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1D63ED] focus:border-[#1D63ED]"
             />
             {searchTerm && (
               <button
@@ -452,7 +452,7 @@ export function EmbeddedDocumentViewer({
             </div>
           )}
 
-          {isSearching && <RotateCw className="h-3 w-3 animate-spin text-[#3067DB]" />}
+          {isSearching && <RotateCw className="h-3 w-3 animate-spin text-[#1D63ED]" />}
         </div>
 
         {/* Right: Zoom, Fullscreen & Download */}
@@ -497,7 +497,7 @@ export function EmbeddedDocumentViewer({
 
           <button
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 rounded bg-[#3067DB] hover:bg-[#2554B8] text-white px-2.5 py-1 text-xs font-medium shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 rounded bg-[#1D63ED] hover:bg-[#1550C0] text-white px-2.5 py-1 text-xs font-medium shadow-xs transition-colors"
             title="Download original file"
           >
             <Download className="h-3.5 w-3.5" />
@@ -528,7 +528,7 @@ export function EmbeddedDocumentViewer({
       <div className="relative flex-1 min-h-[500px] max-h-[75vh] overflow-auto bg-slate-700/80 p-4 flex justify-center items-start">
         {loading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-2xs gap-3">
-            <RotateCw className="h-6 w-6 animate-spin text-[#3067DB]" />
+            <RotateCw className="h-6 w-6 animate-spin text-[#1D63ED]" />
             <span className="text-xs font-medium text-slate-600">Rendering document with PDF.js…</span>
           </div>
         )}
