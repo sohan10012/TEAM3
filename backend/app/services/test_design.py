@@ -55,17 +55,19 @@ def _generate_criteria_for_requirement_model(
     evidence = req.evidence_excerpt or req.title
 
     # Determine actor and actions from requirement details
-    actor = "Authenticated User"
+    actor = "System Principal"
     if req.category == "security":
-        actor = "Caller / Client Application"
-    elif req.category == "permission_role":
-        actor = "Role-Restricted Actor"
-    elif req.category == "business_rule":
-        actor = "System Rule Engine"
+        actor = "Security Principal / Service Account"
+    elif req.category in ["permission_role", "compliance"]:
+        actor = "Authorized Auditor / Operator"
+    elif req.category in ["business_rule", "boundary_value"]:
+        actor = "Automated Calculation Engine"
 
     created: list[AcceptanceCriterion] = []
+    req_context = (req.evidence_excerpt or req.title).strip()
+    first_clause = req_context.split(".")[0].strip() or req.title
 
-    # 1. Primary Success Acceptance Criterion
+    # 1. Primary Normative Acceptance Criterion (Positive / Happy Path)
     ac1_key = f"{req.key}.AC1"
     if ac1_key not in existing_ac_keys:
         ac1 = AcceptanceCriterion(
@@ -73,21 +75,24 @@ def _generate_criteria_for_requirement_model(
             requirement_id=req.id,
             requirement_version=ver.version,
             clause_keys=clause_keys,
-            description=f"Given valid input and preconditions, when {actor.lower()} executes '{req.title}', then the system must process the request successfully and fulfill: {req.title}.",
-            preconditions="System is active; actor is authorized and required prerequisites exist.",
+            description=f"Given verified operational context, when {actor.lower()} executes '{first_clause}', then the system must satisfy all specified constraints and verify that: {first_clause}.",
+            preconditions=f"System environment is initialized; {actor} has authenticated credentials and prerequisites for '{req.title[:60]}' are met.",
             actor=actor,
-            action=f"Executes operation: {req.title}",
-            input_conditions=[{"field": "input_payload", "condition": "valid_format"}],
-            expected_behaviour=f"The system fulfills: {req.title}",
-            expected_output="Operation returns HTTP 200/201 or verified state change confirmation.",
-            validation_conditions=["Verify operation state change", "Verify response schema matches specification"],
-            business_rules=[f"Enforce {req.category} compliance"],
+            action=f"Executes operation fulfilling: {first_clause}",
+            input_conditions=[{"field": "specification_context", "condition": "valid_prerequisites_met"}],
+            expected_behaviour=f"The system deterministically enforces: {first_clause}.",
+            expected_output=f"Operation successfully completes; target state satisfies {req.key} invariants.",
+            validation_conditions=[
+                f"Verify operational state confirms {req.key}",
+                "Verify state transition matches documented specification",
+            ],
+            business_rules=[f"Enforce {req.category} normative invariants"],
             source_quote=evidence[:300],
             quote_verified=True,
-            confidence=0.95,
-            rationale=f"Primary verification criterion directly grounded in {req.key}.",
+            confidence=0.94,
+            rationale=f"Primary normative verification criterion directly grounded in {req.key}.",
             assumptions=[],
-            review_status="approved" if req.status == "approved" else "pending",
+            review_status="pending",
             provider="rule_engine",
             model="deterministic-generator",
         )
@@ -95,7 +100,7 @@ def _generate_criteria_for_requirement_model(
         created.append(ac1)
         existing_ac_keys.add(ac1_key)
 
-    # 2. Validation / Failure Acceptance Criterion
+    # 2. Boundary / Negative Exception Acceptance Criterion (Fail-Safe Verification)
     ac2_key = f"{req.key}.AC2"
     if ac2_key not in existing_ac_keys:
         ac2 = AcceptanceCriterion(
@@ -103,57 +108,30 @@ def _generate_criteria_for_requirement_model(
             requirement_id=req.id,
             requirement_version=ver.version,
             clause_keys=clause_keys,
-            description=f"Given invalid or missing input parameters, when {actor.lower()} submits the request, then the system must reject the transaction with an explicit validation error and retain state integrity.",
-            preconditions="System is running with validation interceptor enabled.",
+            description=f"Given boundary violations, unauthorized access, or malformed preconditions for '{req.title[:60]}', when {actor.lower()} attempts the operation, then the system must reject execution, prevent state mutation, and log diagnostic evidence.",
+            preconditions=f"Preconditions fail or caller lacks required authorization for '{req.title[:60]}'.",
             actor=actor,
-            action=f"Submits invalid or empty payload to: {req.title}",
-            input_conditions=[{"field": "input_payload", "condition": "invalid_or_missing"}],
-            expected_behaviour="The system blocks execution and returns an error response.",
-            expected_output="Operation returns HTTP 400 Bad Request with field-level diagnostic messages.",
-            validation_conditions=["Verify no persistent mutations occur", "Verify error message identifies invalid field"],
-            business_rules=["Fail-closed validation rule"],
+            action=f"Attempts operation with violated boundary or invalid state: {first_clause}",
+            input_conditions=[{"field": "input_payload", "condition": "boundary_exceeded_or_unauthorized"}],
+            expected_behaviour=f"The system prevents execution of {req.key} and retains invariant integrity.",
+            expected_output=f"Operation is securely rejected with deterministic diagnostic error; zero unauthorized mutation.",
+            validation_conditions=[
+                "Verify state remains unmutated upon rejection",
+                "Verify fail-closed behavior and audit log emission",
+            ],
+            business_rules=[f"Fail-closed guardrail for {req.category}"],
             source_quote=evidence[:300],
             quote_verified=True,
-            confidence=0.95,
-            rationale=f"Negative boundary verification criterion for {req.key}.",
+            confidence=0.92,
+            rationale=f"Boundary and exception verification criterion for {req.key}.",
             assumptions=[],
-            review_status="approved" if req.status == "approved" else "pending",
+            review_status="pending",
             provider="rule_engine",
             model="deterministic-generator",
         )
         db.add(ac2)
         created.append(ac2)
         existing_ac_keys.add(ac2_key)
-
-    # 3. Invariant / Audit Traceability Criterion
-    ac3_key = f"{req.key}.AC3"
-    if ac3_key not in existing_ac_keys:
-        ac3 = AcceptanceCriterion(
-            key=ac3_key,
-            requirement_id=req.id,
-            requirement_version=ver.version,
-            clause_keys=clause_keys,
-            description=f"Given any state mutation under '{req.title}', when the transaction commits, then an immutable audit log record must be emitted with actor identity and timestamp.",
-            preconditions="Audit logging service is active and listening for lifecycle events.",
-            actor="Audit Logger",
-            action=f"Captures transaction metadata for: {req.title}",
-            input_conditions=[{"field": "audit_event", "condition": "transaction_committed"}],
-            expected_behaviour="System persists timestamped audit trail record.",
-            expected_output="Audit record verifiable with correlation ID and principal ID.",
-            validation_conditions=["Verify audit event payload", "Verify retention and tamper-resistance"],
-            business_rules=["SOC2 / ISO 27001 audit logging invariant"],
-            source_quote=evidence[:300],
-            quote_verified=True,
-            confidence=0.92,
-            rationale=f"Compliance and security audit verification criterion for {req.key}.",
-            assumptions=[],
-            review_status="approved" if req.status == "approved" else "pending",
-            provider="rule_engine",
-            model="deterministic-generator",
-        )
-        db.add(ac3)
-        created.append(ac3)
-        existing_ac_keys.add(ac3_key)
 
     return created
 

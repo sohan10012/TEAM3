@@ -14,7 +14,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import type { Page, Project } from "@/types/models";
 import { cn, pct } from "@/utils/format";
-import { AlertCircle, AlertTriangle, CheckCircle2, FileCode, GitBranch, Plus, Shield } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, FileCode, GitBranch, Plus, Shield, Trash2 } from "lucide-react";
 
 export function ProjectsPage() {
   const st = useListState(["status"], { sort: "key", order: "asc" });
@@ -24,6 +24,7 @@ export function ProjectsPage() {
   const q = useQuery({ queryKey: ["projects", st.params], queryFn: () => api.get<Page<Project>>("/projects", st.params) });
   const [open, setOpen] = useState(false);
   const [repoOpen, setRepoOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   return (
     <>
       <PageHeader
@@ -108,11 +109,121 @@ export function ProjectsPage() {
           { id: "tests", header: "Tests", cell: (p) => p.stats.tests, className: "tabular-nums font-medium" },
           { id: "cov", header: "Clause coverage", cell: (p) => pct(p.stats.coverage_pct), className: "tabular-nums font-medium" },
           { id: "def", header: "Open defects", cell: (p) => p.stats.open_defects, className: "tabular-nums" },
+          {
+            id: "actions",
+            header: "Actions",
+            cell: (p) => (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                {can("project.admin") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 h-7 px-2 text-xs"
+                    onClick={() => setProjectToDelete(p)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+            ),
+          },
         ]}
       />
       <ProjectCreationWizard open={open} onOpenChange={setOpen} />
       <ConnectRepoDialog open={repoOpen} onOpenChange={setRepoOpen} />
+      <DeleteProjectDialog project={projectToDelete} onClose={() => setProjectToDelete(null)} />
     </>
+  );
+}
+
+export function DeleteProjectDialog({
+  project,
+  onClose,
+}: {
+  project: Project | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { projectId, setProjectId } = useProjects();
+  const [typedKey, setTypedKey] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setTypedKey("");
+    setIsDeleting(false);
+  }, [project]);
+
+  if (!project) return null;
+
+  const isMatch = typedKey.trim().toUpperCase() === project.key.toUpperCase();
+
+  const handleDelete = async () => {
+    if (!isMatch || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/projects/${project.id}?confirm_key=${encodeURIComponent(project.key)}`);
+      toast.ok(`Project ${project.key} (${project.name}) deleted permanently.`);
+      if (projectId === project.id) {
+        setProjectId(null);
+      }
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["projects", "switcher"] });
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete project");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Dialog open={Boolean(project)} onOpenChange={(open) => !open && onClose()} title="Delete Project Permanently">
+      <div className="space-y-4 text-xs">
+        <div className="rounded-lg border border-rose-200 bg-rose-50/60 p-3.5 space-y-2">
+          <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
+            <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span>Destructive & Irreversible Action</span>
+          </div>
+          <p className="text-slate-700 leading-relaxed">
+            You are about to permanently delete project <strong className="text-slate-900">{project.name}</strong> (<span className="font-mono font-bold text-rose-700">{project.key}</span>).
+          </p>
+          <p className="text-slate-600 leading-relaxed">
+            This operation will permanently delete all associated requirements, test cases, execution runs, defects, traceability relationships, and document files. This action cannot be undone.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-slate-700 font-medium">
+            To confirm deletion, please enter the project key <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{project.key}</span> below:
+          </label>
+          <Input
+            value={typedKey}
+            onChange={(e) => setTypedKey(e.target.value)}
+            placeholder={`Type "${project.key}" to confirm`}
+            className="font-mono text-xs w-full"
+            autoFocus
+          />
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDelete}
+            disabled={!isMatch || isDeleting}
+            className="gap-1.5"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {isDeleting ? "Deleting..." : "Permanently Delete Project"}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

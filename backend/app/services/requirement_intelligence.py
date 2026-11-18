@@ -91,12 +91,53 @@ def _classify_category(stmt: str) -> str:
     return "functional"
 
 
+def classify_clause_type(text: str) -> str:
+    """Classify extracted clauses into 7 standard enterprise QE categories:
+    - normative_requirement: prescriptive requirements (shall, must, mandatory, required to, enforces)
+    - recommendation_guidance: advisory guidance (should, recommended, ought to, best practice)
+    - explanatory_statement: descriptive background explaining why or giving examples
+    - informational_content: general feature capabilities (allows, provides, includes, overview)
+    - ai_inferred_interpretation: derived or deduced interpretations
+    - duplicate_or_fragmented: fragmented phrases lacking a complete sentence structure
+    - not_actionable: boilerplate, references, or non-testable headers
+    """
+    s = text.strip()
+    s_lower = s.lower()
+
+    if len(s) < 25 or not re.search(r"[a-zA-Z]", s):
+        return "duplicate_or_fragmented"
+
+    if re.match(r"^(figure|table|note|see section|refer to|copyright|all rights reserved|page \d+)", s_lower):
+        return "not_actionable"
+
+    # Prescriptive normative modals
+    if any(k in s_lower for k in [
+        "shall", "must", "mandatory", "required to", "enforces", "prohibits",
+        "rejects", "returns status", "calculates", "complies", "validates", "stores"
+    ]):
+        return "normative_requirement"
+
+    # Advisory recommendation
+    if any(k in s_lower for k in ["should", "recommended", "best practice", "ought to", "advise"]):
+        return "recommendation_guidance"
+
+    # Informational statements (e.g. "allows", "provides", "is capable of")
+    if any(k in s_lower for k in ["allows", "provides", "features", "consists of", "overview", "designed to"]):
+        return "informational_content"
+
+    # Explanatory statements
+    if any(k in s_lower for k in ["for example", "such as", "in order to", "that is", "meaning", "specifically"]):
+        return "explanatory_statement"
+
+    return "explanatory_statement"
+
+
 def _calc_confidence(stmt: str) -> float:
     s = stmt.lower()
     score = 0.86
     if "shall" in s or "must" in s or "enforces" in s:
         score += 0.05
-    elif "should" in s or "allows" in s:
+    elif "should" in s:
         score += 0.02
     if re.search(r"\b\d+(\.\d+)?\b", s):
         score += 0.04
@@ -164,11 +205,14 @@ def extract_requirements_from_text(text: str, source_doc: Document) -> list[dict
             s_clean = s.strip()
             if not s_clean:
                 continue
-            is_req = any(kw in s_clean.lower() for kw in [
-                "shall", "must", "should", "will support", "required to", "endpoint:", "api:", "allows",
-                "enforces", "validates", "prohibits", "rejects", "returns status", "stores", "calculates", "complies"
-            ])
-            if is_req and len(s_clean) >= 20:
+
+            # Classify into 7 categories
+            clause_type = classify_clause_type(s_clean)
+            # Only normative requirements and recommendation guidance are actionable requirements
+            if clause_type not in ["normative_requirement", "recommendation_guidance"]:
+                continue
+
+            if len(s_clean) >= 20:
                 clean_stmt = re.sub(r"^[-*•\d\.\)\s]+", "", s_clean).strip()
                 if len(clean_stmt) >= 15:
                     # Semantic deduplication
@@ -185,6 +229,7 @@ def extract_requirements_from_text(text: str, source_doc: Document) -> list[dict
                         "section": section,
                         "page": page,
                         "category": category,
+                        "clause_type": clause_type,
                         "confidence": confidence,
                     })
 

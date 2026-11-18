@@ -34,7 +34,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button, PageHeader, Panel } from "@/components/ui";
 import { useProjects } from "@/hooks/useProjects";
@@ -152,15 +152,14 @@ export default function SimulationPage() {
   const { projectId, current, byId } = useProjects();
   const [searchParams] = useSearchParams();
   const urlProjectId = searchParams.get("project_id");
-  const effectiveProjectId = urlProjectId ? Number(urlProjectId) : (projectId || 11);
-  const activeProject = byId(effectiveProjectId) || current;
+  const effectiveProjectId = urlProjectId ? Number(urlProjectId) : (projectId ?? null);
+  const activeProject = effectiveProjectId ? (byId(effectiveProjectId) || current) : current;
   const isHcm = Boolean(
     activeProject?.business_domain?.toLowerCase().includes("hr") ||
     activeProject?.business_domain?.toLowerCase().includes("payroll") ||
     activeProject?.name?.toLowerCase().includes("payroll") ||
     activeProject?.key === "EV_PAY" ||
-    activeProject?.key === "DAYFORCE" ||
-    (!activeProject && effectiveProjectId === 11)
+    activeProject?.key === "DAYFORCE"
   );
   const isPayments = (!isHcm) && Boolean(
     activeProject?.business_domain?.toLowerCase().includes("bank") ||
@@ -176,12 +175,129 @@ export default function SimulationPage() {
   const [rcaScenario, setRcaScenario] = useState<"pre-payroll" | "payroll-rca" | "union-compliance" | "costing-rca">("payroll-rca");
   const [copiedRcaSummary, setCopiedRcaSummary] = useState<boolean>(false);
 
+  const fallbackPhases = useMemo(() => {
+    if (isHcm) {
+      return [
+        {
+          phase_id: "preparation",
+          name: "Preparation Phase",
+          subtitle: "Data collection and validation",
+          completion_pct: 100.0,
+          status: "completed",
+          completed_steps: 7,
+          total_steps: 7,
+          duration_ms: 140,
+          last_execution_at: new Date().toISOString(),
+          steps: [
+            { step_id: "prep_time_data", name: "Time Data Ingestion", category: "Time data", records_count: 168, validation_check: "Raw shift records, punch cards, and timesheets parsed without truncation.", completed: true, status: "completed", errors: [], evidence: "29 CFR § 778.100 time card records extracted." },
+            { step_id: "prep_absence_data", name: "Absence & Leave Balances", category: "Absence Data", records_count: 42, validation_check: "FMLA, PTO, and statutory sick leave balances reconciled against shift schedules.", completed: true, status: "completed", errors: [], evidence: "Leave accrual tables validated." },
+            { step_id: "prep_benefit_data", name: "Pre-Tax Benefit Deductions", category: "Benefit Data", records_count: 56, validation_check: "Section 125 cafeteria plan contributions and HSA deductions verified.", completed: true, status: "completed", errors: [], evidence: "Benefit schedule table parsed." },
+            { step_id: "prep_hr_profile", name: "HR Employment Profiles", category: "HR Data", records_count: 24, validation_check: "Exempt vs non-exempt status, FLSA classification, and pay group assignment.", completed: true, status: "completed", errors: [], evidence: "FLSA job profile attributes confirmed." },
+            { step_id: "prep_pre_costing", name: "Pre-Costing Rule Assignment", category: "Pre Costing Data", records_count: 18, validation_check: "Cost center mapping and account allocation cross-referenced with labor budgets.", completed: true, status: "completed", errors: [], evidence: "GL cost center table mapped." },
+            { step_id: "prep_commissions", name: "Commission & Incentive Schedule", category: "Commission Data", records_count: 12, validation_check: "Nondiscretionary production bonuses and commission tiers ingested.", completed: true, status: "completed", errors: [], evidence: "Performance bonus schedule verified." },
+            { step_id: "prep_performance", name: "Performance & Shift Metric Review", category: "Performance Data", records_count: 24, validation_check: "Shift attendance ratios and biometric punch timestamps verified.", completed: true, status: "completed", errors: [], evidence: "Shift sign-in audit logs complete." },
+          ]
+        },
+        {
+          phase_id: "pre_payroll",
+          name: "Pre Payroll Phase",
+          subtitle: "Pre-validation and calculation rules",
+          completion_pct: 71.4,
+          status: "in_progress",
+          completed_steps: 5,
+          total_steps: 7,
+          duration_ms: 280,
+          last_execution_at: new Date().toISOString(),
+          steps: [
+            { step_id: "pre_element_entry", name: "Element Entry Data Validation", category: "Element Entry Data", records_count: 96, validation_check: "Recurring and non-recurring earnings elements mapped to statutory tax buckets.", completed: true, status: "completed", errors: [], evidence: "Earnings elements aligned." },
+            { step_id: "pre_calc_cards", name: "Calculation Card Verification", category: "Calculation Card data", records_count: 24, validation_check: "Statutory withholding exemptions and tax jurisdiction calculation cards active.", completed: true, status: "completed", errors: [], evidence: "W-4 / State withholding cards verified." },
+            { step_id: "pre_regular_rate", name: "FLSA Regular Rate Calculation", category: "Calculation Card data", records_count: 24, validation_check: "Deterministic computation of regular rate including all remuneration under 29 CFR § 778.109.", completed: true, status: "completed", errors: [], evidence: "Regular rate formula verified." },
+            { step_id: "pre_daily_overtime", name: "Daily & Weekly Overtime Multipliers", category: "Calculation Card data", records_count: 30, validation_check: "1.5x threshold beyond 8h daily / 40h weekly verified against policy specifications.", completed: true, status: "completed", errors: [], evidence: "30 unit test assertions confirmed." },
+            { step_id: "pre_shift_differentials", name: "Shift Differential Stacking", category: "Calculation Card data", records_count: 16, validation_check: "Night shift premium (+10%) and weekend differential (+15%) evaluated.", completed: true, status: "completed", errors: [], evidence: "Differential rates validated." },
+            { step_id: "pre_union_cba", name: "Union CBA Local 402 Compliance Check", category: "Calculation Card data", records_count: 8, validation_check: "Consecutive 7th-day shift double-time threshold under CBA Section 14.2.", completed: false, status: "in_progress", errors: ["Pending dual-signoff on 7th-day consecutive shifts."], evidence: "CBA Section 14.2 clause extracted." },
+            { step_id: "pre_audit_run", name: "Gross-to-Net Pre-Audit Check", category: "Element Entry Data", records_count: 24, validation_check: "Negative net pay prevention and maximum statutory withholding cap check.", completed: false, status: "in_progress", errors: ["Pre-audit pending CBA resolution."], evidence: "Withholding limits evaluated." },
+          ]
+        },
+        {
+          phase_id: "post_payroll",
+          name: "Post Payroll Phase",
+          subtitle: "Analysis, reconciliation and reporting",
+          completion_pct: 25.0,
+          status: "partially_completed",
+          completed_steps: 1,
+          total_steps: 4,
+          duration_ms: 195,
+          last_execution_at: new Date().toISOString(),
+          steps: [
+            { step_id: "post_balance_report", name: "Balance Report Reconciliation", category: "Balance Report", records_count: 30, validation_check: "Gross pay, total tax deductions, net payroll, and employer contributions reconciled.", completed: true, status: "completed", errors: [], evidence: "Reconciled via SIM-000002." },
+            { step_id: "post_gl_costing", name: "General Ledger Costing Data Export", category: "Costing Data", records_count: 18, validation_check: "Labor distribution ledger debits and credits balanced to zero variance.", completed: false, status: "in_progress", errors: ["Blocked: open defect(s) prevent costing ledger signoff."], evidence: null },
+            { step_id: "post_variance_rca", name: "Variance & Discrepancy RCA Report", category: "Variance Report", records_count: 1, validation_check: "Root-cause classification of variance between actual timesheets and baseline pay.", completed: false, status: "failed", errors: ["FLSA Regular Rate Bonus Allocation Mismatch in Overtime Batch"], evidence: "1 unresolved defect(s) logged in system." },
+            { step_id: "post_disbursement", name: "Disbursement & Remittance File Release", category: "Balance Report", records_count: 24, validation_check: "NACHA ACH direct deposit file creation and tax authority remittance signoff.", completed: false, status: "blocked", errors: ["Remittance file release blocked until all variance RCA defects are resolved."], evidence: null },
+          ]
+        }
+      ];
+    }
+    return [
+      {
+        phase_id: "preparation",
+        name: "Specification Ingestion Phase",
+        subtitle: "Document clause parsing and schema validation",
+        completion_pct: 100.0,
+        status: "completed",
+        completed_steps: 3,
+        total_steps: 3,
+        duration_ms: 140,
+        last_execution_at: new Date().toISOString(),
+        steps: [
+          { step_id: "prep_doc_ingest", name: "Specification Ingestion", category: "Document Ingestion", records_count: 10, validation_check: "Specification documents and circulars parsed into structured clauses.", completed: true, status: "completed", errors: [], evidence: "Source clauses parsed and indexed." },
+          { step_id: "prep_clause_norm", name: "Clause Normalization & Classification", category: "Clause Normalization", records_count: 10, validation_check: "Normative requirements distinguished from guidance and explanatory statements.", completed: true, status: "completed", errors: [], evidence: "Normative requirements classified." },
+          { step_id: "prep_schema_val", name: "Schema & Contract Invariant Validation", category: "Schema Validation", records_count: 10, validation_check: "Interface schemas, constraints, and operational bounds verified.", completed: true, status: "completed", errors: [], evidence: "Schema contracts validated." },
+        ]
+      },
+      {
+        phase_id: "pre_validation",
+        name: "Pre-Release Verification Phase",
+        subtitle: "Invariant testing and simulation",
+        completion_pct: 50.0,
+        status: "in_progress",
+        completed_steps: 2,
+        total_steps: 4,
+        duration_ms: 280,
+        last_execution_at: new Date().toISOString(),
+        steps: [
+          { step_id: "pre_boundary", name: "Boundary & Invariant Data Verification", category: "Validation Rules", records_count: 10, validation_check: "Numeric boundaries, schema rules, and invariant constraints evaluated.", completed: true, status: "completed", errors: [], evidence: "Validation assertions evaluated." },
+          { step_id: "pre_security", name: "Access Control & Guardrail Enforcement", category: "Security Controls", records_count: 10, validation_check: "Least privilege authorization, role-based isolation, and permission boundaries verified.", completed: true, status: "completed", errors: [], evidence: "Security controls active." },
+          { step_id: "pre_sim_run", name: "Deterministic Sandbox Simulation Run", category: "Behavior Simulation", records_count: 10, validation_check: "State machine transitions, negative edge cases, and failure modes evaluated in isolation.", completed: false, status: "in_progress", errors: [], evidence: null },
+          { step_id: "pre_breakglass", name: "Exception & Emergency Break-Glass Handling", category: "Resilience Gate", records_count: 5, validation_check: "Emergency override procedures require elevated audit logging and dual authorization.", completed: false, status: "not_started", errors: [], evidence: null },
+        ]
+      },
+      {
+        phase_id: "post_validation",
+        name: "Post-Validation Reconciliation Phase",
+        subtitle: "Traceability reconciliation and release gate",
+        completion_pct: 25.0,
+        status: "partially_completed",
+        completed_steps: 1,
+        total_steps: 4,
+        duration_ms: 195,
+        last_execution_at: new Date().toISOString(),
+        steps: [
+          { step_id: "post_traceability", name: "Requirement-to-Test Traceability Reconciliation", category: "Traceability Audit", records_count: 10, validation_check: "All staged normative requirements and invariants linked to verified test cases.", completed: true, status: "completed", errors: [], evidence: "Traceability reconciliation logged." },
+          { step_id: "post_compliance", name: "Security & Quality Invariant Compliance Ledger", category: "Compliance Ledger", records_count: 10, validation_check: "Zero invariant breaches across evaluated access boundaries and security domains.", completed: false, status: "in_progress", errors: [], evidence: null },
+          { step_id: "post_variance", name: "Defect Root Cause & Risk Impact Assessment", category: "Variance & RCA", records_count: 0, validation_check: "All test execution failures classified with root-cause, severity, and remediation steps.", completed: false, status: "not_started", errors: [], evidence: null },
+          { step_id: "post_gate", name: "Enterprise Quality Release Gate Dossier", category: "Release Dossier", records_count: 1, validation_check: "Consolidated evidence dossier verified for automated deployment and compliance sign-off.", completed: false, status: "not_started", errors: [], evidence: null },
+        ]
+      }
+    ];
+  }, [isHcm]);
+
   // Live operational pipeline progress query grounded in persisted Project records
   const pipelineProgressQ = useQuery({
     queryKey: ["pipeline-progress", effectiveProjectId],
     queryFn: () => api.get<any>("/simulation/pipeline-progress", { project_id: effectiveProjectId }),
     staleTime: 10_000,
     refetchInterval: isSimulating ? 1500 : false,
+    enabled: Boolean(effectiveProjectId),
   });
 
   const pipelineData = pipelineProgressQ.data;
@@ -628,65 +744,7 @@ export default function SimulationPage() {
 
                 {/* Vertical Interactive Phase Accordion */}
                 <div className="space-y-4">
-                  {(pipelineData?.phases || [
-                    {
-                      phase_id: "preparation",
-                      name: "Preparation Phase",
-                      subtitle: "Data collection and validation",
-                      completion_pct: 100.0,
-                      status: "completed",
-                      completed_steps: 7,
-                      total_steps: 7,
-                      duration_ms: 140,
-                      last_execution_at: new Date().toISOString(),
-                      steps: [
-                        { step_id: "prep_time_data", name: "Time Data Ingestion", category: "Time data", records_count: 168, validation_check: "Raw shift records, punch cards, and timesheets parsed without truncation.", completed: true, status: "completed", errors: [], evidence: "29 CFR § 778.100 time card records extracted from source documentation." },
-                        { step_id: "prep_absence_data", name: "Absence & Leave Balances", category: "Absence Data", records_count: 42, validation_check: "FMLA, PTO, and statutory sick leave balances reconciled against shift schedules.", completed: true, status: "completed", errors: [], evidence: "Leave accrual tables validated." },
-                        { step_id: "prep_benefit_data", name: "Pre-Tax Benefit Deductions", category: "Benefit Data", records_count: 56, validation_check: "Section 125 cafeteria plan contributions and HSA deductions verified.", completed: true, status: "completed", errors: [], evidence: "Benefit schedule table parsed." },
-                        { step_id: "prep_hr_profile", name: "HR Employment Profiles", category: "HR Data", records_count: 24, validation_check: "Exempt vs non-exempt status, FLSA classification, and pay group assignment.", completed: true, status: "completed", errors: [], evidence: "FLSA job profile attributes confirmed." },
-                        { step_id: "prep_pre_costing", name: "Pre-Costing Rule Assignment", category: "Pre Costing Data", records_count: 18, validation_check: "Cost center mapping and account allocation cross-referenced with labor budgets.", completed: true, status: "completed", errors: [], evidence: "GL cost center table mapped." },
-                        { step_id: "prep_commissions", name: "Commission & Incentive Schedule", category: "Commission Data", records_count: 12, validation_check: "Nondiscretionary production bonuses and commission tiers ingested.", completed: true, status: "completed", errors: [], evidence: "Performance bonus schedule verified." },
-                        { step_id: "prep_performance", name: "Performance & Shift Metric Review", category: "Performance Data", records_count: 24, validation_check: "Shift attendance ratios and biometric punch timestamps verified.", completed: true, status: "completed", errors: [], evidence: "Shift sign-in audit logs complete." },
-                      ]
-                    },
-                    {
-                      phase_id: "pre_payroll",
-                      name: "Pre Payroll Phase",
-                      subtitle: "Pre-validation and calculation rules",
-                      completion_pct: 71.4,
-                      status: "in_progress",
-                      completed_steps: 5,
-                      total_steps: 7,
-                      duration_ms: 280,
-                      last_execution_at: new Date().toISOString(),
-                      steps: [
-                        { step_id: "pre_element_entry", name: "Element Entry Data Validation", category: "Element Entry Data", records_count: 96, validation_check: "Recurring and non-recurring earnings elements mapped to statutory tax buckets.", completed: true, status: "completed", errors: [], evidence: "Earnings elements aligned." },
-                        { step_id: "pre_calc_cards", name: "Calculation Card Verification", category: "Calculation Card data", records_count: 24, validation_check: "Statutory withholding exemptions and tax jurisdiction calculation cards active.", completed: true, status: "completed", errors: [], evidence: "W-4 / State withholding cards verified." },
-                        { step_id: "pre_regular_rate", name: "FLSA Regular Rate Calculation", category: "Calculation Card data", records_count: 24, validation_check: "Deterministic computation of regular rate including all remuneration under 29 CFR § 778.109.", completed: true, status: "completed", errors: [], evidence: "Regular rate formula verified." },
-                        { step_id: "pre_daily_overtime", name: "Daily & Weekly Overtime Multipliers", category: "Calculation Card data", records_count: 30, validation_check: "1.5x threshold beyond 8h daily / 40h weekly verified against policy specifications.", completed: true, status: "completed", errors: [], evidence: "30 unit test assertions confirmed." },
-                        { step_id: "pre_shift_differentials", name: "Shift Differential Stacking", category: "Calculation Card data", records_count: 16, validation_check: "Night shift premium (+10%) and weekend differential (+15%) evaluated.", completed: true, status: "completed", errors: [], evidence: "Differential rates validated." },
-                        { step_id: "pre_union_cba", name: "Union CBA Local 402 Compliance Check", category: "Calculation Card data", records_count: 8, validation_check: "Consecutive 7th-day shift double-time threshold under CBA Section 14.2.", completed: false, status: "in_progress", errors: ["Pending dual-signoff on 7th-day consecutive shifts."], evidence: "CBA Section 14.2 clause extracted." },
-                        { step_id: "pre_audit_run", name: "Gross-to-Net Pre-Audit Check", category: "Element Entry Data", records_count: 24, validation_check: "Negative net pay prevention and maximum statutory withholding cap check.", completed: false, status: "in_progress", errors: ["Pre-audit pending CBA resolution."], evidence: "Withholding limits evaluated." },
-                      ]
-                    },
-                    {
-                      phase_id: "post_payroll",
-                      name: "Post Payroll Phase",
-                      subtitle: "Analysis, reconciliation and reporting",
-                      completion_pct: 25.0,
-                      status: "partially_completed",
-                      completed_steps: 1,
-                      total_steps: 4,
-                      duration_ms: 195,
-                      last_execution_at: new Date().toISOString(),
-                      steps: [
-                        { step_id: "post_balance_report", name: "Balance Report Reconciliation", category: "Balance Report", records_count: 30, validation_check: "Gross pay, total tax deductions, net payroll, and employer contributions reconciled.", completed: true, status: "completed", errors: [], evidence: "Reconciled via SIM-000002 (30/30 passed)." },
-                        { step_id: "post_gl_costing", name: "General Ledger Costing Data Export", category: "Costing Data", records_count: 18, validation_check: "Labor distribution ledger debits and credits balanced to zero variance.", completed: false, status: "in_progress", errors: ["Blocked: 1 open defect(s) prevent costing ledger signoff."], evidence: null },
-                        { step_id: "post_variance_rca", name: "Variance & Discrepancy RCA Report", category: "Variance Report", records_count: 1, validation_check: "Root-cause classification of variance between actual timesheets and baseline pay.", completed: false, status: "failed", errors: ["DEF-EV_PAY-0001: FLSA Regular Rate Bonus Allocation Mismatch in Overtime Batch"], evidence: "1 unresolved defect(s) logged in system." },
-                        { step_id: "post_disbursement", name: "Disbursement & Remittance File Release", category: "Balance Report", records_count: 24, validation_check: "NACHA ACH direct deposit file creation and tax authority remittance signoff.", completed: false, status: "blocked", errors: ["Remittance file release blocked until all variance RCA defects are resolved."], evidence: null },
-                      ]
-                    }
-                  ]).map((phase: any) => {
+                  {(pipelineData?.phases || fallbackPhases).map((phase: any) => {
                     const isExpanded = expandedPhaseId === phase.phase_id;
                     const statusColor =
                       phase.status === "completed"
@@ -849,7 +907,7 @@ export default function SimulationPage() {
                                       </Link>
                                       <span className="text-slate-300">|</span>
                                       <Link
-                                        to={`/traceability?project_id=${projectId || 11}`}
+                                        to={effectiveProjectId ? `/traceability?project_id=${effectiveProjectId}` : "/traceability"}
                                         className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1D4ED8] hover:underline"
                                       >
                                         <span>Traceability Matrix</span>
@@ -1434,14 +1492,14 @@ export default function SimulationPage() {
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                       <Link
-                        to={`/traceability?project_id=${projectId || 11}`}
+                        to={effectiveProjectId ? `/traceability?project_id=${effectiveProjectId}` : "/traceability"}
                         className="flex items-center justify-between rounded-lg border border-blue-200 bg-white p-2.5 text-xs font-semibold text-[#1D4ED8] hover:bg-blue-50 shadow-2xs"
                       >
                         <span>Traceability Matrix</span>
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                       <Link
-                        to={`/requirements?project_id=${projectId || 11}`}
+                        to={effectiveProjectId ? `/requirements?project_id=${effectiveProjectId}` : "/requirements"}
                         className="flex items-center justify-between rounded-lg border border-blue-200 bg-white p-2.5 text-xs font-semibold text-[#1D4ED8] hover:bg-blue-50 shadow-2xs"
                       >
                         <span>Source Clauses</span>

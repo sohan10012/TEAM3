@@ -98,3 +98,15 @@ def export_project_intelligence_report(
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/projects/{project_id}/release-decision")
+def get_project_release_decision(
+    project_id: int,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    """Retrieve the authoritative release decision and evidence breakdown for a project."""
+    scoped_project_ids(db, p, project_id)
+    from app.services.release_decision import evaluate_release_decision
+    return evaluate_release_decision(db, project_id)

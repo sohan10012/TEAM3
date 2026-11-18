@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import BadRequest, Conflict, NotFound
 from app.db.base import session_scope, utcnow
-from app.db.models import Defect, DefectComment, DefectLink, Execution, ExecutionResult, Run, TestCase
+from app.db.models import Defect, DefectComment, DefectLink, Execution, ExecutionResult, Requirement, Run, TestCase
 from app.domain.enums import (
     SEVERITIES,
     can_transition_defect,
@@ -45,15 +45,35 @@ def create_manual(db: Session, project_id: int, project_key: str, data: dict, ac
         if res is None or res.status not in ("failed", "error", "timed_out"):
             raise BadRequest("Defects can only be linked to a recorded failure")
         ex = db.get(Execution, res.execution_id)
-        if ex.project_id != project_id:
+        if not ex or ex.project_id != project_id:
             raise BadRequest("Execution result belongs to another project")
-    t = db.get(TestCase, res.test_case_id) if res else (
-        db.get(TestCase, data["test_case_id"]) if data.get("test_case_id") else None)
+
+    if data.get("test_case_id"):
+        t = db.get(TestCase, data["test_case_id"])
+        if not t:
+            raise NotFound("TestCase")
+        if t.project_id != project_id:
+            raise BadRequest("Test case belongs to another project")
+    elif res:
+        t = db.get(TestCase, res.test_case_id)
+        if t and t.project_id != project_id:
+            raise BadRequest("Test case belongs to another project")
+    else:
+        t = None
+
+    req_id = t.requirement_id if t else data.get("requirement_id")
+    if req_id:
+        req = db.get(Requirement, req_id)
+        if not req:
+            raise NotFound("Requirement")
+        if req.project_id != project_id:
+            raise BadRequest("Requirement belongs to another project")
+
     d = Defect(key=next_key(db, Defect, f"DEF-{project_key}", 4), project_id=project_id, title=data["title"],
                description=data.get("description", ""), severity=data["severity"], priority=data["priority"],
                evidence_type=data.get("evidence_type", "execution_failure" if res else "manual"),
                source_commit_sha=data.get("source_commit_sha"),
-               status="open", approval_status="approved", requirement_id=t.requirement_id if t else data.get("requirement_id"),
+               status="open", approval_status="approved", requirement_id=req_id,
                test_case_id=t.id if t else None, execution_id=res.execution_id if res else None,
                execution_result_id=res.id if res else None, expected_result=data.get("expected_result", ""),
                actual_result=data.get("actual_result") or (res.message if res else ""),

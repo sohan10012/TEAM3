@@ -91,10 +91,14 @@ def get_project_traceability_overview(db: Session, project_id: int) -> dict[str,
         for ack in (t.ac_keys or []):
             ac_to_tests[ack].append(t)
 
-    # 5. Latest execution result per test case
+    # 5. Latest execution result per test case (strictly project-scoped)
     latest_results_query = (
         select(ExecutionResult)
-        .where(ExecutionResult.test_case_id.in_(test_ids or [-1]))
+        .join(Execution, Execution.id == ExecutionResult.execution_id)
+        .where(
+            Execution.project_id == project_id,
+            ExecutionResult.test_case_id.in_(test_ids or [-1]),
+        )
         .order_by(ExecutionResult.id.asc())
     )
     all_results = list(db.execute(latest_results_query).scalars().all())
@@ -141,26 +145,44 @@ def get_project_traceability_overview(db: Session, project_id: int) -> dict[str,
         if t.id in latest_result_by_test and latest_result_by_test[t.id].status == "blocked"
     )
 
-    # Requirement coverage categorization
+    # Requirement coverage categorization across 5 enterprise categories:
+    # 1. fully_covered: linked tests exist, all executed and passed
+    # 2. partially_covered: linked tests exist, some failing or some ACs missing
+    # 3. not_covered: 0 tests linked
+    # 4. not_applicable: deprecated or informational requirements
+    # 5. pending_validation: linked tests exist, but 0 executions run yet
     fully_covered_reqs = 0
     partially_covered_reqs = 0
-    untested_reqs = 0
+    not_covered_reqs = 0
+    not_applicable_reqs = 0
+    pending_validation_reqs = 0
 
     for r in reqs:
         r_tests = tests_by_req[r.id]
         r_acs = acs_by_req[r.id]
+
+        if r.status in ("deprecated", "not_applicable") or r.category in ("informational", "not_applicable"):
+            not_applicable_reqs += 1
+            continue
+
         if not r_tests:
-            untested_reqs += 1
+            not_covered_reqs += 1
+            continue
+
+        has_any_exec = any(t.id in latest_result_by_test for t in r_tests)
+        if not has_any_exec:
+            pending_validation_reqs += 1
+            continue
+
+        all_acs_covered = bool(r_acs) and all(len(ac_to_tests[a.key]) > 0 for a in r_acs)
+        all_tests_passed = all(
+            latest_result_by_test.get(t.id) and latest_result_by_test[t.id].status == "passed"
+            for t in r_tests
+        )
+        if all_tests_passed and (not r_acs or all_acs_covered):
+            fully_covered_reqs += 1
         else:
-            all_acs_covered = bool(r_acs) and all(len(ac_to_tests[a.key]) > 0 for a in r_acs)
-            any_failing = any(
-                latest_result_by_test.get(t.id) and latest_result_by_test[t.id].status in ("failed", "error", "timed_out")
-                for t in r_tests
-            )
-            if all_acs_covered and not any_failing:
-                fully_covered_reqs += 1
-            else:
-                partially_covered_reqs += 1
+            partially_covered_reqs += 1
 
     # Deterministic percentages
     req_cov_pct = round(((fully_covered_reqs + partially_covered_reqs) / total_reqs * 100), 1) if total_reqs > 0 else 0.0
@@ -181,7 +203,10 @@ def get_project_traceability_overview(db: Session, project_id: int) -> dict[str,
         "requirements_without_clauses": reqs_without_clauses,
         "fully_covered_requirements": fully_covered_reqs,
         "partially_covered_requirements": partially_covered_reqs,
-        "untested_requirements": untested_reqs,
+        "not_covered_requirements": not_covered_reqs,
+        "untested_requirements": not_covered_reqs,
+        "not_applicable_requirements": not_applicable_reqs,
+        "pending_validation_requirements": pending_validation_reqs,
         "requirement_coverage_pct": req_cov_pct,
         "full_requirement_coverage_pct": full_req_cov_pct,
         # 2. Clauses Governance
@@ -384,10 +409,16 @@ def get_traceability_hierarchy(
         for ack in (t.ac_keys or []):
             tests_by_ac_key[ack].append(t)
 
-    # Preload latest execution results
+    # Preload latest execution results (strictly project-scoped)
     results = list(
         db.execute(
-            select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1])).order_by(ExecutionResult.id.asc())
+            select(ExecutionResult)
+            .join(Execution, Execution.id == ExecutionResult.execution_id)
+            .where(
+                Execution.project_id == project_id,
+                ExecutionResult.test_case_id.in_(test_ids or [-1])
+            )
+            .order_by(ExecutionResult.id.asc())
         ).scalars().all()
     )
     latest_result_by_test: dict[int, ExecutionResult] = {}
@@ -417,23 +448,33 @@ def get_traceability_hierarchy(
         r_tests = tests_by_req[r.id]
         r_defects = defects_by_req[r.id]
 
-        # Determine requirement coverage status
+        # Determine requirement coverage status across 5 explicit enterprise categories
         all_acs_covered = bool(r_acs) and all(len(tests_by_ac_key[a.key]) > 0 for a in r_acs)
-        any_failed = any(
-            latest_result_by_test.get(t.id) and latest_result_by_test[t.id].status in ("failed", "error", "timed_out")
-            for t in r_tests
+        has_executed = any(t.id in latest_result_by_test for t in r_tests)
+        all_passed = (
+            bool(r_tests)
+            and all(latest_result_by_test.get(t.id) and latest_result_by_test[t.id].status == "passed" for t in r_tests)
+            and (not r_acs or all_acs_covered)
         )
 
-        if not r_tests:
-            cov_status = "uncovered"
-        elif all_acs_covered and not any_failed:
+        if r.status in ("deprecated", "not_applicable") or r.category in ("informational", "not_applicable"):
+            cov_status = "not_applicable"
+        elif not r_tests:
+            cov_status = "not_covered"
+        elif not has_executed:
+            cov_status = "pending_validation"
+        elif all_passed:
             cov_status = "fully_covered"
         else:
             cov_status = "partially_covered"
 
         # Apply coverage filter if specified
-        if coverage_filter and coverage_filter != "all" and cov_status != coverage_filter:
-            continue
+        if coverage_filter and coverage_filter != "all":
+            if coverage_filter in ("not_covered", "uncovered"):
+                if cov_status not in ("not_covered", "uncovered"):
+                    continue
+            elif cov_status != coverage_filter:
+                continue
 
         # Build clause nodes
         clause_nodes = []
@@ -592,10 +633,16 @@ def get_coverage_gaps(
         for ack in (t.ac_keys or []):
             tests_by_ac_key[ack].append(t)
 
-    # Preload latest execution results
+    # Preload latest execution results (strictly project-scoped)
     results = list(
         db.execute(
-            select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1])).order_by(ExecutionResult.id.asc())
+            select(ExecutionResult)
+            .join(Execution, Execution.id == ExecutionResult.execution_id)
+            .where(
+                Execution.project_id == project_id,
+                ExecutionResult.test_case_id.in_(test_ids or [-1])
+            )
+            .order_by(ExecutionResult.id.asc())
         ).scalars().all()
     )
     latest_result_by_test: dict[int, ExecutionResult] = {}
@@ -830,7 +877,14 @@ def get_requirement_change_impact_analysis(
     test_ids = [t.id for t in tests]
 
     results = list(
-        db.execute(select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1]))).scalars().all()
+        db.execute(
+            select(ExecutionResult)
+            .join(Execution, Execution.id == ExecutionResult.execution_id)
+            .where(
+                Execution.project_id == req.project_id,
+                ExecutionResult.test_case_id.in_(test_ids or [-1])
+            )
+        ).scalars().all()
     )
 
     defects = list(
@@ -1019,7 +1073,13 @@ def get_advanced_coverage_matrix(
 
     results = list(
         db.execute(
-            select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1])).order_by(ExecutionResult.id.asc())
+            select(ExecutionResult)
+            .join(Execution, Execution.id == ExecutionResult.execution_id)
+            .where(
+                Execution.project_id == project_id,
+                ExecutionResult.test_case_id.in_(test_ids or [-1])
+            )
+            .order_by(ExecutionResult.id.asc())
         ).scalars().all()
     )
     latest_result_by_test = {r.test_case_id: r for r in results}

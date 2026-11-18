@@ -59,7 +59,7 @@ def build_project_intelligence_report(db: Session, project_id: int, force_regene
             .order_by(ProjectIntelligenceReport.generated_at.desc())
         ).scalars().first()
         if cached and cached.version_hash == current_hash:
-            return _format_report_dict(cached, project)
+            return _format_report_dict(cached, project, db)
 
     # 1. Dashboard & Categories
     dash_data = get_requirements_project_dashboard_data(db, project_id)
@@ -191,24 +191,23 @@ def build_project_intelligence_report(db: Session, project_id: int, force_regene
     covered_count = len(covered_req_ids)
     coverage_pct = round(100.0 * covered_count / max(1, len(reqs)), 1) if reqs else 0.0
 
-    # 9. Readiness Score & Area Scores (Reference Image 1: Executive Readiness Report)
-    doc_score = 100.0 if any(d.status in ("completed", "extracted") for d in docs) else 40.0
-    req_score = 95.0 if functional_count > 0 else 60.0
-    cov_score = min(100.0, max(20.0, coverage_pct * 1.2))
-    exec_score = pass_rate if total_execs > 0 else 90.0
-    defect_score = max(50.0, 100.0 - (len(defects) * 5.0))
-
-    readiness_score = round((doc_score * 0.15) + (req_score * 0.25) + (cov_score * 0.25) + (exec_score * 0.25) + (defect_score * 0.10), 1)
-    readiness_score = min(98.0, max(45.0, readiness_score))
+    # 9. Readiness Score & Area Scores (Grounded in canonical evaluate_release_decision)
+    from app.services.release_decision import evaluate_release_decision
+    rel_dec = evaluate_release_decision(db, project_id)
+    readiness_score = rel_dec["readiness_score"]
+    bd = rel_dec["score_breakdown"]
+    total_acs = rel_dec["metrics"]["total_acceptance_criteria"]
+    approved_acs = rel_dec["metrics"]["approved_acceptance_criteria"]
+    ac_synth_score = int(round(100.0 * approved_acs / max(1, total_acs))) if total_acs > 0 else 0
 
     metrics_by_area = [
-        {"area": "Document Ingestion & Parsing", "score": int(doc_score), "status": "Complete"},
-        {"area": "Requirements & Clause Decomposition", "score": int(req_score), "status": "Complete"},
-        {"area": "Business Rules & Policy Validation", "score": 95, "status": "Complete"},
-        {"area": "Acceptance Criteria Synthesis", "score": 90, "status": "Complete"},
-        {"area": "Scenario & Edge-Case Coverage", "score": int(cov_score), "status": "Complete" if cov_score >= 80 else "Evidence gap"},
-        {"area": "Execution Verification & Sandbox", "score": int(exec_score), "status": "Complete" if exec_score >= 85 else "Action required"},
-        {"area": "Defect Resolution & Retest", "score": int(defect_score), "status": "Complete" if defect_score >= 80 else "Attention needed"},
+        {"area": "Document Ingestion & Parsing", "score": int(bd["document_score"]["score"]), "status": "Complete" if bd["document_score"]["score"] >= 80 else "In progress"},
+        {"area": "Requirements & Clause Decomposition", "score": int(bd["requirement_score"]["score"]), "status": "Complete" if bd["requirement_score"]["score"] >= 80 else "Action required"},
+        {"area": "Business Rules & Policy Validation", "score": 95 if business_rules_count > 0 else (0 if not reqs else 50), "status": "Complete" if business_rules_count > 0 else "Pending"},
+        {"area": "Acceptance Criteria Synthesis", "score": ac_synth_score, "status": "Complete" if total_acs > 0 and approved_acs == total_acs else ("Pending review" if total_acs > 0 else "Pending")},
+        {"area": "Scenario & Edge-Case Coverage", "score": int(bd["coverage_score"]["score"]), "status": "Complete" if bd["coverage_score"]["score"] >= 80 else "Evidence gap"},
+        {"area": "Execution Verification & Sandbox", "score": int(bd["execution_score"]["score"]), "status": "Complete" if bd["execution_score"]["score"] >= 85 else "Action required"},
+        {"area": "Defect Resolution & Retest", "score": int(bd["defect_score"]["score"]), "status": "Complete" if bd["defect_score"]["score"] >= 80 else "Attention needed"},
     ]
 
     # 10. Critical Gaps Table (Reference Image 1)
@@ -372,10 +371,21 @@ def build_project_intelligence_report(db: Session, project_id: int, force_regene
     db.commit()
     db.refresh(report_record)
 
-    return _format_report_dict(report_record, project)
+    return _format_report_dict(report_record, project, db)
 
 
-def _format_report_dict(r: ProjectIntelligenceReport, project: Project) -> dict[str, Any]:
+def _format_report_dict(r: ProjectIntelligenceReport, project: Project, db: Session | None = None) -> dict[str, Any]:
+    from app.services.release_decision import evaluate_release_decision
+    rel_dec = evaluate_release_decision(db, r.project_id) if db else None
+
+    readiness_score = rel_dec["readiness_score"] if rel_dec else r.readiness_score
+    status_timeline = rel_dec["display_status"] if rel_dec else ("On Track" if readiness_score >= 70 else "Attention Required")
+
+    cov_reqs = rel_dec["metrics"]["covered_requirements"] if rel_dec else r.traceability.get("covered_requirements", 0)
+    tot_reqs = rel_dec["metrics"]["total_requirements"] if rel_dec else r.traceability.get("total_requirements", 0)
+    passed_tests = rel_dec["metrics"]["passed_tests_count"] if rel_dec else r.test_design.get("approved", 0)
+    tot_tests = rel_dec["metrics"]["total_test_cases"] if rel_dec else r.test_design.get("total_test_cases", 0)
+
     return {
         "report_id": r.id,
         "project_id": r.project_id,
@@ -385,13 +395,30 @@ def _format_report_dict(r: ProjectIntelligenceReport, project: Project) -> dict[
         "product_type": project.product_type or "Requirements & Policy Verification",
         "primary_goal": project.business_goal or "Zero-defect regulatory compliance and continuous quality assurance",
         "version_hash": r.version_hash,
-        "readiness_score": r.readiness_score,
+        "readiness_score": readiness_score,
+        "release_decision": rel_dec or {
+            "project_id": r.project_id,
+            "project_key": project.key,
+            "project_name": project.name,
+            "status": "insufficient_evidence",
+            "display_status": "Insufficient Evidence",
+            "is_approved": False,
+            "readiness_score": readiness_score,
+            "reasons": [],
+            "blocking_defects": [],
+            "metrics": {},
+            "score_breakdown": {},
+        },
         "stage_readiness": {
-            "stage_1_ready": min(100, int(r.readiness_score * 0.95)),
-            "stage_2_ready": min(100, int(r.readiness_score * 0.85)),
-            "clause_maturity": f"{r.traceability.get('covered_requirements', 1)}/{r.traceability.get('total_requirements', 1)}",
-            "controls_verified": f"{r.test_design.get('approved', 0)}/{r.test_design.get('total_test_cases', 1)}",
-            "status_timeline": "On Track" if r.readiness_score >= 70 else "Attention Required",
+            "status": rel_dec["status"] if rel_dec else "insufficient_evidence",
+            "display_status": status_timeline,
+            "is_approved": rel_dec["is_approved"] if rel_dec else False,
+            "reasons": rel_dec["reasons"] if rel_dec else [],
+            "stage_1_ready": min(100, int(readiness_score * 0.95)),
+            "stage_2_ready": min(100, int(readiness_score * 0.85)),
+            "clause_maturity": f"{cov_reqs}/{tot_reqs}",
+            "controls_verified": f"{passed_tests}/{tot_tests}",
+            "status_timeline": status_timeline,
         },
         "executive_summary": r.executive_summary,
         "metrics_by_area": r.metrics_by_area.get("items", []),

@@ -535,6 +535,8 @@ def quality_report(db: Session, project_ids: list[int]) -> dict:
         automated = sum(1 for t in tests if t.automation in ("pytest", "playwright"))
         last = execs[-1] if execs else None
         cov = coverage_by_project(db, [p.id])
+        from app.services.release_decision import evaluate_release_decision
+        rel_dec = evaluate_release_decision(db, p.id)
         out.append({
             "project": p.key, "name": p.name, "requirements": reqs, "tests": len(tests),
             "approved_tests": sum(1 for t in tests if t.status == "approved"),
@@ -547,7 +549,8 @@ def quality_report(db: Session, project_ids: list[int]) -> dict:
             "executions": len(execs),
             "last_execution": {"key": last.key, "status": last.status, "hcm_version": last.hcm_version,
                                "passed": last.passed, "failed": last.failed} if last else None,
-            "release_readiness": ("blocked" if any(d.severity == "critical" for d in open_d) else
-                                  "at_risk" if open_d or (last and last.status != "passed") else "ready"),
+            "release_readiness": rel_dec["status"],
+            "release_decision": rel_dec,
+            "readiness_score": rel_dec["readiness_score"],
         })
     return {"generated_at": now.isoformat(), "projects": out}

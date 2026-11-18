@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  AlertCircle,
   AlertOctagon,
   AlertTriangle,
   ArrowRight,
@@ -101,19 +102,19 @@ export default function ProjectIntelligenceReportPage() {
 
   const reportQ = useQuery({
     queryKey: ["project_intelligence_report", projectId],
-    queryFn: () => api.get<any>(`/projects/${projectId || 13}/intelligence-report`),
-    enabled: !!projectId,
+    queryFn: () => api.get<any>(`/projects/${projectId}/intelligence-report`),
+    enabled: Boolean(projectId),
     staleTime: 30_000,
   });
 
   const defectsQ = useQuery({
     queryKey: ["project_defects", projectId],
-    queryFn: () => api.get<any>(`/defects?project_id=${projectId || 13}`),
-    enabled: !!projectId,
+    queryFn: () => api.get<any>(`/defects?project_id=${projectId}`),
+    enabled: Boolean(projectId),
   });
 
   const regenM = useMutation({
-    mutationFn: () => api.post(`/projects/${projectId || 13}/intelligence-report/regenerate`),
+    mutationFn: () => api.post(`/projects/${projectId}/intelligence-report/regenerate`),
     onSuccess: () => {
       reportQ.refetch();
       defectsQ.refetch();
@@ -177,9 +178,14 @@ export default function ProjectIntelligenceReportPage() {
 
   const stage = rep.stage_readiness || {};
   const execSummary = rep.executive_summary || {};
-  const hasOpenDefects = defectsList.some((d) => d.status === "open");
-  const hasFailedValidation = (rep.execution_results?.recent_runs || []).some((r: any) => r.status === "failed");
-  const isReleaseBlocked = hasOpenDefects || hasFailedValidation;
+  const relDec = rep.release_decision || {};
+  const releaseStatus: string = relDec.status || stage.status || "insufficient_evidence";
+  const displayStatus: string = relDec.display_status || stage.display_status || (releaseStatus === "approved_for_production" ? "Approved for Production" : "Insufficient Evidence");
+  const isApproved: boolean = relDec.is_approved ?? stage.is_approved ?? (releaseStatus === "approved_for_production");
+  const isBlocked: boolean = releaseStatus === "not_approved" || releaseStatus === "insufficient_evidence";
+  const reasons: string[] = relDec.reasons || stage.reasons || [];
+  const blockingDefects: any[] = relDec.blocking_defects || [];
+  const openDefectsCount = defectsList.filter((d) => d.status !== "closed" && d.status !== "verified").length;
 
   return (
     <div className="space-y-6 pb-16 print:p-0 print:space-y-4">
@@ -331,7 +337,7 @@ export default function ProjectIntelligenceReportPage() {
           <div
             className={cn(
               "rounded-xl border p-3 text-center",
-              isReleaseBlocked
+              isBlocked
                 ? "border-rose-300 bg-rose-50/70 text-rose-900"
                 : "border-emerald-200 bg-emerald-50/70 text-emerald-900"
             )}
@@ -340,7 +346,7 @@ export default function ProjectIntelligenceReportPage() {
               Release Gate
             </span>
             <div className="mt-1 inline-flex items-center gap-1 font-bold text-xs">
-              {isReleaseBlocked ? (
+              {isBlocked ? (
                 <>
                   <AlertOctagon className="h-3.5 w-3.5 text-rose-600" />
                   <span className="text-rose-700">NO-GO (BLOCKED)</span>
@@ -353,7 +359,7 @@ export default function ProjectIntelligenceReportPage() {
               )}
             </div>
             <span className="mt-0.5 block text-3xs font-mono text-slate-500">
-              {hasOpenDefects ? "1 Active Defect" : "All Assertions Met"}
+              {openDefectsCount > 0 ? `${openDefectsCount} Active Defect(s)` : "All Assertions Met"}
             </span>
           </div>
         </div>
@@ -364,48 +370,99 @@ export default function ProjectIntelligenceReportPage() {
         aria-label="Executive Release Gate Assessment"
         className={cn(
           "rounded-2xl border p-5 shadow-xs print-break-inside-avoid",
-          isReleaseBlocked ? "border-rose-300 bg-rose-50/40" : "border-emerald-300 bg-emerald-50/40"
+          isApproved
+            ? "border-emerald-300 bg-emerald-50/40"
+            : releaseStatus === "approved_with_conditions"
+            ? "border-amber-300 bg-amber-50/40"
+            : releaseStatus === "not_approved"
+            ? "border-rose-300 bg-rose-50/40"
+            : "border-slate-300 bg-slate-50/60"
         )}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-200/60 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
           <div className="flex items-center gap-2.5">
-            {isReleaseBlocked ? (
+            {isApproved ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            ) : releaseStatus === "approved_with_conditions" ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700 border border-amber-300 shrink-0">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+            ) : releaseStatus === "not_approved" ? (
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 text-rose-700 border border-rose-300 shrink-0">
                 <AlertOctagon className="h-5 w-5" />
               </div>
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-200 text-slate-700 border border-slate-300 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
               </div>
             )}
             <div>
               <h2 className="text-sm font-bold text-slate-900">
                 Executive Release Decision:{" "}
-                <span className={isReleaseBlocked ? "text-rose-700" : "text-emerald-700"}>
-                  {isReleaseBlocked ? "CONDITIONAL / NO-GO (RELEASE BLOCKED)" : "APPROVED FOR PRODUCTION"}
+                <span
+                  className={cn(
+                    "font-bold uppercase tracking-wide",
+                    isApproved
+                      ? "text-emerald-700"
+                      : releaseStatus === "approved_with_conditions"
+                      ? "text-amber-700"
+                      : releaseStatus === "not_approved"
+                      ? "text-rose-700"
+                      : "text-slate-700"
+                  )}
+                >
+                  {displayStatus}
                 </span>
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                Deterministic four-pillar gate evaluation across Statutory Ingestion, Suite Completeness, Behavioral Simulation, and Defect Resolution.
+                Deterministic evidence-backed gate evaluation across Scope Ingestion, Test Suite Completeness, Behavioral Verification, and Defect Remediation.
               </p>
             </div>
           </div>
-          <span className="rounded-full px-3 py-1 text-xs font-mono font-bold bg-white border border-rose-200 text-rose-800 shadow-2xs">
-            Gate 4: 1 Blocking Item
+          <span
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-mono font-bold bg-white border shadow-2xs",
+              isApproved
+                ? "border-emerald-300 text-emerald-800"
+                : isBlocked
+                ? "border-rose-300 text-rose-800"
+                : "border-amber-300 text-amber-800"
+            )}
+          >
+            {isApproved
+              ? "All Gates Passed"
+              : blockingDefects.length > 0
+              ? `${blockingDefects.length} Blocking Defect(s)`
+              : reasons.length > 0
+              ? `${reasons.length} Condition(s) Flagged`
+              : "Pending Verification"}
           </span>
         </div>
 
         {/* 4 Pillars Gate Checklist */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
-          {/* Gate 1: Statutory Document Ingestion */}
+          {/* Gate 1: Scope & Specification Ingestion */}
           <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase text-slate-700">1. Statutory Ingestion</span>
-              <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              <span className="text-[11px] font-bold uppercase text-slate-700">1. Scope Ingestion</span>
+              {(rep.traceability?.total_requirements || 0) > 0 ? (
+                <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-500 font-bold" />
+              )}
             </div>
-            <span className="text-xs font-semibold text-emerald-700 block">100% Verified Pass</span>
+            <span
+              className={cn(
+                "text-xs font-semibold block",
+                (rep.traceability?.total_requirements || 0) > 0 ? "text-emerald-700" : "text-amber-700"
+              )}
+            >
+              {(rep.traceability?.total_requirements || 0) > 0 ? "Grounded Scope Loaded" : "No Scope Loaded"}
+            </span>
             <p className="text-2xs text-slate-500 leading-tight">
-              41 statutory clauses and 36 requirements parsed with zero dropped text.
+              {rep.traceability?.total_clauses || 0} clauses across {rep.traceability?.total_requirements || 0} atomic requirements.
             </p>
           </div>
 
@@ -413,52 +470,122 @@ export default function ProjectIntelligenceReportPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase text-slate-700">2. Suite Completeness</span>
-              <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              {(rep.traceability?.coverage_pct || 0) >= 90.0 && (rep.test_design?.total_test_cases || 0) > 0 ? (
+                <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              ) : (
+                <XCircle className="h-4 w-4 text-rose-500 font-bold" />
+              )}
             </div>
-            <span className="text-xs font-semibold text-emerald-700 block">100% Verified Pass</span>
+            <span
+              className={cn(
+                "text-xs font-semibold block",
+                (rep.traceability?.coverage_pct || 0) >= 90.0 && (rep.test_design?.total_test_cases || 0) > 0
+                  ? "text-emerald-700"
+                  : "text-rose-700"
+              )}
+            >
+              {rep.traceability?.coverage_pct || 0}% Coverage ({rep.test_design?.total_test_cases || 0} tests)
+            </span>
             <p className="text-2xs text-slate-500 leading-tight">
-              360 test cases generated across all 10 standard test categories (36 each).
+              {rep.test_design?.approved || 0} approved, {rep.test_design?.pending || 0} pending review across {rep.traceability?.covered_requirements || 0} covered requirements.
             </p>
           </div>
 
-          {/* Gate 3: Behavioral Simulation */}
+          {/* Gate 3: Behavioral Execution & Sandbox */}
           <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase text-slate-700">3. Behavior Simulation</span>
-              <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              <span className="text-[11px] font-bold uppercase text-slate-700">3. Behavior & Sandbox</span>
+              {(rep.execution_results?.total_runs || 0) > 0 && (rep.execution_results?.pass_rate || 0) >= 95.0 ? (
+                <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              ) : (rep.execution_results?.total_runs || 0) > 0 ? (
+                <AlertTriangle className="h-4 w-4 text-amber-500 font-bold" />
+              ) : (
+                <XCircle className="h-4 w-4 text-slate-400 font-bold" />
+              )}
             </div>
-            <span className="text-xs font-semibold text-emerald-700 block">100% Passed (360/360)</span>
+            <span
+              className={cn(
+                "text-xs font-semibold block",
+                (rep.execution_results?.total_runs || 0) > 0 && (rep.execution_results?.pass_rate || 0) >= 95.0
+                  ? "text-emerald-700"
+                  : (rep.execution_results?.total_runs || 0) > 0
+                  ? "text-amber-700"
+                  : "text-slate-600"
+              )}
+            >
+              {(rep.execution_results?.total_runs || 0) > 0
+                ? `${rep.execution_results?.pass_rate || 0}% Pass (${rep.execution_results?.passed_runs || 0}/${rep.execution_results?.total_runs || 0})`
+                : "0 Executions Recorded"}
+            </span>
             <p className="text-2xs text-slate-500 leading-tight">
-              Run SIM-000004 passed 360 of 360 state transitions in simulation engine.
+              {(rep.execution_results?.total_runs || 0) > 0
+                ? `${rep.execution_results?.failed_runs || 0} failed / errored execution runs in sandbox.`
+                : "No simulation or integration test executions recorded yet."}
             </p>
           </div>
 
           {/* Gate 4: Specification & Defect Gate */}
-          <div className="rounded-xl border border-rose-300 bg-rose-50/60 p-3 space-y-1 shadow-2xs">
+          <div
+            className={cn(
+              "rounded-xl border p-3 space-y-1 shadow-2xs",
+              openDefectsCount === 0
+                ? "border-slate-200 bg-white"
+                : blockingDefects.length > 0
+                ? "border-rose-300 bg-rose-50/60"
+                : "border-amber-300 bg-amber-50/60"
+            )}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase text-rose-900">4. Spec & Defect Gate</span>
-              <XCircle className="h-4 w-4 text-rose-600 font-bold" />
+              <span className="text-[11px] font-bold uppercase text-slate-700">4. Defect Gate</span>
+              {openDefectsCount === 0 ? (
+                <Check className="h-4 w-4 text-emerald-600 font-bold" />
+              ) : blockingDefects.length > 0 ? (
+                <XCircle className="h-4 w-4 text-rose-600 font-bold" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-600 font-bold" />
+              )}
             </div>
-            <span className="text-xs font-semibold text-rose-700 block">BLOCKING (1 Defect, 20 Failures)</span>
-            <p className="text-2xs text-rose-800 leading-tight">
-              VAL-000002 failed 20 assertions; 1 open defect DEF-FLSA_PAY-0001 (Tip Credit Shortfall).
+            <span
+              className={cn(
+                "text-xs font-semibold block",
+                openDefectsCount === 0
+                  ? "text-emerald-700"
+                  : blockingDefects.length > 0
+                  ? "text-rose-700"
+                  : "text-amber-700"
+              )}
+            >
+              {openDefectsCount === 0
+                ? "0 Open Defects"
+                : blockingDefects.length > 0
+                ? `BLOCKING (${blockingDefects.length} Critical/High)`
+                : `${openDefectsCount} Open Defect(s)`}
+            </span>
+            <p className="text-2xs text-slate-500 leading-tight">
+              {openDefectsCount === 0
+                ? "Clean defect register with zero open discrepancies."
+                : `Active defects: ${defectsList.map((d: any) => d.key).slice(0, 3).join(", ")}${defectsList.length > 3 ? "..." : ""}`}
             </p>
           </div>
         </div>
 
-        {/* Prescribed Resolution Steps */}
-        <div className="mt-3.5 rounded-xl border border-rose-200 bg-white p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="space-y-0.5">
+        {/* Evidence-Backed Findings / Prescribed Resolution Steps */}
+        <div className="mt-3.5 rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs">
+          <div className="space-y-1 flex-1">
             <span className="font-bold text-slate-900 block text-[11px] uppercase tracking-wider">
-              Required Remediation to Achieve Production GO:
+              {isApproved ? "Release Evidence Validation Summary:" : "Required Remediation to Achieve Production Approval:"}
             </span>
-            <p className="text-slate-600 text-2xs leading-relaxed">
-              1. Patch wage adjustment engine in payroll service to compute make-up differential under FLSA § 3(m).
-              <br />
-              2. Retest and resolve <span className="font-mono font-semibold text-rose-700">DEF-FLSA_PAY-0001</span>.
-              <br />
-              3. Rerun Specification Validation until 0 assertion failures remain.
-            </p>
+            {reasons.length > 0 ? (
+              <ul className="list-disc list-inside text-slate-600 text-2xs space-y-0.5 leading-relaxed">
+                {reasons.map((r, ri) => (
+                  <li key={ri}>{r}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-600 text-2xs leading-relaxed">
+                All quality gates satisfied. Test coverage exceeds threshold with zero open defects.
+              </p>
+            )}
           </div>
           <Link
             to={`/defects?project_id=${projectId}`}
@@ -557,17 +684,16 @@ export default function ProjectIntelligenceReportPage() {
 
               <div>
                 <span className="text-2xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                  Statutory & Compliance Frameworks:
+                  Governance & Domain Frameworks:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    "Statutory Overtime (FLSA § 778)",
-                    "Tip Credit Differential (FLSA § 3(m))",
-                    "Regular Rate of Pay Calculation",
-                    "Exempt / Non-Exempt Classification",
-                    "Youth Minimum Wage Sub-Rules",
-                    "Dual-Control Four-Eyes Audit",
-                  ].map((std, si) => (
+                    rep.business_domain,
+                    rep.product_type,
+                    "Dual-Control Four-Eyes Verification",
+                    "Tamper-Evident Source Provenance",
+                    "Deterministic Requirement Coverage",
+                  ].filter(Boolean).map((std, si) => (
                     <span
                       key={si}
                       className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-2xs font-medium text-indigo-800 border border-indigo-200/80"
@@ -1002,71 +1128,76 @@ export default function ProjectIntelligenceReportPage() {
 
             {/* Distinct Execution Containers */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Simulation Run Container */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-2xs font-bold border border-blue-200 uppercase tracking-wider">
-                    In-Memory Behavior Simulation
-                  </span>
-                  <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    100% Pass Rate
-                  </span>
+              {(rep.execution_results?.recent_runs || []).length > 0 ? (
+                rep.execution_results.recent_runs.slice(0, 2).map((run: any, ri: number) => {
+                  const total = (run.passed || 0) + (run.failed || 0) + (run.errored || 0);
+                  const passRate = total > 0 ? Math.round(((run.passed || 0) / total) * 100) : run.status === "passed" ? 100 : 0;
+                  return (
+                    <div
+                      key={run.id || ri}
+                      className={cn(
+                        "rounded-xl border p-4 space-y-3",
+                        run.status === "passed"
+                          ? "border-blue-200 bg-blue-50/40"
+                          : "border-rose-200 bg-rose-50/40"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-2xs font-bold border border-blue-200 uppercase tracking-wider">
+                          {run.source?.replace(/_/g, " ") || "Execution Engine"}
+                        </span>
+                        <span
+                          className={cn(
+                            "font-mono text-xs font-bold px-2 py-0.5 rounded border",
+                            run.status === "passed"
+                              ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                              : "text-rose-700 bg-rose-50 border-rose-200"
+                          )}
+                        >
+                          {passRate}% Pass Rate
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        Execution run evaluating project test suites, state transitions, and deterministic policy rules.
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-lg bg-white p-2 border border-slate-200">
+                          <span className="text-lg font-bold text-slate-900">{total}</span>
+                          <span className="block text-[10px] text-slate-400">Total Run</span>
+                        </div>
+                        <div className="rounded-lg bg-white p-2 border border-emerald-200">
+                          <span className="text-lg font-bold text-emerald-600">{run.passed || 0}</span>
+                          <span className="block text-[10px] text-emerald-600 font-medium">Passed</span>
+                        </div>
+                        <div className="rounded-lg bg-white p-2 border border-rose-200">
+                          <span className="text-lg font-bold text-rose-600">
+                            {(run.failed || 0) + (run.errored || 0)}
+                          </span>
+                          <span className="block text-[10px] text-rose-600 font-medium">Failed</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-2xs text-slate-500 pt-1 font-mono border-t border-slate-200/60">
+                        <span>Run ID: {run.key}</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            run.status === "passed" ? "text-emerald-700" : "text-rose-700"
+                          )}
+                        >
+                          Status: {run.status === "passed" ? "Passed" : "Failed / Errored"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-1 lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-6 text-center space-y-2">
+                  <p className="text-sm font-semibold text-slate-800">No Execution Runs Recorded</p>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    This project has not yet executed automated simulation or test suite verification runs.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-700 leading-relaxed">
-                  Autonomous sandbox simulation validating state transitions, event dispatch, and functional test scenarios under nominal and boundary inputs.
-                </p>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-lg bg-white p-2 border border-slate-200">
-                    <span className="text-lg font-bold text-slate-900">360</span>
-                    <span className="block text-[10px] text-slate-400">Total Run</span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-emerald-200">
-                    <span className="text-lg font-bold text-emerald-600">360</span>
-                    <span className="block text-[10px] text-emerald-600 font-medium">Passed</span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-slate-200">
-                    <span className="text-lg font-bold text-slate-400">0</span>
-                    <span className="block text-[10px] text-slate-400">Failed</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-2xs text-slate-500 pt-1 font-mono border-t border-blue-100">
-                  <span>Run ID: SIM-000004</span>
-                  <span className="text-emerald-700 font-semibold">Status: Passed</span>
-                </div>
-              </div>
-
-              {/* Specification Validation Run Container */}
-              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 text-rose-800 px-2.5 py-0.5 text-2xs font-bold border border-rose-200 uppercase tracking-wider">
-                    Statutory Policy Validation
-                  </span>
-                  <span className="font-mono text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                    94.4% Pass Rate
-                  </span>
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed">
-                  Strict deterministic assertions evaluated against statutory payroll policy definitions. Uncovered 20 assertion failures leading to defect DEF-FLSA_PAY-0001.
-                </p>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-lg bg-white p-2 border border-slate-200">
-                    <span className="text-lg font-bold text-slate-900">360</span>
-                    <span className="block text-[10px] text-slate-400">Total Run</span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-emerald-200">
-                    <span className="text-lg font-bold text-emerald-600">340</span>
-                    <span className="block text-[10px] text-emerald-600 font-medium">Passed</span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-rose-200">
-                    <span className="text-lg font-bold text-rose-600">20</span>
-                    <span className="block text-[10px] text-rose-600 font-medium">Failed</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-2xs text-slate-500 pt-1 font-mono border-t border-rose-100">
-                  <span>Run ID: VAL-000002</span>
-                  <span className="text-rose-700 font-semibold">Status: Failed (Flagged for Fix)</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Execution History Table */}
@@ -1168,7 +1299,7 @@ export default function ProjectIntelligenceReportPage() {
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 leading-snug">{def.title}</h4>
                       <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                        Under Fair Labor Standards Act (FLSA) Section 3(m) and 29 CFR § 531.59, an employer utilizing the $5.12/hr tip credit must pay a cash wage of at least $2.13/hr. However, if the employee’s actual tips plus $2.13/hr do not equal the federal minimum wage ($7.25/hr), the employer MUST pay the difference as a catch-up differential.
+                        {def.description || def.title}
                       </p>
                     </div>
 
@@ -1176,13 +1307,13 @@ export default function ProjectIntelligenceReportPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
                       <div className="rounded-xl border border-rose-200 bg-white p-3 space-y-1">
                         <span className="text-[10px] font-bold uppercase text-rose-800 block">
-                          Failing Assertion
+                          Failing Assertion / Error
                         </span>
-                        <span className="font-mono text-2xs font-semibold text-slate-800">
-                          Execution Run: VAL-000002
+                        <span className="font-mono text-2xs font-semibold text-slate-800 block truncate">
+                          {def.actual_result || def.error_log || (def.ai_analysis?.root_cause) || "Assertion failure logged"}
                         </span>
                         <p className="text-2xs text-slate-500">
-                          20 specification test cases triggered shortfall without catch-up wage disbursement.
+                          Failure state captured during execution validation.
                         </p>
                       </div>
 
@@ -1190,26 +1321,30 @@ export default function ProjectIntelligenceReportPage() {
                         <span className="text-[10px] font-bold uppercase text-rose-800 block">
                           Associated Requirement
                         </span>
-                        <Link
-                          to={`/requirements/415`}
-                          className="font-mono text-2xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          FLSA_PAY-REQ-002 <ExternalLink className="h-3 w-3" />
-                        </Link>
+                        {def.requirement_id ? (
+                          <Link
+                            to={`/requirements?project_id=${projectId}`}
+                            className="font-mono text-2xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            REQ-{def.requirement_id} <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : (
+                          <span className="text-2xs font-mono text-slate-500">Unlinked Requirement</span>
+                        )}
                         <p className="text-2xs text-slate-500">
-                          Tip Credit and Minimum Cash Wage mandate.
+                          Direct requirement mapping in project ledger.
                         </p>
                       </div>
 
                       <div className="rounded-xl border border-rose-200 bg-white p-3 space-y-1">
                         <span className="text-[10px] font-bold uppercase text-rose-800 block">
-                          Required Engineering Action
+                          Expected Result
                         </span>
-                        <span className="text-2xs font-semibold text-slate-800">
-                          Automatic Catch-Up Module
+                        <span className="text-2xs font-semibold text-slate-800 block truncate">
+                          {def.expected_result || "Deterministic compliance condition satisfied"}
                         </span>
                         <p className="text-2xs text-slate-500">
-                          Calculate: <span className="font-mono">max(0, $7.25 - ($2.13 + tips_per_hr))</span>.
+                          Remediate implementation to fulfill specification.
                         </p>
                       </div>
                     </div>

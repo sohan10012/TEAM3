@@ -104,46 +104,21 @@ def execute_tool(
         }
 
     elif tool_name == "get_release_readiness":
-        tdata = traceability(db, [project_id])
-        summary = tdata.get("summary", {})
-        cov = summary.get("coverage_pct", 0.0)
-        crit_defects = db.scalar(select(func.count(Defect.id)).where(Defect.project_id == project_id, Defect.severity == "critical", Defect.status != "closed")) or 0
-        high_defects = db.scalar(select(func.count(Defect.id)).where(Defect.project_id == project_id, Defect.severity == "high", Defect.status != "closed")) or 0
-        latest_exec = db.execute(
-            select(Execution).where(Execution.project_id == project_id).order_by(desc(Execution.created_at)).limit(1)
-        ).scalars().first()
-        pass_rate = 0.0
-        if latest_exec:
-            tot = (latest_exec.passed or 0) + (latest_exec.failed or 0) + (latest_exec.errored or 0)
-            pass_rate = round(((latest_exec.passed or 0) / tot) * 100, 1) if tot > 0 else 0.0
-
-        is_ready = crit_defects == 0 and high_defects == 0 and pass_rate >= 95.0 and cov >= 95.0
-        readiness_score = round((min(cov, 100) * 0.4) + (pass_rate * 0.4) + (max(0, 100 - (crit_defects * 30 + high_defects * 15)) * 0.2), 1)
-
-        blocking_reasons = []
-        if crit_defects > 0:
-            blocking_reasons.append(f"{crit_defects} critical defect(s) unresolved")
-        if high_defects > 0:
-            blocking_reasons.append(f"{high_defects} high-severity defect(s) unresolved")
-        if pass_rate < 95.0:
-            blocking_reasons.append(f"Latest test pass rate is {pass_rate}%, below 95.0% threshold")
-        if cov < 95.0:
-            blocking_reasons.append(f"Traceability coverage is {cov}%, below 95.0% threshold")
-
+        from app.services.release_decision import evaluate_release_decision
+        rel_dec = evaluate_release_decision(db, project_id)
         return {
-            "release_readiness_status": "READY" if is_ready else "CONDITIONAL_APPROVAL" if len(blocking_reasons) <= 1 and crit_defects == 0 else "BLOCKED",
-            "readiness_score": readiness_score,
-            "blocking_risks": blocking_reasons,
-            "measured_metrics": {
-                "traceability_coverage_pct": cov,
-                "latest_pass_rate_pct": pass_rate,
-                "critical_defects": crit_defects,
-                "high_defects": high_defects,
-            },
+            "release_readiness_status": rel_dec["status"].upper(),
+            "display_status": rel_dec["display_status"],
+            "readiness_score": rel_dec["readiness_score"],
+            "is_approved": rel_dec["is_approved"],
+            "blocking_risks": rel_dec["reasons"],
+            "blocking_defects": rel_dec["blocking_defects"],
+            "measured_metrics": rel_dec["metrics"],
+            "score_breakdown": rel_dec["score_breakdown"],
             "recommendations": [
-                "Remediate and verify high-severity defects before production deployment.",
-                "Execute regression retest against corrected deployment environment.",
-            ] if blocking_reasons else ["Release criteria met. Proceed with automated staging gate."],
+                "Remediate and verify high-severity defects before production deployment." if rel_dec["metrics"]["open_defects_count"] > 0 else "Maintain continuous regression coverage.",
+                "Execute regression retest against corrected deployment environment." if rel_dec["metrics"]["failed_tests_count"] > 0 else "Expand negative boundary tests.",
+            ] if rel_dec["reasons"] else ["Release criteria met. Proceed with automated staging gate."],
         }
 
     # -------------------------------------------------------------------------

@@ -5,9 +5,9 @@ import re
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, Response
+from fastapi import APIRouter, Depends, File, Form, UploadFile, Response, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, delete
 from sqlalchemy.orm import Session
 
 from app.api import serializers as S
@@ -24,6 +24,7 @@ from app.api.deps import (
 from app.core.errors import BadRequest, Conflict, NotFound
 from app.db.base import get_db, utcnow
 from app.db.models import (
+    AcceptanceCriterion,
     BusinessScenario,
     Defect,
     Document,
@@ -35,6 +36,9 @@ from app.db.models import (
     ProjectMember,
     ProjectRole,
     Requirement,
+    Review,
+    Run,
+    RunStep,
     TestCase,
     TestSuite,
     User,
@@ -733,16 +737,44 @@ def get_project(project_id: int, p: Principal = Depends(current_principal), db: 
 
 
 @router.delete("/{project_id}", status_code=204)
-def delete_project(project_id: int, p: Principal = Depends(require("project.admin")), db: Session = Depends(get_db)):
-    """Safely deletes a project and cascades deletion to all associated assets."""
+def delete_project(
+    project_id: int,
+    confirm_key: str | None = Query(None, description="Must match the project key to confirm permanent deletion"),
+    p: Principal = Depends(require("project.admin")),
+    db: Session = Depends(get_db),
+):
+    """Safely and permanently deletes a project, cascading deletion across all project-owned assets and cleaning up polymorphic reviews, runs, and disk storage."""
     proj = get_project_checked(db, p, project_id)
-    # Prevent deletion of protected foundational projects in production if specified
+    if confirm_key and confirm_key.strip() != proj.key:
+        raise BadRequest(f"Confirmation key '{confirm_key}' does not match project key '{proj.key}'")
+
     from app.core.config import get_settings
     import shutil
+
+    # 1. Clean up polymorphic Review records referencing project requirements, test cases, or ACs
+    req_ids = [r for r in db.execute(select(Requirement.id).where(Requirement.project_id == proj.id)).scalars().all()]
+    tc_ids = [t for t in db.execute(select(TestCase.id).where(TestCase.project_id == proj.id)).scalars().all()]
+    ac_ids = [a for a in db.execute(select(AcceptanceCriterion.id).where(AcceptanceCriterion.requirement_id.in_(req_ids or [-1]))).scalars().all()]
+
+    if req_ids:
+        db.execute(delete(Review).where(Review.entity_type == "requirement", Review.entity_id.in_(req_ids)))
+    if tc_ids:
+        db.execute(delete(Review).where(Review.entity_type == "test_case", Review.entity_id.in_(tc_ids)))
+    if ac_ids:
+        db.execute(delete(Review).where(Review.entity_type == "acceptance_criterion", Review.entity_id.in_(ac_ids)))
+
+    # 2. Clean up polymorphic Run and RunStep records where subject is project
+    run_ids = [r for r in db.execute(select(Run.id).where(Run.subject_type == "project", Run.subject_id == proj.id)).scalars().all()]
+    if run_ids:
+        db.execute(delete(RunStep).where(RunStep.run_id.in_(run_ids)))
+        db.execute(delete(Run).where(Run.id.in_(run_ids)))
+
+    # 3. Clean up physical project document files from disk
     doc_dir = get_settings().data_dir / "documents" / str(proj.id)
     if doc_dir.exists():
         shutil.rmtree(doc_dir, ignore_errors=True)
 
+    # 4. Audit record and cascade delete Project
     audit.record(db, p.id, "project.deleted", "project", proj.id, f"Project {proj.key} ({proj.name}) deleted", None)
     db.delete(proj)
     db.commit()

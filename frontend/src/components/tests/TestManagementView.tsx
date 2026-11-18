@@ -1042,7 +1042,7 @@ export function TestManagementView({ projectId, current }: TestManagementViewPro
         open={previewModalOpen}
         onClose={() => setPreviewModalOpen(false)}
         projectId={projectId}
-        uncoveredAcCount={metricsData.uncovered_ac_count || 112}
+        uncoveredAcCount={metricsData.uncovered_ac_count ?? 0}
         onGenerationComplete={() => {
           qc.invalidateQueries({ queryKey: ["tests"] });
           qc.invalidateQueries({ queryKey: ["test-metrics", projectId] });

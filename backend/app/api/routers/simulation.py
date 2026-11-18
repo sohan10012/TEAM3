@@ -102,16 +102,16 @@ def get_agent_traces(policy_id: str = Query("POL001")):
 
 @router.get("/pipeline-progress")
 def get_pipeline_progress(
-    project_id: int = Query(11, description="Target Project ID"),
+    project_id: int = Query(..., description="Target Project ID"),
     db: Session = Depends(get_db),
 ):
-    """Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases."""
+    """Calculate and return operational data processing pipeline progress across Preparation, Validation, and Post-Validation phases."""
     return compute_pipeline_progress(db, project_id)
 
 
 @router.post("/run-pipeline-step")
 def run_pipeline_step(
-    project_id: int = Query(11, description="Target Project ID"),
+    project_id: int = Query(..., description="Target Project ID"),
     step_id: str | None = Query(None, description="Optional step identifier"),
     db: Session = Depends(get_db),
 ):
