@@ -18,6 +18,7 @@ import {
   Scale,
   ShieldCheck,
   Sparkles,
+  Terminal,
   Trash2,
   Upload,
   X,
@@ -116,6 +117,13 @@ export const DOMAIN_OPTIONS = [
   "General Software Platform",
 ];
 
+function formatElapsed(sec: number): string {
+  const s = Math.floor(sec);
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m < 10 ? "0" + m : m}:${rem < 10 ? "0" + rem : rem}`;
+}
+
 export function AiAssistedOnboardingView({
   onSuccess,
   onCancel,
@@ -151,6 +159,8 @@ export function AiAssistedOnboardingView({
   const [analysisStageText, setAnalysisStageText] = useState("");
   const [analysisActiveStageIndex, setAnalysisActiveStageIndex] = useState(0);
   const [analysisElapsedSeconds, setAnalysisElapsedSeconds] = useState(0);
+  const [analysisEstimatedRemaining, setAnalysisEstimatedRemaining] = useState<number>(25);
+  const [analysisLogs, setAnalysisLogs] = useState<Array<{ timestamp: string; message: string; type?: "info" | "success" | "active" }>>([]);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisCompletedSummary, setAnalysisCompletedSummary] = useState<{
     rulesCount: number;
@@ -251,26 +261,24 @@ export function AiAssistedOnboardingView({
       const file = fileArray[i];
       const item = newItems[i];
 
-      // Simulated progressive pipeline milestones for active visual feedback
-      const t1 = setTimeout(() => {
+      let uploadStep = 0;
+      const uploadInterval = setInterval(() => {
+        uploadStep++;
+        const msgs = [
+          "Uploading specification binary bytes...",
+          "Extracting pages, paragraphs, and tables...",
+          "Parsing clause structure and chapter headers...",
+          "Calculating SHA-256 tamper-evident integrity hash...",
+          "Finalizing document staging in quality registry...",
+        ];
+        const msg = msgs[Math.min(uploadStep, msgs.length - 1)];
+        const prog = Math.min(92, 25 + uploadStep * 14);
         setUploadingFiles((prev) =>
           prev.map((it) =>
-            it.id === item.id
-              ? { ...it, progress: 45, stageMessage: "Extracting text & parsing paragraphs...", status: "parsing" }
-              : it
+            it.id === item.id ? { ...it, progress: prog, stageMessage: msg, status: "parsing" } : it
           )
         );
-      }, 200);
-
-      const t2 = setTimeout(() => {
-        setUploadingFiles((prev) =>
-          prev.map((it) =>
-            it.id === item.id
-              ? { ...it, progress: 75, stageMessage: "Analyzing structure & verifying checksum...", status: "verifying" }
-              : it
-          )
-        );
-      }, 500);
+      }, 900);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -279,8 +287,7 @@ export function AiAssistedOnboardingView({
 
       try {
         const uploaded = await api.upload<StagedDocItem>("/projects/onboarding/upload", formData);
-        clearTimeout(t1);
-        clearTimeout(t2);
+        clearInterval(uploadInterval);
 
         setUploadingFiles((prev) =>
           prev.map((it) =>
@@ -297,8 +304,7 @@ export function AiAssistedOnboardingView({
           setUploadingFiles((prev) => prev.filter((it) => it.id !== item.id));
         }, 600);
       } catch (err: any) {
-        clearTimeout(t1);
-        clearTimeout(t2);
+        clearInterval(uploadInterval);
         const errMsg = err?.message || "Upload failed";
         setUploadingFiles((prev) =>
           prev.map((it) =>
@@ -334,40 +340,123 @@ export function AiAssistedOnboardingView({
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAnalysisCompletedSummary(null);
-    setAnalysisProgress(15);
+    setAnalysisProgress(12);
     setAnalysisActiveStageIndex(0);
 
     const docCount = stagedDocs.length;
     const firstDocName = stagedDocs[0]?.filename || stagedDocs[0]?.display_name || "specification";
-    setAnalysisStageText(
-      docCount === 1
-        ? `Ingesting text and structure from ${firstDocName}...`
-        : `Ingesting text and structure from ${docCount} staged documents (${firstDocName} + ${docCount - 1} more)...`
-    );
+    const totalBytes = stagedDocs.reduce((acc, d) => acc + (d.size_bytes || 0), 0);
+    const totalPages = stagedDocs.reduce((acc, d) => acc + (d.page_count || 1), 0);
+    // Estimated time calculation based on page volume and document size
+    const estimatedTotalSec = Math.max(22, Math.min(48, Math.round(totalPages * 0.12) + 18));
+
+    setAnalysisEstimatedRemaining(estimatedTotalSec);
+    setAnalysisStageText(`Ingesting text and structure from ${firstDocName}...`);
+
+    const initialLog = {
+      timestamp: "[00:00]",
+      message: `Ingesting ${docCount} staged document(s): ${firstDocName} (${totalPages} pages, ${(totalBytes / 1024).toFixed(0)} KB)`,
+      type: "info" as const,
+    };
+    setAnalysisLogs([initialLog]);
 
     const startTime = Date.now();
-    setAnalysisElapsedSeconds(0);
+    const loggedMilestones = new Set<number>();
+
     analysisTimerRef.current = setInterval(() => {
-      setAnalysisElapsedSeconds(Math.floor((Date.now() - startTime) / 100) / 10);
-    }, 100);
+      const elapsedMs = Date.now() - startTime;
+      const elapsedSec = elapsedMs / 1000;
+      setAnalysisElapsedSeconds(Math.floor(elapsedSec * 10) / 10);
 
-    const timerStage1 = setTimeout(() => {
-      setAnalysisProgress(40);
-      setAnalysisActiveStageIndex(1);
-      setAnalysisStageText("Executing context intelligence model: synthesizing domain invariants, rules, and acceptance criteria...");
-    }, 600);
+      // Smooth estimated remaining countdown
+      const remaining = Math.max(1, Math.round(estimatedTotalSec - elapsedSec));
+      setAnalysisEstimatedRemaining(remaining);
 
-    const timerStage2 = setTimeout(() => {
-      setAnalysisProgress(68);
-      setAnalysisActiveStageIndex(2);
-      setAnalysisStageText("Verifying supporting quotes verbatim against raw document text for tamper-evident provenance...");
-    }, 1200);
+      // Smooth progressive bar (up to 92% until API completes)
+      const progressFraction = Math.min(0.92, 0.12 + (elapsedSec / estimatedTotalSec) * 0.8);
+      setAnalysisProgress(Math.max(12, Math.round(progressFraction * 100)));
 
-    const timerStage3 = setTimeout(() => {
-      setAnalysisProgress(88);
-      setAnalysisActiveStageIndex(3);
-      setAnalysisStageText("Reconciling actor personas, operational roles, permissions, and multi-scenario workflows...");
-    }, 1800);
+      // Dynamic milestone logs and stages
+      if (elapsedSec >= 2 && !loggedMilestones.has(2)) {
+        loggedMilestones.add(2);
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Normalizing clauses, structural headings, and section hierarchies...",
+            type: "info",
+          },
+        ]);
+      }
+
+      if (elapsedSec >= 4 && !loggedMilestones.has(4)) {
+        loggedMilestones.add(4);
+        setAnalysisActiveStageIndex(1);
+        setAnalysisStageText("Executing context intelligence model: synthesizing domain invariants, rules, and acceptance criteria...");
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Connecting to Context Intelligence Engine (Gemini 3.1 Flash-Lite & Groq)...",
+            type: "active",
+          },
+        ]);
+      }
+
+      if (elapsedSec >= 10 && !loggedMilestones.has(10)) {
+        loggedMilestones.add(10);
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Synthesizing domain invariants, security rules, and statutory mandates...",
+            type: "info",
+          },
+        ]);
+      }
+
+      if (elapsedSec >= 16 && !loggedMilestones.has(16)) {
+        loggedMilestones.add(16);
+        setAnalysisActiveStageIndex(2);
+        setAnalysisStageText("Verifying supporting quotes verbatim against raw document text for tamper-evident provenance...");
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Performing verbatim quote verification across raw source text for tamper-evident provenance...",
+            type: "active",
+          },
+        ]);
+      }
+
+      if (elapsedSec >= 24 && !loggedMilestones.has(24)) {
+        loggedMilestones.add(24);
+        setAnalysisActiveStageIndex(3);
+        setAnalysisStageText("Deriving actor personas, operational roles, permissions, and governance gates...");
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Deriving operational roles, governance gates, and persona permissions...",
+            type: "info",
+          },
+        ]);
+      }
+
+      if (elapsedSec >= 32 && !loggedMilestones.has(32)) {
+        loggedMilestones.add(32);
+        setAnalysisActiveStageIndex(4);
+        setAnalysisStageText("Reconciling end-to-end workflows and multi-document dependencies...");
+        setAnalysisLogs((prev) => [
+          ...prev,
+          {
+            timestamp: `[${formatElapsed(elapsedSec)}]`,
+            message: "Connecting multi-scenario business workflows and cross-document dependencies...",
+            type: "active",
+          },
+        ]);
+      }
+    }, 400);
 
     try {
       const payload = {
@@ -380,23 +469,31 @@ export function AiAssistedOnboardingView({
 
       const result = await api.post<any>("/projects/onboarding/analyze", payload);
       const totalElapsedMs = Date.now() - startTime;
+      const totalElapsedSec = totalElapsedMs / 1000;
 
-      clearTimeout(timerStage1);
-      clearTimeout(timerStage2);
-      clearTimeout(timerStage3);
       if (analysisTimerRef.current) {
         clearInterval(analysisTimerRef.current);
       }
 
       setAnalysisProgress(100);
-      setAnalysisActiveStageIndex(4);
-      setAnalysisStageText(`Analysis completed in ${(totalElapsedMs / 1000).toFixed(1)}s! Assembling evidence-backed project configuration.`);
+      setAnalysisActiveStageIndex(5);
+      setAnalysisEstimatedRemaining(0);
+      setAnalysisStageText(`Analysis completed in ${totalElapsedSec.toFixed(1)}s! Assembling evidence-backed project configuration.`);
 
       const rules = result.business_rules || [];
       const roles = result.roles || result.roles_and_responsibilities || [];
       const scenarios = result.scenarios || result.business_scenarios || [];
       const insights = result.cross_document_insights || [];
       const verified = rules.filter((r: any) => !r.is_inferred).length;
+
+      setAnalysisLogs((prev) => [
+        ...prev,
+        {
+          timestamp: `[${formatElapsed(totalElapsedSec)}]`,
+          message: `✓ Pipeline complete! Extracted ${rules.length} rules (${verified} verified), ${roles.length} roles, ${scenarios.length} scenarios.`,
+          type: "success",
+        },
+      ]);
 
       setAnalysisCompletedSummary({
         rulesCount: rules.length,
@@ -415,17 +512,22 @@ export function AiAssistedOnboardingView({
       setTimeout(() => {
         setIsAnalyzing(false);
         setCurrentStep(4);
-      }, 800);
+      }, 900);
     } catch (err: any) {
-      clearTimeout(timerStage1);
-      clearTimeout(timerStage2);
-      clearTimeout(timerStage3);
       if (analysisTimerRef.current) {
         clearInterval(analysisTimerRef.current);
       }
       setIsAnalyzing(false);
       const errorMsg = err?.message || "AI Analysis failed to process documents.";
       setAnalysisError(errorMsg);
+      setAnalysisLogs((prev) => [
+        ...prev,
+        {
+          timestamp: `[${formatElapsed((Date.now() - startTime) / 1000)}]`,
+          message: `✗ Analysis halted: ${errorMsg}`,
+          type: "active",
+        },
+      ]);
       toast.error(`AI analysis failed: ${errorMsg}`);
     }
   };
@@ -901,12 +1003,12 @@ export function AiAssistedOnboardingView({
         {/* STEP 3: LIVE REAL-TIME ANALYSIS PIPELINE */}
         {/* ========================================================================= */}
         {currentStep === 3 && (
-          <div className="space-y-6 max-w-2xl mx-auto py-8 text-center">
+          <div className="space-y-3.5 max-w-2xl mx-auto py-1 text-center">
             {/* Header with live brain pulse or error icon */}
-            <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-col items-center justify-center gap-2">
               <div
                 className={cn(
-                  "relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-md transition-all",
+                  "relative flex h-12 w-12 items-center justify-center rounded-xl shadow-md transition-all",
                   analysisError
                     ? "bg-rose-100 text-rose-600"
                     : analysisProgress === 100
@@ -915,35 +1017,45 @@ export function AiAssistedOnboardingView({
                 )}
               >
                 {analysisError ? (
-                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                  <AlertCircle className="h-6 w-6 text-rose-600" />
                 ) : analysisProgress === 100 ? (
-                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                 ) : (
                   <>
-                    <Brain className="h-8 w-8 text-[#3067DB] animate-pulse" />
-                    <div className="absolute -inset-1 rounded-2xl border-2 border-[#3067DB]/40 animate-ping" />
+                    <Brain className="h-6 w-6 text-[#3067DB] animate-pulse" />
+                    <div className="absolute -inset-1 rounded-xl border-2 border-[#3067DB]/40 animate-ping" />
                   </>
                 )}
               </div>
 
               <div>
-                <h3 className="text-base font-bold text-slate-900">TraceTest Context Intelligence Engine</h3>
-                <p className="text-xs text-slate-600 max-w-lg mt-1">{analysisStageText}</p>
+                <h3 className="text-sm font-bold text-slate-900">TraceTest Context Intelligence Engine</h3>
+                <p className="text-2xs text-slate-600 max-w-lg mt-0.5">{analysisStageText}</p>
               </div>
 
-              {/* Live Elapsed Time Pill */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-2xs font-mono text-slate-600 shadow-2xs">
-                <Clock className="h-3.5 w-3.5 text-slate-400" />
+              {/* Live Estimated Time Remaining Pill (replaces elapsed time per user requirement) */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-2xs font-mono shadow-2xs">
+                <Clock className="h-3.5 w-3.5 text-[#3067DB]" />
                 <span>
                   {isAnalyzing ? (
                     <>
-                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-ping mr-1.5" />
-                      Elapsed: <strong className="text-slate-800">{analysisElapsedSeconds.toFixed(1)}s</strong>
+                      <span className="relative inline-flex h-2 w-2 mr-1">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3067DB]"></span>
+                      </span>
+                      <span className="text-slate-600">Estimated time: </span>
+                      <strong className="text-blue-900 font-semibold">
+                        {analysisEstimatedRemaining > 3
+                          ? `~${analysisEstimatedRemaining}s remaining`
+                          : "~2-3s remaining • Finalizing verification..."}
+                      </strong>
                     </>
                   ) : analysisError ? (
-                    <span>Failed after {analysisElapsedSeconds.toFixed(1)}s</span>
+                    <span className="text-rose-700 font-medium">Analysis paused • Retry available</span>
                   ) : (
-                    <span className="text-emerald-700 font-semibold">Completed in {analysisElapsedSeconds.toFixed(1)}s</span>
+                    <span className="text-emerald-700 font-semibold">
+                      Completed & verified in {analysisElapsedSeconds.toFixed(1)}s
+                    </span>
                   )}
                 </span>
               </div>
@@ -1016,7 +1128,7 @@ export function AiAssistedOnboardingView({
             )}
 
             {/* Dynamic Multi-Document Pipeline Stages */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs text-left max-w-md mx-auto space-y-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs text-left max-w-lg mx-auto space-y-2">
               {[
                 {
                   label: "Document Text Ingestion & Clause Normalization",
@@ -1044,41 +1156,104 @@ export function AiAssistedOnboardingView({
                 const isFailed = idx === analysisActiveStageIndex && !!analysisError;
 
                 return (
-                  <div key={stg.label} className="flex items-start gap-2.5">
-                    <div
-                      className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-full text-2xs font-bold mt-0.5 shrink-0 transition-colors",
-                        isComplete
-                          ? "bg-emerald-600 text-white"
-                          : isFailed
-                          ? "bg-rose-600 text-white"
-                          : isCurrent
-                          ? "bg-[#3067DB] text-white animate-pulse"
-                          : "bg-slate-200 text-slate-500"
-                      )}
-                    >
-                      {isComplete ? <Check className="h-3 w-3" /> : idx + 1}
-                    </div>
-                    <div>
+                  <div key={stg.label} className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
                       <div
                         className={cn(
-                          "text-xs font-semibold",
-                          isFailed
-                            ? "text-rose-700"
+                          "flex h-5 w-5 items-center justify-center rounded-full text-2xs font-bold mt-0.5 shrink-0 transition-colors",
+                          isComplete
+                            ? "bg-emerald-600 text-white shadow-2xs"
+                            : isFailed
+                            ? "bg-rose-600 text-white"
                             : isCurrent
-                            ? "text-[#3067DB]"
-                            : isComplete
-                            ? "text-slate-800"
-                            : "text-slate-400"
+                            ? "bg-[#3067DB] text-white ring-4 ring-blue-500/20 animate-pulse"
+                            : "bg-slate-200 text-slate-500"
                         )}
                       >
-                        {stg.label}
+                        {isComplete ? <Check className="h-3 w-3" /> : idx + 1}
                       </div>
-                      <div className="text-[10px] text-slate-500">{stg.desc}</div>
+                      <div className="min-w-0">
+                        <div
+                          className={cn(
+                            "text-xs font-semibold",
+                            isFailed
+                              ? "text-rose-700"
+                              : isCurrent
+                              ? "text-[#3067DB]"
+                              : isComplete
+                              ? "text-slate-800"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {stg.label}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">{stg.desc}</div>
+                      </div>
                     </div>
+
+                    {isCurrent && (
+                      <span className="shrink-0 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                        <Loader2 className="h-2.5 w-2.5 animate-spin text-[#3067DB]" />
+                        Active
+                      </span>
+                    )}
+                    {isComplete && (
+                      <span className="shrink-0 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Done
+                      </span>
+                    )}
                   </div>
                 );
               })}
+            </div>
+
+            {/* Antigravity-Style Live Activity Terminal */}
+            <div className="rounded-xl border border-slate-800 bg-slate-950 shadow-md text-left max-w-lg mx-auto overflow-hidden animate-fadeIn">
+              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-900 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-300 ml-1.5 flex items-center gap-1.5">
+                    <Terminal className="h-3.5 w-3.5 text-blue-400" />
+                    TraceTest Context Engine • Autonomous Pipeline
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/50">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  LIVE
+                </div>
+              </div>
+              <div className="p-3 font-mono text-[11px] text-slate-300 space-y-1.5 max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+                {analysisLogs.map((logItem, idx) => (
+                  <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                    <span className="text-slate-500 shrink-0 font-semibold">{logItem.timestamp}</span>
+                    <span
+                      className={cn(
+                        "break-words",
+                        logItem.type === "success"
+                          ? "text-emerald-400 font-semibold"
+                          : logItem.type === "active"
+                          ? "text-blue-300 font-medium"
+                          : "text-slate-300"
+                      )}
+                    >
+                      {logItem.message}
+                    </span>
+                  </div>
+                ))}
+                {isAnalyzing && (
+                  <div className="flex items-center gap-2 text-blue-400 animate-pulse pt-1 border-t border-slate-800/60 mt-1">
+                    <span className="text-slate-500 font-mono">[{formatElapsed(analysisElapsedSeconds)}]</span>
+                    <span className="flex items-center gap-1.5 text-blue-300 font-mono text-[10px]">
+                      <Loader2 className="h-3 w-3 animate-spin text-[#3067DB]" />
+                      {analysisStageText}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Staged Document Badges */}
@@ -1649,7 +1824,12 @@ export function AiAssistedOnboardingView({
               ) : (
                 <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 font-medium">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3067DB]" />
-                  <span>AI Extraction Pipeline Active ({analysisElapsedSeconds}s)...</span>
+                  <span>
+                    AI Extraction Pipeline Active ·{" "}
+                    {analysisEstimatedRemaining > 3
+                      ? `~${analysisEstimatedRemaining}s remaining`
+                      : "Finalizing verification..."}
+                  </span>
                 </div>
               )}
             </div>

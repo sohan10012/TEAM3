@@ -304,11 +304,12 @@ class GeminiProvider(LLMProvider):
         self.key = self.keys[0] if self.keys else s.gemini_api_key
         self.pool = SlotPool(self.keys, self.name, concurrency_limit=2)
         # gemini-3.1-flash-lite provides verified active quota and fast response times
-        if s.gemini_model in ("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"):
+        if s.gemini_model in ("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash"):
             self.primary_model = "gemini-3.1-flash-lite"
+            self.fallback_model = s.gemini_model
         else:
             self.primary_model = s.gemini_model
-        self.fallback_model = s.gemini_fallback_model
+            self.fallback_model = s.gemini_fallback_model
         self.model = self.primary_model
 
     def configured(self) -> bool:
@@ -325,11 +326,13 @@ class GeminiProvider(LLMProvider):
             raise ProviderError("google-genai SDK not installed", False) from exc
 
         models_to_try = [self.primary_model]
-        if self.fallback_model and self.fallback_model != self.primary_model:
+        if "gemini-3.1-flash-lite" not in models_to_try:
+            models_to_try.append("gemini-3.1-flash-lite")
+        if self.fallback_model and self.fallback_model not in models_to_try:
             models_to_try.append(self.fallback_model)
 
-        # Cap individual attempt timeout to 8 seconds so failover to Groq/fallback is crisp
-        slot_timeout = min(timeout, 8.0)
+        # Allow sufficient time for complex reasoning and large document extraction
+        slot_timeout = max(min(timeout, 45.0), 15.0)
 
         errors: list[str] = []
         for idx, model in enumerate(models_to_try):
@@ -352,6 +355,7 @@ class GeminiProvider(LLMProvider):
                                 system_instruction=system,
                                 temperature=0.1,
                                 response_mime_type="application/json",
+                                max_output_tokens=8192,
                             ),
                         )
                         usage = getattr(resp, "usage_metadata", None)
