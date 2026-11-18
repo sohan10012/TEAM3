@@ -302,4 +302,4 @@ export function IntegrationsPage() {
 }
 
 // ---------------- settings ----------------
-export { SettingsPage } from "./SettingsPage";
+

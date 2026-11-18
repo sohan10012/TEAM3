@@ -1328,7 +1328,7 @@
           "projects"
         ],
         "summary": "Delete Project",
-        "description": "Safely deletes a project and cascades deletion to all associated assets.",
+        "description": "Safely and permanently deletes a project, cascading deletion across all project-owned assets and cleaning up polymorphic reviews, runs, and disk storage.",
         "operationId": "delete_project_api_v1_projects__project_id__delete",
         "parameters": [
           {
@@ -1339,6 +1339,24 @@
               "type": "integer",
               "title": "Project Id"
             }
+          },
+          {
+            "name": "confirm_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Must match the project key to confirm permanent deletion",
+              "title": "Confirm Key"
+            },
+            "description": "Must match the project key to confirm permanent deletion"
           }
         ],
         "responses": {
@@ -8520,6 +8538,32 @@
               "type": "string",
               "title": "Q"
             }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 8,
+              "title": "Limit"
+            }
           }
         ],
         "responses": {
@@ -8807,17 +8851,16 @@
           "simulation"
         ],
         "summary": "Get Pipeline Progress",
-        "description": "Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases.",
+        "description": "Calculate and return operational data processing pipeline progress across Preparation, Validation, and Post-Validation phases.",
         "operationId": "get_pipeline_progress_api_v1_simulation_pipeline_progress_get",
         "parameters": [
           {
             "name": "project_id",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer",
               "description": "Target Project ID",
-              "default": 11,
               "title": "Project Id"
             },
             "description": "Target Project ID"
@@ -8857,11 +8900,10 @@
           {
             "name": "project_id",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer",
               "description": "Target Project ID",
-              "default": 11,
               "title": "Project Id"
             },
             "description": "Target Project ID"
@@ -9020,6 +9062,47 @@
               "type": "string",
               "default": "markdown",
               "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/release-decision": {
+      "get": {
+        "tags": [
+          "intelligence_report"
+        ],
+        "summary": "Get Project Release Decision",
+        "description": "Retrieve the authoritative release decision and evidence breakdown for a project.",
+        "operationId": "get_project_release_decision_api_v1_projects__project_id__release_decision_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
             }
           }
         ],

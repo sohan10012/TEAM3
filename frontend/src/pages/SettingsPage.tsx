@@ -44,6 +44,7 @@ import {
   Panel,
 } from "@/components/ui";
 import { useProjects } from "@/hooks/useProjects";
+import { AuditPage, EvaluationsPage, IntegrationsPage } from "@/pages/InsightPages";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
 
@@ -63,6 +64,9 @@ export function SettingsPage() {
   const toast = useToast();
   const qc = useQueryClient();
   const { projects } = useProjects();
+
+  // Top-level Settings Category Tab
+  const [settingsCategory, setSettingsCategory] = useState<"ai" | "integrations" | "audit" | "evaluations">("ai");
 
   // Filters
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
@@ -203,7 +207,65 @@ export function SettingsPage() {
         }
       />
 
-      {/* SECTION A: AI Providers & Health Probes */}
+      {/* Settings Navigation Tabs */}
+      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
+        <button
+          onClick={() => setSettingsCategory("ai")}
+          className={cn(
+            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
+            settingsCategory === "ai"
+              ? "border-[#1D4ED8] text-[#1D4ED8]"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          )}
+        >
+          <Cpu className="h-3.5 w-3.5" />
+          <span>AI Intelligence & Telemetry</span>
+        </button>
+        <button
+          onClick={() => setSettingsCategory("integrations")}
+          className={cn(
+            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
+            settingsCategory === "integrations"
+              ? "border-[#1D4ED8] text-[#1D4ED8]"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          )}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Integrations & CI</span>
+        </button>
+        <button
+          onClick={() => setSettingsCategory("audit")}
+          className={cn(
+            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
+            settingsCategory === "audit"
+              ? "border-[#1D4ED8] text-[#1D4ED8]"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          )}
+        >
+          <Activity className="h-3.5 w-3.5" />
+          <span>Audit Logs</span>
+        </button>
+        <button
+          onClick={() => setSettingsCategory("evaluations")}
+          className={cn(
+            "px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer",
+            settingsCategory === "evaluations"
+              ? "border-[#1D4ED8] text-[#1D4ED8]"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          )}
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          <span>AI Evaluations</span>
+        </button>
+      </div>
+
+      {settingsCategory === "integrations" && <IntegrationsPage />}
+      {settingsCategory === "audit" && <AuditPage />}
+      {settingsCategory === "evaluations" && <EvaluationsPage />}
+
+      {settingsCategory === "ai" && (
+        <>
+          {/* SECTION A: AI Providers & Health Probes */}
       <Panel
         title={
           <div className="flex items-center gap-2">
@@ -1142,6 +1204,8 @@ export function SettingsPage() {
           )}
         </Panel>
       </div>
+        </>
+      )}
     </div>
   );
 }

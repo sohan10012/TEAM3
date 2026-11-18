@@ -24,6 +24,7 @@ from app.core.config import get_settings
 from app.core.errors import AppError, BadRequest, Conflict, NotFound
 from app.db.base import get_db, utcnow
 from app.db.models import (
+    AcceptanceCriterion,
     AuditLog,
     Defect,
     Environment,
@@ -406,23 +407,114 @@ def mark_read(nid: int, p: Principal = Depends(current_principal), db: Session =
 
 
 @router.get("/search", tags=["search"])
-def search(q: str, p: Principal = Depends(current_principal), db: Session = Depends(get_db)):
-    if len(q.strip()) < 2:
+def search(
+    q: str,
+    project_id: int | None = None,
+    limit: int = 8,
+    p: Principal = Depends(current_principal),
+    db: Session = Depends(get_db),
+):
+    query_str = q.strip()
+    if len(query_str) < 2:
         return {"results": []}
-    ids = scoped_project_ids(db, p, None) or [-1]
-    like = f"%{q.strip()}%"
+
+    ids = scoped_project_ids(db, p, project_id) or [-1]
+    like = f"%{query_str}%"
     out = []
-    for r in db.execute(select(Requirement).where(Requirement.project_id.in_(ids),
-                        Requirement.key.ilike(like) | Requirement.title.ilike(like)).limit(6)).scalars():
-        out.append({"type": "requirement", "id": r.id, "key": r.key, "title": r.title})
-    for t in db.execute(select(TestCase).where(TestCase.project_id.in_(ids),
-                        TestCase.key.ilike(like) | TestCase.title.ilike(like)).limit(6)).scalars():
-        out.append({"type": "test", "id": t.id, "key": t.key, "title": t.title})
-    for d in db.execute(select(Defect).where(Defect.project_id.in_(ids),
-                        Defect.key.ilike(like) | Defect.title.ilike(like)).limit(6)).scalars():
-        out.append({"type": "defect", "id": d.id, "key": d.key, "title": d.title})
-    for e in db.execute(select(Execution).where(Execution.project_id.in_(ids), Execution.key.ilike(like)).limit(4)).scalars():
-        out.append({"type": "execution", "id": e.id, "key": e.key, "title": f"{e.status} · {e.hcm_version}"})
+
+    # 1. Projects
+    if not project_id or p.is_admin:
+        for prj in db.execute(
+            select(Project)
+            .where(Project.id.in_(ids), Project.key.ilike(like) | Project.name.ilike(like))
+            .limit(limit)
+        ).scalars():
+            out.append({
+                "type": "project",
+                "id": prj.id,
+                "key": prj.key,
+                "title": prj.name,
+                "subtitle": prj.business_domain or "Workspace Project",
+                "project_id": prj.id,
+            })
+
+    # 2. Requirements
+    for r in db.execute(
+        select(Requirement)
+        .where(Requirement.project_id.in_(ids), Requirement.key.ilike(like) | Requirement.title.ilike(like))
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "requirement",
+            "id": r.id,
+            "key": r.key,
+            "title": r.title,
+            "subtitle": f"Category: {r.category} · Status: {r.status}",
+            "project_id": r.project_id,
+            "snippet": (r.evidence_excerpt or "")[:120] if r.evidence_excerpt else None,
+        })
+
+    # 3. Acceptance Criteria
+    for ac, r_key, p_id in db.execute(
+        select(AcceptanceCriterion, Requirement.key, Requirement.project_id)
+        .join(Requirement, AcceptanceCriterion.requirement_id == Requirement.id)
+        .where(Requirement.project_id.in_(ids), AcceptanceCriterion.key.ilike(like) | AcceptanceCriterion.description.ilike(like))
+        .limit(limit)
+    ).all():
+        out.append({
+            "type": "acceptance_criterion",
+            "id": ac.id,
+            "key": ac.key,
+            "title": (ac.description[:100] + "...") if len(ac.description or "") > 100 else (ac.description or ac.key),
+            "subtitle": f"Parent: {r_key} · Status: {ac.review_status}",
+            "project_id": p_id,
+        })
+
+    # 4. Test Cases
+    for t in db.execute(
+        select(TestCase)
+        .where(TestCase.project_id.in_(ids), TestCase.key.ilike(like) | TestCase.title.ilike(like))
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "test",
+            "id": t.id,
+            "key": t.key,
+            "title": t.title,
+            "subtitle": f"Type: {t.test_type} · Status: {t.status}",
+            "project_id": t.project_id,
+        })
+
+    # 5. Defects
+    for d in db.execute(
+        select(Defect)
+        .where(Defect.project_id.in_(ids), Defect.key.ilike(like) | Defect.title.ilike(like))
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "defect",
+            "id": d.id,
+            "key": d.key,
+            "title": d.title,
+            "subtitle": f"Severity: {d.severity} · Status: {d.status}",
+            "project_id": d.project_id,
+        })
+
+    # 6. Executions
+    for e in db.execute(
+        select(Execution)
+        .where(Execution.project_id.in_(ids), Execution.key.ilike(like))
+        .limit(limit)
+    ).scalars():
+        out.append({
+            "type": "execution",
+            "id": e.id,
+            "key": e.key,
+            "title": f"Run {e.key} ({e.status})",
+            "subtitle": f"Target: {e.hcm_version or 'Default'} · Passed: {e.passed} · Failed: {e.failed}",
+            "project_id": e.project_id,
+        })
+
     return {"results": out}
 
 

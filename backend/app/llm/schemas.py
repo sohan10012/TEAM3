@@ -136,7 +136,7 @@ class JudgeEvaluation(BaseModel):
 
 class ReasonXEvidence(BaseModel):
     source_document: str = ""
-    page: int | None = None
+    page: int | str | None = None
     section: str = ""
     requirement_id: str = ""
     quote: str = ""

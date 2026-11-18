@@ -12,16 +12,18 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PlayCircle,
+  Search,
   Settings,
   Sparkles,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { TraceTestLogo } from "@/components/brand/TraceTestLogo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProjectSwitcher } from "@/components/projects/ProjectSwitcher";
 import { ReasonXAssistant } from "@/components/reasonx/ReasonXAssistant";
+import { GlobalSearchPalette } from "@/components/search/GlobalSearchPalette";
 import { useProjects } from "@/hooks/useProjects";
 import { api } from "@/services/api";
 import { cn } from "@/utils/format";
@@ -37,13 +39,17 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
       { to: "/projects", label: "Projects", icon: Layers },
-      { to: "/requirements", label: "Requirements", icon: FileText },
-      { to: "/acceptance-criteria", label: "Acceptance Criteria", icon: ListChecks },
-      { to: "/intelligence-report", label: "Project Intelligence", icon: BarChart3 },
     ],
   },
   {
-    title: "QUALITY ENGINEERING",
+    title: "SPECIFICATION",
+    items: [
+      { to: "/requirements", label: "Requirements", icon: FileText },
+      { to: "/acceptance-criteria", label: "Acceptance Criteria", icon: ListChecks },
+    ],
+  },
+  {
+    title: "VERIFICATION",
     items: [
       { to: "/tests", label: "Test Cases", icon: ClipboardCheck },
       { to: "/executions", label: "Test Runs", icon: PlayCircle },
@@ -52,10 +58,11 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "AI & SYSTEM",
+    title: "INSIGHTS & OPERATIONS",
     items: [
-      { to: "/simulation", label: "Policy & Scenario Validation", icon: Sparkles },
+      { to: "/intelligence-report", label: "Project Intelligence", icon: BarChart3 },
       { to: "/analytics", label: "Monitoring", icon: Activity },
+      { to: "/simulation", label: "Policy & Scenario Validation", icon: Sparkles },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -140,6 +147,19 @@ export function AppShell() {
     }
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [searchPaletteOpen, setSearchPaletteOpen] = useState(false);
+
+  // Global Cmd+K / Ctrl+K keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const cfg = useQuery({ queryKey: ["config"], queryFn: () => api.get<any>("/config"), staleTime: 60_000 });
   const llmReady = cfg.data?.llm?.any_configured;
@@ -310,6 +330,21 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3 ml-auto shrink-0">
+            {/* Global Quick Search Button */}
+            <button
+              type="button"
+              onClick={() => setSearchPaletteOpen(true)}
+              className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 sm:px-3 text-xs text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label="Open global search palette (Command+K)"
+              title="Global Search (⌘K / Ctrl+K)"
+            >
+              <Search className="h-4 w-4 text-slate-400" />
+              <span className="hidden md:inline font-normal text-slate-600">Search platform...</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+                ⌘K
+              </kbd>
+            </button>
+
             {/* Screen-reader status preserved for keyboard accessibility and test contracts */}
             <Link
               to="/simulation"
@@ -333,6 +368,12 @@ export function AppShell() {
           </ErrorBoundary>
         </main>
       </div>
+
+      {/* Global Search Command Palette */}
+      <GlobalSearchPalette
+        open={searchPaletteOpen}
+        onClose={() => setSearchPaletteOpen(false)}
+      />
 
       {/* Persistent Context-Aware ReasonX AI Assistant */}
       <ReasonXAssistant />

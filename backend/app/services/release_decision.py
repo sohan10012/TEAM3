@@ -348,3 +348,4 @@ def evaluate_release_decision(db: Session, project_id: int) -> dict[str, Any]:
             },
         },
     }
+

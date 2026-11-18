@@ -4,7 +4,8 @@ import { ProjectProvider } from "@/hooks/useProjects";
 import { AppShell } from "@/layouts/AppShell";
 import DashboardPage from "@/pages/DashboardPage";
 import { DefectDetailPage, DefectsPage, ExecutionDetailPage, ExecutionsPage } from "@/pages/ExecutionDefectPages";
-import { AnalyticsPage, AuditPage, EvaluationsPage, IntegrationsPage, SettingsPage, TraceabilityPage } from "@/pages/InsightPages";
+import { AnalyticsPage, AuditPage, EvaluationsPage, IntegrationsPage, TraceabilityPage } from "@/pages/InsightPages";
+import { SettingsPage } from "@/pages/SettingsPage";
 import ProjectIntelligenceReportPage from "@/pages/ProjectIntelligenceReportPage";
 import { ProjectDetailPage, ProjectsPage } from "@/pages/ProjectsPage";
 import { RequirementDetailPage, RequirementsPage } from "@/pages/RequirementsPages";
@@ -51,7 +52,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="intelligence-report" element={<ProjectIntelligenceReportPage />} />
           <Route path="simulation" element={<SimulationPage />} />
-          <Route path="validation" element={<SimulationPage />} />
+          <Route path="validation" element={<Navigate to="/simulation" replace />} />
           <Route path="requirements" element={<RequirementsPage />} />
           <Route path="requirements/:id" element={<RequirementDetailPage />} />
           <Route path="acceptance-criteria" element={<AcceptanceCriteriaPage />} />
