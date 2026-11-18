@@ -1,17 +1,38 @@
-import { useEffect } from "react";
+import { lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ProjectProvider } from "@/hooks/useProjects";
 import { AppShell } from "@/layouts/AppShell";
-import DashboardPage from "@/pages/DashboardPage";
-import { DefectDetailPage, DefectsPage, ExecutionDetailPage, ExecutionsPage } from "@/pages/ExecutionDefectPages";
-import { AnalyticsPage, AuditPage, EvaluationsPage, IntegrationsPage, TraceabilityPage } from "@/pages/InsightPages";
-import { SettingsPage } from "@/pages/SettingsPage";
-import ProjectIntelligenceReportPage from "@/pages/ProjectIntelligenceReportPage";
-import { ProjectDetailPage, ProjectsPage } from "@/pages/ProjectsPage";
-import { RequirementDetailPage, RequirementsPage } from "@/pages/RequirementsPages";
-import SimulationPage from "@/pages/SimulationPage";
-import { ConsumerMonitoringPage, ReviewWorkspacePage, SuiteDetailPage, SuitesPage, TestDetailPage, TestsPage } from "@/pages/TestPages";
-import { AcceptanceCriteriaPage } from "@/pages/AcceptanceCriteriaPage";
+
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const ProjectIntelligenceReportPage = lazy(() => import("@/pages/ProjectIntelligenceReportPage"));
+const SimulationPage = lazy(() => import("@/pages/SimulationPage"));
+const AcceptanceCriteriaPage = lazy(() => import("@/pages/AcceptanceCriteriaPage").then((m) => ({ default: m.AcceptanceCriteriaPage })));
+
+const RequirementsPage = lazy(() => import("@/pages/RequirementsPages").then((m) => ({ default: m.RequirementsPage })));
+const RequirementDetailPage = lazy(() => import("@/pages/RequirementsPages").then((m) => ({ default: m.RequirementDetailPage })));
+
+const TestsPage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.TestsPage })));
+const ConsumerMonitoringPage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.ConsumerMonitoringPage })));
+const ReviewWorkspacePage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.ReviewWorkspacePage })));
+const TestDetailPage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.TestDetailPage })));
+const SuitesPage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.SuitesPage })));
+const SuiteDetailPage = lazy(() => import("@/pages/TestPages").then((m) => ({ default: m.SuiteDetailPage })));
+
+const ExecutionsPage = lazy(() => import("@/pages/ExecutionDefectPages").then((m) => ({ default: m.ExecutionsPage })));
+const ExecutionDetailPage = lazy(() => import("@/pages/ExecutionDefectPages").then((m) => ({ default: m.ExecutionDetailPage })));
+const DefectsPage = lazy(() => import("@/pages/ExecutionDefectPages").then((m) => ({ default: m.DefectsPage })));
+const DefectDetailPage = lazy(() => import("@/pages/ExecutionDefectPages").then((m) => ({ default: m.DefectDetailPage })));
+
+const SettingsPage = lazy(() => import("@/pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+
+const ProjectsPage = lazy(() => import("@/pages/ProjectsPage").then((m) => ({ default: m.ProjectsPage })));
+const ProjectDetailPage = lazy(() => import("@/pages/ProjectsPage").then((m) => ({ default: m.ProjectDetailPage })));
+
+const TraceabilityPage = lazy(() => import("@/pages/InsightPages").then((m) => ({ default: m.TraceabilityPage })));
+const AnalyticsPage = lazy(() => import("@/pages/InsightPages").then((m) => ({ default: m.AnalyticsPage })));
+const EvaluationsPage = lazy(() => import("@/pages/InsightPages").then((m) => ({ default: m.EvaluationsPage })));
+const AuditPage = lazy(() => import("@/pages/InsightPages").then((m) => ({ default: m.AuditPage })));
+const IntegrationsPage = lazy(() => import("@/pages/InsightPages").then((m) => ({ default: m.IntegrationsPage })));
 
 const TITLES: [RegExp, string][] = [
   [/^\/$/, "Overview"],

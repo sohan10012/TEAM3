@@ -747,6 +747,7 @@ export function TestManagementView({ projectId, current }: TestManagementViewPro
                                   checked={isChecked}
                                   onChange={() => toggleCheck(tc.id)}
                                   onClick={(e) => e.stopPropagation()}
+                                  aria-label={`Select test case ${tc.key}`}
                                   className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
                                 />
 
@@ -754,6 +755,7 @@ export function TestManagementView({ projectId, current }: TestManagementViewPro
                                   type="button"
                                   onClick={() => toggleExpandTest(tc.key)}
                                   className="text-slate-400 hover:text-slate-700"
+                                  aria-label={isExpanded ? `Collapse details for ${tc.key}` : `Expand details for ${tc.key}`}
                                 >
                                   {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                                 </button>

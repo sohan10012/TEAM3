@@ -840,6 +840,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                       className="rounded border-slate-300"
                       checked={checkedIds.length === pagedTests.length && pagedTests.length > 0}
                       onChange={toggleCheckAll}
+                      aria-label="Select all test cases"
                     />
                   </th>
                   <th className="w-32 whitespace-nowrap px-3 py-2.5">Test ID</th>
@@ -907,6 +908,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                             className="rounded border-slate-300"
                             checked={isChecked}
                             onChange={() => toggleCheck(t.id)}
+                            aria-label={`Select test case ${t.key}`}
                           />
                         </td>
                         <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium text-[#1D63ED]">
@@ -952,6 +954,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                               }}
                               className="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100"
                               title="Inspect details"
+                              aria-label={`Inspect details for ${t.key}`}
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
@@ -960,6 +963,7 @@ export function TestCasesManagementView({ projectId, current }: TestCasesManagem
                               onClick={() => nav(`/tests/${t.id}`)}
                               className="p-1 text-slate-400 hover:text-[#1D63ED] rounded hover:bg-slate-100"
                               title="Open full test case page"
+                              aria-label={`Open full test case page for ${t.key}`}
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </button>

@@ -17,7 +17,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { TraceTestLogo } from "@/components/brand/TraceTestLogo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -191,7 +191,7 @@ export function AppShell() {
             <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
               {NAV_SECTIONS.map((section) => (
                 <div key={section.title}>
-                  <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-400">
+                  <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-500">
                     {section.title}
                   </div>
                   <div className="space-y-1">
@@ -251,7 +251,7 @@ export function AppShell() {
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!collapsed && (
-                <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-400">
+                <div className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-slate-500">
                   {section.title}
                 </div>
               )}
@@ -366,7 +366,16 @@ export function AppShell() {
 
         <main className="mx-auto min-h-0 min-w-0 w-full max-w-[1800px] flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6 sm:py-7 xl:px-8" id="main">
           <ErrorBoundary>
-            <Outlet />
+            <Suspense
+              fallback={
+                <div className="flex min-h-[360px] w-full flex-col items-center justify-center gap-3 py-12" role="status" aria-label="Loading page view">
+                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-[#1D63ED]" />
+                  <p className="text-xs font-medium text-slate-500">Loading module...</p>
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>

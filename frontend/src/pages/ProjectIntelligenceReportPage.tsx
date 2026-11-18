@@ -75,7 +75,7 @@ const TEST_CATEGORY_DESCRIPTIONS: Record<string, { label: string; desc: string; 
   },
   integration: {
     label: "Integration & Handoffs",
-    desc: "Third-party payroll handoffs, banking ACH interfaces, timecard sync.",
+    desc: "Third-party upstream/downstream handoffs, external API interfaces, and system sync.",
     focus: "Cross-system interoperability",
   },
 };

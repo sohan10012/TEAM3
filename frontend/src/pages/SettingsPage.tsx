@@ -520,6 +520,7 @@ export function SettingsPage() {
                   onChange={(e) => setStartDate(e.target.value)}
                   className="text-xs border border-slate-300 rounded px-2 py-1 bg-white"
                   placeholder="Start Date"
+                  aria-label="Start Date"
                 />
                 <span className="text-xs text-slate-400">to</span>
                 <input
@@ -528,6 +529,7 @@ export function SettingsPage() {
                   onChange={(e) => setEndDate(e.target.value)}
                   className="text-xs border border-slate-300 rounded px-2 py-1 bg-white"
                   placeholder="End Date"
+                  aria-label="End Date"
                 />
               </div>
             )}
@@ -541,6 +543,7 @@ export function SettingsPage() {
                 onChange={(e) =>
                   setSelectedProjectId(e.target.value === "all" ? "all" : Number(e.target.value))
                 }
+                aria-label="Filter audit usage by project"
                 className="text-xs border border-slate-300 rounded px-2.5 py-1.5 bg-white font-medium text-slate-700"
               >
                 <option value="all">All Accessible Projects</option>

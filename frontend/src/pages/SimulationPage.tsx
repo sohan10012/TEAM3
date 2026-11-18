@@ -591,7 +591,13 @@ export default function SimulationPage() {
       {/* Header */}
       <PageHeader
         title="Policy & Scenario Validation"
-        subtitle="Multi-Agent Simulation & Agent Health Monitoring: Continuous verification across data intake, payroll calculation rules, and sandboxed execution."
+        subtitle={
+          isHcm
+            ? "Multi-Agent Simulation & Agent Health Monitoring: Continuous verification across data intake, payroll calculation rules, and sandboxed execution."
+            : isPayments
+            ? "Multi-Agent Simulation & Agent Health Monitoring: Continuous verification across payment intake, dispute turnaround rules, and settlement execution."
+            : "Multi-Agent Simulation & Agent Health Monitoring: Continuous verification across specification intake, policy invariant rules, and sandboxed execution."
+        }
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -714,7 +720,7 @@ export default function SimulationPage() {
                     <div>
                       <h3 className="text-sm font-bold text-slate-900">Data Processing Pipeline</h3>
                       <p className="text-2xs text-slate-500">
-                        Track data flow through {isPayments ? "settlement & dispute" : "payroll"} processing phases
+                        Track data flow through {isHcm ? "payroll" : isPayments ? "settlement & dispute" : "operational verification"} processing phases
                       </p>
                     </div>
                   </div>
@@ -948,7 +954,7 @@ export default function SimulationPage() {
                     <FileText className="h-3.5 w-3.5" />
                   </div>
                   <h3 className="text-xs font-bold text-slate-900">
-                    {isPayments ? "Regulatory Reports & Telemetry" : "Report & Analytics"}
+                    {isHcm ? "Report & Analytics" : isPayments ? "Regulatory Reports & Telemetry" : "Governance Reports & Audit Dossiers"}
                   </h3>
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-700">
@@ -960,7 +966,7 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>{isPayments ? "TAT SLA Breach Log (T+1 Mandate)" : "Retroactive Payments"}</span>
+                    <span>{isHcm ? "Retroactive Payments" : isPayments ? "TAT SLA Breach Log (T+1 Mandate)" : "Requirement Traceability Matrix"}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -970,7 +976,7 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>{isPayments ? "Automated ₹100/Day Compensation Ledger" : "Off-Cycle Checks"}</span>
+                    <span>{isHcm ? "Off-Cycle Checks" : isPayments ? "Automated ₹100/Day Compensation Ledger" : "Invariant & Boundary Test Dossier"}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -980,7 +986,7 @@ export default function SimulationPage() {
                     className="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#1D63ED] transition-colors cursor-pointer"
                   >
                     <span className="text-slate-400 font-bold">→</span>
-                    <span>{isPayments ? "RBI Integrated Ombudsman Dossier (RB-IOS)" : "Supplemental Pay"}</span>
+                    <span>{isHcm ? "Supplemental Pay" : isPayments ? "RBI Integrated Ombudsman Dossier (RB-IOS)" : "Security & Compliance Attestation"}</span>
                   </button>
                 </div>
               </div>
@@ -992,7 +998,7 @@ export default function SimulationPage() {
                     <DollarSign className="h-3.5 w-3.5" />
                   </div>
                   <h3 className="text-xs font-bold text-slate-900">
-                    {isPayments ? "Dispute Assurance & Controls" : "Payroll Assurance & Controls"}
+                    {isHcm ? "Payroll Assurance & Controls" : isPayments ? "Dispute Assurance & Controls" : "Operational Assurance & Controls"}
                   </h3>
                 </div>
                 <div className="space-y-2">
@@ -1004,12 +1010,14 @@ export default function SimulationPage() {
                       <span className="text-slate-500 font-mono text-xs">▷</span>
                       <div>
                         <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
-                          {isPayments ? "Parallel Settlement Validator" : "Parallel Run Validator"}
+                          {isHcm ? "Parallel Run Validator" : isPayments ? "Parallel Settlement Validator" : "Parallel Contract Validator"}
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {isPayments
+                          {isHcm
+                            ? "Compare system outputs against baseline rules"
+                            : isPayments
                             ? "Compare switch settlement logs against RBI turnaround rules"
-                            : "Compare system outputs against baseline rules"}
+                            : "Compare system assertions against specification invariants"}
                         </div>
                       </div>
                     </div>
@@ -1023,12 +1031,14 @@ export default function SimulationPage() {
                       <span className="text-amber-500 font-mono text-xs font-bold">!</span>
                       <div>
                         <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
-                          {isPayments ? "Dispute Scenario Sandbox" : "Sandbox Simulator"}
+                          {isHcm ? "Sandbox Simulator" : isPayments ? "Dispute Scenario Sandbox" : "Invariant Sandbox Simulator"}
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {isPayments
+                          {isHcm
+                            ? "Test payroll changes safely before commit"
+                            : isPayments
                             ? "Test liability thresholds & compensation tiers safely"
-                            : "Test payroll changes safely before commit"}
+                            : "Test policy changes safely before commit"}
                         </div>
                       </div>
                     </div>
@@ -1042,15 +1052,17 @@ export default function SimulationPage() {
                     className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/70 hover:bg-blue-50/50 hover:border-blue-200 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-emerald-600 font-mono text-xs font-bold">$</span>
+                      <span className="text-emerald-600 font-mono text-xs font-bold">{isHcm ? "$" : "✓"}</span>
                       <div>
                         <div className="text-xs font-semibold text-slate-900 group-hover:text-[#1D63ED]">
-                          {isPayments ? "Compensation Audit Checker" : "Costing Checker"}
+                          {isHcm ? "Costing Checker" : isPayments ? "Compensation Audit Checker" : "Root Cause Analysis (RCA)"}
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {isPayments
+                          {isHcm
+                            ? "Remediate Payroll Cost Misallocations"
+                            : isPayments
                             ? "Remediate Customer Penalty Calculation Discrepancies"
-                            : "Remediate Payroll Cost Misallocations"}
+                            : "Remediate Policy Invariant Deviations"}
                         </div>
                       </div>
                     </div>
@@ -1066,7 +1078,7 @@ export default function SimulationPage() {
                     <h3 className="text-xs font-bold text-slate-900">Quick Actions</h3>
                   </div>
                   <span className="text-2xs text-slate-400">
-                    {isPayments ? "Access key settlement functions" : "Access key payroll functions"}
+                    {isHcm ? "Access key payroll functions" : isPayments ? "Access key settlement functions" : "Access key verification functions"}
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -1082,7 +1094,7 @@ export default function SimulationPage() {
                   >
                     <div>
                       <div className="text-xs font-medium text-slate-800">
-                        {isPayments ? "TAT Express Adhoc Analysis" : "RCA Express Adhoc Analysis"}
+                        {isHcm ? "RCA Express Adhoc Analysis" : isPayments ? "TAT Express Adhoc Analysis" : "Invariant Express Adhoc Analysis"}
                       </div>
                       <div className="text-[11px] text-slate-500">Quick root cause insights</div>
                     </div>
@@ -1099,10 +1111,10 @@ export default function SimulationPage() {
                   >
                     <div>
                       <div className="text-xs font-medium text-slate-800">
-                        {isPayments ? "Dispute Telemetry Stream" : "PRN Analytics"}
+                        {isHcm ? "PRN Analytics" : isPayments ? "Dispute Telemetry Stream" : "Invariant Audit Stream"}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        {isPayments ? "Failed transaction incident tracking" : "Employee issue tracking"}
+                        {isHcm ? "Employee issue tracking" : isPayments ? "Failed transaction incident tracking" : "Specification invariant tracking"}
                       </div>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
@@ -1147,13 +1159,17 @@ export default function SimulationPage() {
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </div>
                         <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#1D4ED8]">
-                          {isPayments ? "Pre-Settlement RCA" : "Pre-Payroll RCA"}
+                          {isHcm ? "Pre-Payroll RCA" : isPayments ? "Pre-Settlement RCA" : "Pre-Release Verification RCA"}
                         </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#1D4ED8] group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <p className="text-2xs text-slate-500 mt-1">
-                      {isPayments ? "Validate transaction telemetry and reversal triggers before adjudication" : "Validate payroll data before processing"}
+                      {isHcm
+                        ? "Validate payroll data before processing"
+                        : isPayments
+                        ? "Validate transaction telemetry and reversal triggers before adjudication"
+                        : "Validate specification invariants and contracts before deployment"}
                     </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
                       {isPayments ? (
@@ -1163,12 +1179,19 @@ export default function SimulationPage() {
                           <li>Matches bank CBS records to reversal queues</li>
                           <li>Reduces un-reconciled customer debits</li>
                         </>
-                      ) : (
+                      ) : isHcm ? (
                         <>
                           <li>Detects errors early</li>
                           <li>Prevents overpayments and missed deductions</li>
                           <li>Matches payroll data to records</li>
                           <li>Reduces payroll issues and complaints</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Detects regression errors early</li>
+                          <li>Prevents breaking invariant violations</li>
+                          <li>Matches test assertions to specification clauses</li>
+                          <li>Reduces deployment failures and rollbacks</li>
                         </>
                       )}
                     </ul>
@@ -1196,13 +1219,17 @@ export default function SimulationPage() {
                           <Clock className="h-3.5 w-3.5" />
                         </div>
                         <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-800">
-                          {isPayments ? "TAT & Compensation RCA" : "Payroll RCA"}
+                          {isHcm ? "Payroll RCA" : isPayments ? "TAT & Compensation RCA" : "Policy Invariant RCA"}
                         </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <p className="text-2xs text-slate-500 mt-1">
-                      {isPayments ? "Analyze dispute turnaround time & penalty accruals" : "Analyze payroll discrepancies"}
+                      {isHcm
+                        ? "Analyze payroll discrepancies"
+                        : isPayments
+                        ? "Analyze dispute turnaround time & penalty accruals"
+                        : "Analyze invariant violations and safety thresholds"}
                     </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
                       {isPayments ? (
@@ -1212,12 +1239,19 @@ export default function SimulationPage() {
                           <li>Root causes automated reversal failures</li>
                           <li>Reduces regulatory dispute resolution time</li>
                         </>
-                      ) : (
+                      ) : isHcm ? (
                         <>
                           <li>Compares payroll periods</li>
                           <li>Identifies the cause of discrepancies</li>
                           <li>Categorizes variances by risk</li>
                           <li>Reduces investigation time</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Compares execution telemetry against specs</li>
+                          <li>Identifies root causes of assertion failures</li>
+                          <li>Categorizes invariant violations by severity</li>
+                          <li>Accelerates defect remediation time</li>
                         </>
                       )}
                     </ul>
@@ -1246,13 +1280,17 @@ export default function SimulationPage() {
                           <FileText className="h-3.5 w-3.5" />
                         </div>
                         <h4 className="text-xs font-bold text-slate-900 group-hover:text-rose-800">
-                          {isPayments ? "RBI Circular & Regulatory Policy RCA" : "Union Policy & Compliance RCA"}
+                          {isHcm ? "Union Policy & Compliance RCA" : isPayments ? "RBI Circular & Regulatory Policy RCA" : "Security & Governance RCA"}
                         </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-rose-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <p className="text-2xs text-slate-500 mt-1">
-                      {isPayments ? "Ensure compliance with RBI customer protection directions" : "Ensure compliance with policies"}
+                      {isHcm
+                        ? "Ensure compliance with policies"
+                        : isPayments
+                        ? "Ensure compliance with RBI customer protection directions"
+                        : "Ensure compliance with security frameworks and access policies"}
                     </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
                       {isPayments ? (
@@ -1262,12 +1300,19 @@ export default function SimulationPage() {
                           <li>Ensures Internal Ombudsman concurrence before claim rejection</li>
                           <li>Prevents penalties from RBI Ombudsman escalations</li>
                         </>
-                      ) : (
+                      ) : isHcm ? (
                         <>
                           <li>Ensures compliance with changing regulations</li>
                           <li>Detects errors in tax and benefit calculations</li>
                           <li>Verifies pension contributions are accurate</li>
                           <li>Prevents costly penalties from misapplied deductions</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Verifies least-privilege access controls</li>
+                          <li>Detects ungrounded role-permission mappings</li>
+                          <li>Confirms emergency break-glass procedures</li>
+                          <li>Prevents audit findings and regulatory breaches</li>
                         </>
                       )}
                     </ul>
@@ -1295,13 +1340,17 @@ export default function SimulationPage() {
                           <BarChart3 className="h-3.5 w-3.5" />
                         </div>
                         <h4 className="text-xs font-bold text-slate-900 group-hover:text-emerald-800">
-                          {isPayments ? "Settlement & Dispute Costing RCA" : "Payroll Costing RCA"}
+                          {isHcm ? "Payroll Costing RCA" : isPayments ? "Settlement & Dispute Costing RCA" : "Traceability & Coverage RCA"}
                         </h4>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-emerald-800 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <p className="text-2xs text-slate-500 mt-1">
-                      {isPayments ? "Reconciliation and dispute accounting" : "Cost analysis and budgeting"}
+                      {isHcm
+                        ? "Cost analysis and budgeting"
+                        : isPayments
+                        ? "Reconciliation and dispute accounting"
+                        : "Audit clause coverage and requirement-to-test matrices"}
                     </p>
                     <ul className="mt-2 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
                       {isPayments ? (
@@ -1311,12 +1360,19 @@ export default function SimulationPage() {
                           <li>Tracks financial impact of failed transaction TATs</li>
                           <li>Allocates dispute losses to operational cost centers</li>
                         </>
-                      ) : (
+                      ) : isHcm ? (
                         <>
                           <li>Cost analysis and budgeting</li>
                           <li>Breaks down payroll costs</li>
                           <li>Identifies cost discrepancies by account</li>
                           <li>Reconciles actuals against general ledger budget</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Verifies 100% clause-to-scenario mapping</li>
+                          <li>Detects orphan requirements and unlinked tests</li>
+                          <li>Tracks coverage impact of specification revisions</li>
+                          <li>Confirms release decision criteria met</li>
                         </>
                       )}
                     </ul>
@@ -1562,16 +1618,49 @@ export default function SimulationPage() {
             </div>
           )}
 
-          {/* Interactive Live Scenario Simulation & Financial Calculation Bar */}
+          {/* Interactive Live Scenario Simulation & Calculation Bar */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+            {/* Domain Context Scope Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                  Domain: {activeProject?.business_domain || (isHcm ? "Human Capital Management (HCM)" : isPayments ? "Banking & Dispute Settlement" : "Cloud & Security Architecture")}
+                </span>
+                <span className="text-2xs text-slate-500">
+                  {isHcm
+                    ? "Evaluating wage calculations and statutory overtime policies."
+                    : isPayments
+                    ? "Evaluating transaction dispute turnaround times and regulatory compensation."
+                    : "Evaluating policy invariant rules, boundary thresholds, and scenario execution."}
+                </span>
+              </div>
+              {!isHcm && (
+                <span className="text-2xs text-slate-400 italic">
+                  Financial shift-wage calculator is active on Enterprise Payroll (EV_PAY).
+                </span>
+              )}
+            </div>
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-[#1D63ED]">
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900">Interactive Scenario Simulator & Financial Calculator</h3>
-                  <p className="text-2xs text-slate-500">Test timesheet shifts directly against active policy rules with real wage payouts</p>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    {isHcm
+                      ? "Interactive Scenario Simulator & Financial Calculator"
+                      : isPayments
+                      ? "Interactive Dispute & SLA Compensation Calculator"
+                      : "Interactive Scenario Simulator & Policy Invariant Evaluator"}
+                  </h3>
+                  <p className="text-2xs text-slate-500">
+                    {isHcm
+                      ? "Test timesheet shifts directly against active policy rules with real wage payouts"
+                      : isPayments
+                      ? "Test transaction turnaround times against regulatory compensation rules"
+                      : "Test operational parameter vectors directly against active policy rules with automated invariant verification"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1583,7 +1672,7 @@ export default function SimulationPage() {
                   }}
                   className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-2xs font-medium text-slate-700 hover:bg-slate-100 cursor-pointer"
                 >
-                  Standard 40h
+                  {isHcm ? "Standard 40h" : "Baseline (Nominal)"}
                 </button>
                 <button
                   onClick={() => {
@@ -1592,7 +1681,7 @@ export default function SimulationPage() {
                   }}
                   className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-2xs font-medium text-slate-700 hover:bg-slate-100 cursor-pointer"
                 >
-                  48h Overtime
+                  {isHcm ? "48h Overtime" : "Boundary Edge (1.5x)"}
                 </button>
                 <button
                   onClick={() => {
@@ -1601,34 +1690,42 @@ export default function SimulationPage() {
                   }}
                   className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-2xs font-medium text-slate-700 hover:bg-slate-100 cursor-pointer"
                 >
-                  60h Heavy
+                  {isHcm ? "60h Heavy" : "Extreme Stress (2.0x)"}
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
               <div className="md:col-span-5">
-                <label className="block text-2xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Daily Shift Hours (comma separated)
+                <label htmlFor="sim-custom-shifts-input" className="block text-2xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  {isHcm
+                    ? "Daily Shift Hours (comma separated)"
+                    : isPayments
+                    ? "Transaction Turnaround Days (comma separated)"
+                    : "Input Vector Values (comma separated)"}
                 </label>
                 <input
+                  id="sim-custom-shifts-input"
                   type="text"
                   value={customShifts}
                   onChange={(e) => setCustomShifts(e.target.value)}
-                  placeholder="e.g. 10, 10, 10, 10, 8"
+                  placeholder={isHcm ? "e.g. 10, 10, 10, 10, 8" : "e.g. 8, 8, 8, 8, 8"}
+                  aria-label={isHcm ? "Daily Shift Hours" : "Input Vector Values"}
                   className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#1D63ED] focus:outline-none focus:ring-1 focus:ring-[#1D63ED]"
                 />
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-2xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Base Hourly Wage (\$/hr)
+                <label htmlFor="sim-wage-threshold-input" className="block text-2xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  {isHcm ? "Base Hourly Wage ($/hr)" : isPayments ? "Penalty Rate (₹/day)" : "Threshold Multiplier (x)"}
                 </label>
                 <input
+                  id="sim-wage-threshold-input"
                   type="number"
                   step="0.5"
                   value={baseHourlyWage}
                   onChange={(e) => setBaseHourlyWage(parseFloat(e.target.value) || 0)}
+                  aria-label={isHcm ? "Base Hourly Wage" : "Threshold Multiplier"}
                   className="w-full h-9 rounded-lg border border-slate-300 px-3 text-xs font-mono focus:border-[#1D63ED] focus:outline-none focus:ring-1 focus:ring-[#1D63ED]"
                 />
               </div>
@@ -1640,7 +1737,7 @@ export default function SimulationPage() {
                   className="w-full bg-[#1D63ED] hover:bg-[#1550C0] text-white font-semibold text-xs h-9"
                 >
                   <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                  Calculate & Verify Pay
+                  {isHcm ? "Calculate & Verify Pay" : isPayments ? "Calculate & Verify Compensation" : "Evaluate & Verify Invariants"}
                 </Button>
               </div>
             </div>
@@ -1650,43 +1747,74 @@ export default function SimulationPage() {
               <>
                 <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-                    <span className="text-2xs text-slate-500 block">Total Hours Worked</span>
-                    <span className="text-base font-bold text-slate-900">{customEvalResult.total_worked} hrs</span>
+                    <span className="text-2xs text-slate-500 block">
+                      {isHcm ? "Total Hours Worked" : isPayments ? "Total Dispute TAT" : "Total Units Evaluated"}
+                    </span>
+                    <span className="text-base font-bold text-slate-900">
+                      {customEvalResult.total_worked} {isHcm || isPayments ? "hrs" : "units"}
+                    </span>
                   </div>
                   <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-200">
-                    <span className="text-2xs text-blue-700 block">Regular Hours (1.0x)</span>
-                    <span className="text-base font-bold text-[#1D63ED]">{customEvalResult.regular} hrs</span>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                      \${(customEvalResult.regular * baseHourlyWage).toFixed(2)}
+                    <span className="text-2xs text-blue-700 block">
+                      {isHcm ? "Regular Hours (1.0x)" : isPayments ? "T+1 Permitted TAT" : "Nominal Units (1.0x)"}
                     </span>
+                    <span className="text-base font-bold text-[#1D63ED]">
+                      {customEvalResult.regular} {isHcm || isPayments ? "hrs" : "units"}
+                    </span>
+                    {isHcm && (
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        ${(customEvalResult.regular * baseHourlyWage).toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200">
-                    <span className="text-2xs text-amber-700 block">Overtime Hours (1.5x)</span>
-                    <span className="text-base font-bold text-amber-600">{customEvalResult.overtime} hrs</span>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                      \${(customEvalResult.overtime * baseHourlyWage * 1.5).toFixed(2)}
+                    <span className="text-2xs text-amber-700 block">
+                      {isHcm ? "Overtime Hours (1.5x)" : isPayments ? "Delayed TAT (> T+1)" : "Elevated Threshold (1.5x)"}
                     </span>
+                    <span className="text-base font-bold text-amber-600">
+                      {customEvalResult.overtime} {isHcm || isPayments ? "hrs" : "units"}
+                    </span>
+                    {isHcm && (
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        ${(customEvalResult.overtime * baseHourlyWage * 1.5).toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="p-3 rounded-lg bg-purple-50/60 border border-purple-200">
-                    <span className="text-2xs text-purple-700 block">Double Time (2.0x)</span>
-                    <span className="text-base font-bold text-purple-600">{customEvalResult.double_time} hrs</span>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                      \${(customEvalResult.double_time * baseHourlyWage * 2.0).toFixed(2)}
+                    <span className="text-2xs text-purple-700 block">
+                      {isHcm ? "Double Time (2.0x)" : isPayments ? "Critical Breach TAT" : "Critical Boundary (2.0x)"}
                     </span>
+                    <span className="text-base font-bold text-purple-600">
+                      {customEvalResult.double_time} {isHcm || isPayments ? "hrs" : "units"}
+                    </span>
+                    {isHcm && (
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        ${(customEvalResult.double_time * baseHourlyWage * 2.0).toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200">
-                    <span className="text-2xs text-emerald-700 block">Gross Payout</span>
+                    <span className="text-2xs text-emerald-700 block">
+                      {isHcm ? "Gross Payout" : isPayments ? "Total Compensation" : "Effective Evaluation Scale"}
+                    </span>
                     <span className="text-base font-bold text-emerald-700">
-                      \$
-                      {(
-                        customEvalResult.regular * baseHourlyWage +
-                        customEvalResult.overtime * baseHourlyWage * 1.5 +
-                        customEvalResult.double_time * baseHourlyWage * 2.0
-                      ).toFixed(2)}
+                      {isHcm ? (
+                        `$${(
+                          customEvalResult.regular * baseHourlyWage +
+                          customEvalResult.overtime * baseHourlyWage * 1.5 +
+                          customEvalResult.double_time * baseHourlyWage * 2.0
+                        ).toFixed(2)}`
+                      ) : isPayments ? (
+                        `₹${(customEvalResult.overtime * 100).toFixed(0)}`
+                      ) : (
+                        `${customEvalResult.equivalent_pay_hours} scale units`
+                      )}
                     </span>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                      {customEvalResult.equivalent_pay_hours} Eq Pay Hrs
-                    </span>
+                    {isHcm && (
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        {customEvalResult.equivalent_pay_hours} Eq Pay Hrs
+                      </span>
+                    )}
                   </div>
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
                     <span className="text-2xs text-slate-500 block">Rule Compliance</span>

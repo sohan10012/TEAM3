@@ -18,6 +18,17 @@ export default defineConfig({
       },
     },
   },
-  build: { rollupOptions: { output: { manualChunks: { charts: ["recharts"], vendor: ["react", "react-dom", "react-router-dom", "@tanstack/react-query", "@tanstack/react-table"] } } } },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          pdfjs: ["pdfjs-dist"],
+          charts: ["recharts"],
+          icons: ["lucide-react"],
+          vendor: ["react", "react-dom", "react-router-dom", "@tanstack/react-query", "@tanstack/react-table", "zod"],
+        },
+      },
+    },
+  },
   test: { environment: "jsdom", globals: true, setupFiles: ["./tests/setup.ts"], include: ["tests/**/*.test.tsx"] },
 });
