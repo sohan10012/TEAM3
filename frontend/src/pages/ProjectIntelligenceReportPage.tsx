@@ -55,7 +55,9 @@ const ROLE_METADATA: Record<
   HandoffRole,
   {
     title: string;
+    shortRole: string;
     targetTeam: string;
+    badge: string;
     description: string;
     icon: typeof Code2;
     primaryFormats: string[];
@@ -64,57 +66,69 @@ const ROLE_METADATA: Record<
 > = {
   developer: {
     title: "Developer Engineering Handoff",
-    targetTeam: "Software Engineers & Backend Devs",
+    shortRole: "Software Engineers",
+    targetTeam: "Backend & Systems Devs",
+    badge: "Core Specs",
     description:
       "Normalized functional requirements, Given/When/Then acceptance criteria, domain invariants, and advisory implementation notes.",
     icon: Code2,
     primaryFormats: ["Markdown", "JSON", "XLSX"],
-    deliverableScope: "475 Requirements & Linked Criteria",
+    deliverableScope: "475 Requirements",
   },
   qa: {
     title: "QA Test Pack & Verification Dossier",
+    shortRole: "QA Engineers",
     targetTeam: "Manual QA & Quality Analysts",
+    badge: "Test Procedures",
     description:
       "Structured test procedures, positive/negative/boundary breakdown, preconditions, inputs, and uncovered requirement gaps.",
     icon: CheckCircle2,
     primaryFormats: ["XLSX", "Markdown", "CSV"],
-    deliverableScope: "Synthesized Tests & Coverage Matrix",
+    deliverableScope: "Synthesized Tests",
   },
   automation_agent: {
     title: "Autonomous AI Testing Agent Pack",
-    targetTeam: "Automation Engineers & AI Tools (Cursor, Copilot, Playwright)",
+    shortRole: "AI Testing Agents",
+    targetTeam: "Cursor, Copilot & Playwright",
+    badge: "Agent Prompt",
     description:
       "Machine-readable, self-contained prompt dossier with strict fact-vs-assumption demarcation and 6-step testing execution instructions.",
     icon: Cpu,
     primaryFormats: ["JSON Schema v2.0", "Agent Prompt (.md)"],
-    deliverableScope: "Self-Contained Test Synthesis Prompt",
+    deliverableScope: "Test Synthesis Prompt",
   },
   integration: {
     title: "Integration & Interface Specification",
-    targetTeam: "Integration Engineers & Platform Architects",
+    shortRole: "Integration Engineers",
+    targetTeam: "Platform & API Architects",
+    badge: "Contracts",
     description:
       "System actors, permissions matrix, integration requirements, data exchange boundaries, and interface invariants.",
     icon: Network,
     primaryFormats: ["Markdown", "JSON"],
-    deliverableScope: "Boundary Contracts & Security Rules",
+    deliverableScope: "Boundary Contracts",
   },
   product_owner: {
     title: "Product Owner & Business Scope Dossier",
-    targetTeam: "Product Owners, Business Analysts & Stakeholders",
+    shortRole: "Product Owners",
+    targetTeam: "Product Managers & Stakeholders",
+    badge: "Business Scope",
     description:
       "Business mission, user scenarios, priority distribution, approval status, and unresolved ambiguity clarification requests.",
     icon: Briefcase,
     primaryFormats: ["Markdown", "JSON", "XLSX"],
-    deliverableScope: "Business Scope & Scenarios",
+    deliverableScope: "Business Scenarios",
   },
   executive: {
     title: "Executive Quality & Release Report",
-    targetTeam: "VP Engineering, Head of QA & Compliance Auditors",
+    shortRole: "Executive Leadership",
+    targetTeam: "VP Eng, CTO & Auditors",
+    badge: "Audit & Gate",
     description:
       "Deterministic readiness score (30.5%), 5-category gate score breakdown, release blocking reasons, and prioritized remediation roadmap.",
     icon: ShieldCheck,
     primaryFormats: ["Print Dossier / PDF", "Markdown", "JSON"],
-    deliverableScope: "Quality Decision & Risk Ledger",
+    deliverableScope: "Quality Decision Ledger",
   },
 };
 
@@ -743,40 +757,49 @@ export default function ProjectIntelligenceReportPage() {
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Follow this 4-step workflow to package TraceTest's specifications, criteria, and test scenarios for your engineering team or autonomous coding agents.
+              Select an engineering role to package specifications, acceptance criteria, and behavioral tests into role-ready handoff deliverables.
             </p>
           </div>
 
-          {/* Workflow Step Tracker — Apple Stepper */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-            <div className="rounded-2xl border border-blue-200/80 bg-blue-50/40 p-4 space-y-1">
-              <span className="font-mono text-3xs font-semibold text-blue-600">STEP 1</span>
-              <span className="font-semibold text-slate-900 block">Select Audience</span>
-              <p className="text-slate-500 text-2xs leading-relaxed">Choose the consumer team or automated agent.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 space-y-1">
-              <span className="font-mono text-3xs font-semibold text-slate-400">STEP 2</span>
-              <span className="font-semibold text-slate-900 block">Review Contents</span>
-              <p className="text-slate-500 text-2xs leading-relaxed">Verify requirements, criteria, and test procedures.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 space-y-1">
-              <span className="font-mono text-3xs font-semibold text-slate-400">STEP 3</span>
-              <span className="font-semibold text-slate-900 block">Configure Scope</span>
-              <p className="text-slate-500 text-2xs leading-relaxed">Toggle invariants, ambiguities, and advisory notes.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-4 space-y-1">
-              <span className="font-mono text-3xs font-semibold text-slate-400">STEP 4</span>
-              <span className="font-semibold text-slate-900 block">Export & Copy</span>
-              <p className="text-slate-500 text-2xs leading-relaxed">1-Click download in Markdown, JSON, XLSX, or copy.</p>
-            </div>
+          {/* Workflow Step Tracker — Apple Connected Stepper */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {[
+              { step: "01", title: "Select Role", desc: "Choose team or AI agent", active: true },
+              { step: "02", title: "Review Scope", desc: "Inspect requirements & tests", active: false },
+              { step: "03", title: "Configure Scope", desc: "Toggle constraints & notes", active: false },
+              { step: "04", title: "Export & Copy", desc: "Instant download or copy", active: false },
+            ].map((s) => (
+              <div
+                key={s.step}
+                className={cn(
+                  "rounded-2xl border p-3.5 space-y-1 transition-all",
+                  s.active
+                    ? "border-blue-200/90 bg-blue-50/40 text-slate-900"
+                    : "border-slate-200/70 bg-slate-50/50 text-slate-600"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={cn("font-mono text-3xs font-semibold", s.active ? "text-blue-600" : "text-slate-400")}>
+                    STEP {s.step}
+                  </span>
+                  {s.active && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
+                </div>
+                <span className="font-semibold text-xs text-slate-900 block">{s.title}</span>
+                <p className="text-3xs text-slate-500 leading-normal">{s.desc}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Step 1: Audience Selector Grid */}
+          {/* Step 1: Target Recipient Role Selector Grid */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">
-              1. Select Target Recipient / Role
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">
+                1. Select Target Recipient / Role
+              </label>
+              <span className="text-3xs text-slate-400 font-medium">Click a role to preview & configure</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(Object.keys(ROLE_METADATA) as HandoffRole[]).map((roleKey) => {
                 const meta = ROLE_METADATA[roleKey];
                 const Icon = meta.icon;
@@ -784,27 +807,48 @@ export default function ProjectIntelligenceReportPage() {
                 return (
                   <button
                     key={roleKey}
+                    type="button"
                     onClick={() => setHandoffRole(roleKey)}
                     className={cn(
-                      "rounded-2xl border p-4 text-left transition-all cursor-pointer active:scale-[0.98]",
+                      "rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer active:scale-[0.98] flex flex-col justify-between relative group",
                       isSelected
                         ? "border-blue-500 bg-blue-50/30 shadow-xs ring-1 ring-blue-500"
-                        : "border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50/40"
+                        : "border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50/50 shadow-2xs"
                     )}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className={cn("p-2 rounded-xl", isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600")}>
-                        <Icon className="h-4 w-4" />
+                    <div className="flex items-start justify-between w-full mb-3">
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                        isSelected ? "bg-blue-600 text-white shadow-2xs" : "bg-slate-100 text-slate-600 group-hover:bg-slate-200/70"
+                      )}>
+                        <Icon className="h-5 w-5" />
                       </div>
-                      <span className="text-3xs uppercase font-medium text-slate-400">{meta.targetTeam}</span>
+                      {isSelected ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100/80 px-2 py-0.5 text-3xs font-semibold text-blue-700 border border-blue-200/60">
+                          <CheckCircle2 className="h-3 w-3 text-blue-600" />
+                          <span>Selected</span>
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-3xs font-medium text-slate-500 border border-slate-200/60">
+                          {meta.badge}
+                        </span>
+                      )}
                     </div>
-                    <span className="font-semibold text-xs text-slate-900 block">{meta.title}</span>
-                    <p className="text-2xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                      {meta.description}
-                    </p>
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-3xs font-medium text-slate-400">
-                      <span>{meta.deliverableScope}</span>
-                      <span className="text-blue-600 font-semibold">{meta.primaryFormats.join(" · ")}</span>
+
+                    <div>
+                      <span className="font-semibold text-xs text-slate-900 block tracking-tight">
+                        {meta.shortRole}
+                      </span>
+                      <p className="text-2xs text-slate-500 mt-0.5 font-normal truncate">
+                        {meta.targetTeam}
+                      </p>
+                    </div>
+
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100/80 flex items-center justify-between text-3xs w-full">
+                      <span className="font-mono text-slate-400">{meta.deliverableScope}</span>
+                      <span className={cn("font-medium", isSelected ? "text-blue-600 font-semibold" : "text-slate-500")}>
+                        {meta.primaryFormats[0]}
+                      </span>
                     </div>
                   </button>
                 );
@@ -814,109 +858,150 @@ export default function ProjectIntelligenceReportPage() {
 
           {/* Step 2 & 3: Content Verification & Customization */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-5 space-y-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">
-                2. Packaged Deliverable Scope ({ROLE_METADATA[handoffRole].title})
-              </span>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-200/60">
-                  <span className="text-slate-600">Active Grounded Requirements</span>
-                  <strong className="text-slate-900 font-mono">{reqAnalysis.total || 0}</strong>
+            {/* Step 2: Packaged Scope Inspector */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
+                    2. Packaged Deliverable Scope
+                  </span>
+                  <h4 className="text-sm font-semibold text-slate-900 mt-0.5">
+                    {ROLE_METADATA[handoffRole].title}
+                  </h4>
                 </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-200/60">
-                  <span className="text-slate-600">Synthesized Acceptance Criteria</span>
-                  <strong className="text-slate-900 font-mono">{acData.total || 0}</strong>
+                <div className="flex flex-wrap gap-1">
+                  {ROLE_METADATA[handoffRole].primaryFormats.map((fmt) => (
+                    <span key={fmt} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-3xs font-medium text-slate-600 border border-slate-200/60">
+                      {fmt}
+                    </span>
+                  ))}
                 </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-200/60">
-                  <span className="text-slate-600">Behavioral Test Procedures</span>
-                  <strong className="text-slate-900 font-mono">{testDesign.total_test_cases || 0}</strong>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/60">
+                {ROLE_METADATA[handoffRole].description}
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-center">
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                  <span className="text-lg font-semibold text-slate-900">{reqAnalysis.total || 0}</span>
+                  <span className="block text-3xs text-slate-400 uppercase font-medium mt-0.5">Requirements</span>
                 </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-200/60">
-                  <span className="text-slate-600">Uncovered Requirements Gap</span>
-                  <strong className="text-amber-700 font-mono">{traceability.uncovered_requirements || 0}</strong>
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                  <span className="text-lg font-semibold text-slate-900">{acData.total || 0}</span>
+                  <span className="block text-3xs text-slate-400 uppercase font-medium mt-0.5">Criteria</span>
                 </div>
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-slate-600">Canonical Release Decision</span>
-                  <strong className={cn("font-medium text-2xs uppercase", isApproved ? "text-emerald-700" : "text-rose-700")}>
-                    {displayStatus}
-                  </strong>
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                  <span className="text-lg font-semibold text-slate-900">{testDesign.total_test_cases || 0}</span>
+                  <span className="block text-3xs text-slate-400 uppercase font-medium mt-0.5">Test Procedures</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                  <span className="text-lg font-semibold text-amber-700">{traceability.uncovered_requirements || 0}</span>
+                  <span className="block text-3xs text-slate-400 uppercase font-medium mt-0.5">Uncovered Gap</span>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/50 p-5 space-y-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">
-                3. Section Customization Options
-              </span>
-              <div className="space-y-2.5 text-xs">
-                <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={includeInvariants}
-                    onChange={(e) => setIncludeInvariants(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Include Contract Invariants & Statutory Constraints</span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={includeAmbiguities}
-                    onChange={(e) => setIncludeAmbiguities(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Include Unresolved Ambiguities & Clarification Questions</span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={includeUncovered}
-                    onChange={(e) => setIncludeUncovered(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Include Gap Ledger (Uncovered Requirements & Unverified Tests)</span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer text-slate-700 select-none">
-                  <input
-                    type="checkbox"
-                    checked={includeNotes}
-                    onChange={(e) => setIncludeNotes(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Include Advisory Implementation Notes (Explicitly Tagged)</span>
-                </label>
+            {/* Step 3: Section Customization Options */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-3">
+              <div>
+                <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
+                  3. Section Customization Options
+                </span>
+                <h4 className="text-sm font-semibold text-slate-900 mt-0.5">
+                  Scope Toggles & Advisory Filters
+                </h4>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  {
+                    id: "invariants",
+                    label: "Contract Invariants & Constraints",
+                    description: "Include statutory constraints, data exchange rules, and system boundaries.",
+                    checked: includeInvariants,
+                    onChange: setIncludeInvariants,
+                  },
+                  {
+                    id: "ambiguities",
+                    label: "Unresolved Ambiguities & Clarifications",
+                    description: "Include open clarification requests and questions for stakeholders.",
+                    checked: includeAmbiguities,
+                    onChange: setIncludeAmbiguities,
+                  },
+                  {
+                    id: "uncovered",
+                    label: "Gap Ledger & Uncovered Requirements",
+                    description: "Highlight specifications lacking manual or automated test procedures.",
+                    checked: includeUncovered,
+                    onChange: setIncludeUncovered,
+                  },
+                  {
+                    id: "notes",
+                    label: "Advisory Implementation Notes",
+                    description: "Include guidance and edge case alerts explicitly tagged as advisory.",
+                    checked: includeNotes,
+                    onChange: setIncludeNotes,
+                  },
+                ].map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                      opt.checked
+                        ? "border-blue-200 bg-blue-50/30 text-slate-900"
+                        : "border-slate-200/70 bg-slate-50/40 text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={opt.checked}
+                      onChange={(e) => opt.onChange(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-xs text-slate-900 block">{opt.label}</span>
+                      <span className="text-3xs text-slate-500 block mt-0.5 leading-normal">{opt.description}</span>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Step 4: Export & Copy Actions for Selected Audience */}
-          <div className="rounded-2xl border border-blue-200/80 bg-blue-50/40 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-2xs font-semibold text-blue-900 uppercase tracking-wider block">
-                Step 4: Package Ready for Export
-              </span>
-              <h4 className="text-sm font-semibold text-slate-900 mt-0.5">
-                {ROLE_METADATA[handoffRole].title}
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Download or copy complete, portable deliverables tailored for {ROLE_METADATA[handoffRole].targetTeam}.
-              </p>
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Download className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-2xs font-semibold text-blue-600 uppercase tracking-wider block">
+                  Step 4: Package Ready for Export
+                </span>
+                <h4 className="text-sm font-semibold text-slate-900">
+                  {ROLE_METADATA[handoffRole].title}
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Formatted and ready for {ROLE_METADATA[handoffRole].targetTeam}.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => handleCopyRoleMarkdown(handoffRole, ROLE_METADATA[handoffRole].title)}
                 disabled={copyingEntity === `role_${handoffRole}`}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-4 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
               >
                 <Copy className="h-3.5 w-3.5 text-slate-400" />
-                <span>{copyingEntity === `role_${handoffRole}` ? "Copied!" : "Copy Full Pack"}</span>
+                <span>{copyingEntity === `role_${handoffRole}` ? "Copied to Clipboard!" : "Copy Full Pack"}</span>
               </button>
 
               <a
                 href={`/api/v1/projects/${projectId}/intelligence-report/handoff/${handoffRole}?format=markdown`}
                 download={`${rep.project_key}_${handoffRole}_handoff.md`}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-medium text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-medium text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all"
               >
                 <FileDown className="h-3.5 w-3.5 text-white/90" />
                 <span>Download Markdown</span>
@@ -925,7 +1010,7 @@ export default function ProjectIntelligenceReportPage() {
               <a
                 href={`/api/v1/projects/${projectId}/intelligence-report/handoff/${handoffRole}?format=json`}
                 download={`${rep.project_key}_${handoffRole}_handoff.json`}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 text-xs font-medium text-white shadow-xs hover:bg-black active:scale-[0.98] transition-all"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-slate-900 px-4 text-xs font-medium text-white shadow-xs hover:bg-black active:scale-[0.98] transition-all"
               >
                 <FileCode className="h-3.5 w-3.5 text-white/90" />
                 <span>Download JSON</span>
