@@ -363,7 +363,7 @@ export default function ProjectIntelligenceReportPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-slate-200 no-print">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/90 px-3 py-0.5 text-2xs font-medium text-slate-700 border border-slate-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100/90 px-3 py-0.5 text-2xs font-medium text-slate-700 border border-slate-300 shrink-0 whitespace-nowrap">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
               <span>Enterprise Engineering Handoff</span>
             </span>
@@ -431,10 +431,10 @@ export default function ProjectIntelligenceReportPage() {
         </div>
       </div>
 
-      {/* TOP METRICS BENTO CLUSTER — Apple Clean Surface & Distinct Card Borders */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5 print-break-inside-avoid">
-        {/* 1. Readiness Score (Hero Tile) */}
-        <div className="col-span-1 sm:col-span-2 rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-slate-300 transition-colors">
+      {/* TOP METRICS BENTO CLUSTER — Apple Clean Surface & Balanced 4-Col Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 print-break-inside-avoid">
+        {/* 1. Readiness Score (Hero Tile — 2 cols on lg, 1 col on sm) */}
+        <div className="col-span-1 sm:col-span-1 lg:col-span-2 rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-slate-300 transition-colors">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -442,23 +442,87 @@ export default function ProjectIntelligenceReportPage() {
               </span>
               <span className="text-3xs text-slate-500 block mt-0.5">Evidence-Weighted Quality Gate</span>
             </div>
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-3xs font-semibold text-blue-700 border border-blue-200 shrink-0 whitespace-nowrap">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <span>5 Governance Areas</span>
+            </div>
           </div>
 
-          <div className="mt-4 flex items-baseline gap-2">
+          <div className="my-3 flex items-baseline gap-2">
             <span className="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900">
               {rep.readiness_score}%
             </span>
             <span className="text-xs font-medium text-slate-400">/ 100 max</span>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between text-2xs text-slate-500">
-            <span>5 Governance Areas</span>
+          {/* Progress bar visual */}
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mb-3">
+            <div
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, rep.readiness_score || 0))}%` }}
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-2xs text-slate-500">
+            <span>Canonical Readiness Engine</span>
             <span className="font-medium text-slate-700">Strict Project Scoped</span>
           </div>
         </div>
 
-        {/* 2. Active Requirements */}
+        {/* 2. Release Gate Decision (Hero Tile — 2 cols on lg, 1 col on sm) */}
+        <div
+          className={cn(
+            "col-span-1 sm:col-span-1 lg:col-span-2 rounded-2xl p-5 border-2 flex flex-col justify-between shadow-xs transition-colors",
+            isApproved
+              ? "bg-emerald-50/70 border-emerald-300 text-emerald-950"
+              : "bg-rose-50/70 border-rose-300 text-rose-950"
+          )}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-2xs font-semibold uppercase tracking-wider opacity-70 block">
+                Release Gate Decision
+              </span>
+              <span className="text-3xs opacity-80 block mt-0.5">Authoritative Policy Gate</span>
+            </div>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-3xs font-semibold border",
+                isApproved
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : "bg-rose-100 text-rose-800 border-rose-300"
+              )}
+            >
+              {isApproved ? "Approved" : "Blocked"}
+            </span>
+          </div>
+
+          <div className="my-3">
+            <div className="inline-flex items-center gap-2 font-bold text-lg sm:text-xl">
+              {isApproved ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                  <span>GO (APPROVED FOR PRODUCTION)</span>
+                </>
+              ) : (
+                <>
+                  <AlertOctagon className="h-5 w-5 text-rose-600 shrink-0" />
+                  <span>NO-GO (BLOCKED)</span>
+                </>
+              )}
+            </div>
+            <p className="text-xs mt-1 leading-normal font-medium opacity-90">
+              {gateSubtitle}
+            </p>
+          </div>
+
+          <div className="pt-3 border-t border-black/10 flex items-center justify-between text-2xs opacity-80">
+            <span>Enforced by canonical gate</span>
+            <span className="font-medium">{isApproved ? "Ready for Deploy" : "Production Deployment Held"}</span>
+          </div>
+        </div>
+
+        {/* 3. Active Requirements (1 col) */}
         <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
           <div>
             <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -474,7 +538,7 @@ export default function ProjectIntelligenceReportPage() {
           </div>
         </div>
 
-        {/* 3. Acceptance Criteria */}
+        {/* 4. Acceptance Criteria (1 col) */}
         <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
           <div>
             <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -490,7 +554,7 @@ export default function ProjectIntelligenceReportPage() {
           </div>
         </div>
 
-        {/* 4. Synthesized Tests */}
+        {/* 5. Synthesized Tests (1 col) */}
         <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
           <div>
             <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -506,7 +570,7 @@ export default function ProjectIntelligenceReportPage() {
           </div>
         </div>
 
-        {/* 5. Execution Status */}
+        {/* 6. Execution Status (1 col) */}
         <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
           <div>
             <span className="text-2xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -519,39 +583,6 @@ export default function ProjectIntelligenceReportPage() {
           <div className="mt-4 pt-3 border-t border-slate-200 text-2xs text-slate-500 flex items-center gap-1 truncate" title={isUnexecuted ? "No Code Runs Recorded" : `${totalRuns} Runs Logged`}>
             <span className={cn("inline-block h-1.5 w-1.5 rounded-full", isUnexecuted ? "bg-amber-400" : "bg-emerald-500")} />
             <span>{isUnexecuted ? "No Runs Recorded" : `${totalRuns} Runs`}</span>
-          </div>
-        </div>
-
-        {/* 6. Release Gate Decision (Tile) */}
-        <div
-          className={cn(
-            "col-span-1 sm:col-span-2 lg:col-span-1 rounded-2xl p-5 border-2 flex flex-col justify-between shadow-xs transition-colors",
-            isApproved
-              ? "bg-emerald-50/70 border-emerald-300 text-emerald-950"
-              : "bg-rose-50/70 border-rose-300 text-rose-950"
-          )}
-        >
-          <div>
-            <span className="text-2xs font-semibold uppercase tracking-wider opacity-70 block">
-              Release Gate
-            </span>
-            <div className="mt-3 inline-flex items-center gap-1.5 font-semibold text-xs">
-              {isApproved ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>GO (APPROVED)</span>
-                </>
-              ) : (
-                <>
-                  <AlertOctagon className="h-4 w-4 text-rose-600 shrink-0" />
-                  <span>NO-GO (BLOCKED)</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-black/10 text-3xs opacity-80 truncate" title={gateSubtitle}>
-            {gateSubtitle}
           </div>
         </div>
       </div>
