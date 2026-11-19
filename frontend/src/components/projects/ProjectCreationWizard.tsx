@@ -315,6 +315,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
 
   // Key Validation Debounce
   useEffect(() => {
+    let active = true;
     const cleanKey = key.trim().toUpperCase();
     if (!cleanKey) {
       setKeyValidation({ status: "idle", message: "" });
@@ -332,19 +333,28 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
     const timer = setTimeout(async () => {
       try {
         const res = await api.get<{ valid: boolean; key: string; message: string }>(
-          `/projects/validate-key?key=${cleanKey}`
+          `/projects/validate-key?key=${encodeURIComponent(cleanKey)}`
         );
+        if (!active) return;
         if (res.valid) {
           setKeyValidation({ status: "valid", message: res.message });
         } else {
           setKeyValidation({ status: "invalid", message: res.message });
         }
       } catch (err: any) {
-        setKeyValidation({ status: "invalid", message: err?.message || "Failed to validate key" });
+        if (!active) return;
+        console.warn("Key validation preflight request failed:", err);
+        setKeyValidation({
+          status: "valid",
+          message: "Format valid (uniqueness will be confirmed on creation)",
+        });
       }
-    }, 350);
+    }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [key]);
 
   // Clear Draft
@@ -1817,7 +1827,7 @@ export function ProjectCreationWizard({ open, onOpenChange }: ProjectCreationWiz
                 variant="primary"
                 size="sm"
                 disabled={
-                  (currentStep === 1 && (keyValidation.status !== "valid" || name.trim().length < 3)) ||
+                  (currentStep === 1 && (keyValidation.status === "invalid" || !/^[A-Z0-9_-]{2,10}$/.test(key.trim().toUpperCase()) || name.trim().length < 3)) ||
                   isUploading
                 }
                 onClick={() => setCurrentStep((prev) => Math.min(5, prev + 1))}

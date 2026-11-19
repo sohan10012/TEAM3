@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     secret_key: str = Field("change-me-in-env", alias="TRACETEST_SECRET_KEY")
     session_hours: int = Field(12, alias="TRACETEST_SESSION_HOURS")
     cookie_secure: bool = Field(False, alias="TRACETEST_COOKIE_SECURE")
-    cors_origins: str = Field("http://localhost:5173", alias="TRACETEST_CORS_ORIGINS")
+    cors_origins: str = Field("http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000", alias="TRACETEST_CORS_ORIGINS")
     bind_host: str = Field("127.0.0.1", alias="TRACETEST_HOST")
     bind_port: int = Field(8000, alias="TRACETEST_PORT")
     allowed_hosts: str = Field("localhost,127.0.0.1,[::1],testserver", alias="TRACETEST_ALLOWED_HOSTS")

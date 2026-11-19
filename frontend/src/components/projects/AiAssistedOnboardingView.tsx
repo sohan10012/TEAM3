@@ -171,6 +171,7 @@ export function AiAssistedOnboardingView({
     status: "idle" | "checking" | "valid" | "invalid";
     message: string;
   }>({ status: "idle", message: "" });
+  const [isKeyManuallyEdited, setIsKeyManuallyEdited] = useState(false);
 
   // Step 2: Staged Documents State
   const [stagedDocs, setStagedDocs] = useState<StagedDocItem[]>([]);
@@ -219,6 +220,7 @@ export function AiAssistedOnboardingView({
 
   // Debounced Key Validation
   useEffect(() => {
+    let active = true;
     const cleanKey = key.trim().toUpperCase();
     if (!cleanKey) {
       setKeyValidation({ status: "idle", message: "" });
@@ -236,19 +238,29 @@ export function AiAssistedOnboardingView({
     const timer = setTimeout(async () => {
       try {
         const res = await api.get<{ valid: boolean; key: string; message: string }>(
-          `/projects/validate-key?key=${cleanKey}`
+          `/projects/validate-key?key=${encodeURIComponent(cleanKey)}`
         );
+        if (!active) return;
         if (res.valid) {
           setKeyValidation({ status: "valid", message: res.message });
         } else {
           setKeyValidation({ status: "invalid", message: res.message });
         }
       } catch (err: any) {
-        setKeyValidation({ status: "invalid", message: err?.message || "Validation failed" });
+        if (!active) return;
+        console.warn("Key validation preflight request failed:", err);
+        // If syntax is strictly valid, network failure should not permanently block progress
+        setKeyValidation({
+          status: "valid",
+          message: "Format valid (uniqueness will be confirmed on creation)",
+        });
       }
-    }, 350);
+    }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [key]);
 
   // Handle Project Name Changes and auto-suggest Key if not edited
@@ -262,7 +274,7 @@ export function AiAssistedOnboardingView({
       .join("")
       .toUpperCase()
       .slice(0, 8);
-    if (generated.length >= 2 && (!key || key === "UPI_DISP" || keyValidation.status === "invalid")) {
+    if (generated.length >= 2 && (!isKeyManuallyEdited || !key || key === "UPI_DISP")) {
       setKey(generated);
     }
   };
@@ -711,7 +723,7 @@ export function AiAssistedOnboardingView({
             const canNavigate =
               !isAnalyzing &&
               (s.step === 1 ||
-                (s.step === 2 && name.trim().length > 0 && keyValidation.status === "valid") ||
+                (s.step === 2 && name.trim().length > 0 && /^[A-Z0-9_-]{2,10}$/.test(key.trim().toUpperCase()) && keyValidation.status !== "invalid") ||
                 (s.step === 3 && stagedDocs.length > 0) ||
                 (s.step === 4 && Boolean(reviewConfig)));
             return (
@@ -722,7 +734,7 @@ export function AiAssistedOnboardingView({
                 onClick={() => {
                   if (s.step === 1) {
                     setCurrentStep(1);
-                  } else if (s.step === 2 && name.trim().length > 0 && keyValidation.status === "valid") {
+                  } else if (s.step === 2 && name.trim().length > 0 && /^[A-Z0-9_-]{2,10}$/.test(key.trim().toUpperCase()) && keyValidation.status !== "invalid") {
                     setCurrentStep(2);
                   } else if (s.step === 3 && stagedDocs.length > 0) {
                     handleRunAnalysis();
@@ -806,7 +818,10 @@ export function AiAssistedOnboardingView({
                       type="text"
                       maxLength={10}
                       value={key}
-                      onChange={(e) => setKey(e.target.value.toUpperCase())}
+                      onChange={(e) => {
+                        setIsKeyManuallyEdited(true);
+                        setKey(e.target.value.toUpperCase());
+                      }}
                       placeholder="e.g. UPI_DISP"
                       className="w-full h-10 px-3 font-mono uppercase font-semibold text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1D63ED] focus:border-transparent bg-white shadow-2xs"
                     />
@@ -2143,7 +2158,12 @@ export function AiAssistedOnboardingView({
             <Button
               variant="primary"
               onClick={() => setCurrentStep(2)}
-              disabled={!name.trim() || keyValidation.status !== "valid"}
+              disabled={
+                !name.trim() ||
+                !key.trim() ||
+                !/^[A-Z0-9_-]{2,10}$/.test(key.trim().toUpperCase()) ||
+                keyValidation.status === "invalid"
+              }
               className="bg-[#1D63ED] hover:bg-[#1550C0] text-white font-medium px-5 h-9 shadow-2xs gap-1.5"
             >
               <span>Next: Document Intake</span>
