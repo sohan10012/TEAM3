@@ -9037,7 +9037,7 @@
           "intelligence_report"
         ],
         "summary": "Export Project Intelligence Report",
-        "description": "Export the Project Intelligence Report in JSON, Markdown, or print-ready format.",
+        "description": "Export the Project Intelligence Report in JSON, Markdown, or print-ready HTML/PDF format.",
         "operationId": "export_project_intelligence_report_api_v1_projects__project_id__intelligence_report_export_get",
         "parameters": [
           {
@@ -9057,7 +9057,8 @@
               "enum": [
                 "json",
                 "markdown",
-                "pdf"
+                "pdf",
+                "html"
               ],
               "type": "string",
               "default": "markdown",
