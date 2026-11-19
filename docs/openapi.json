@@ -9037,7 +9037,7 @@
           "intelligence_report"
         ],
         "summary": "Export Project Intelligence Report",
-        "description": "Export the Project Intelligence Report in JSON, Markdown, or print-ready HTML/PDF format.",
+        "description": "Export the Project Intelligence Report in JSON, Markdown, XLSX or print-ready HTML/PDF format.",
         "operationId": "export_project_intelligence_report_api_v1_projects__project_id__intelligence_report_export_get",
         "parameters": [
           {
@@ -9058,11 +9058,236 @@
                 "json",
                 "markdown",
                 "pdf",
-                "html"
+                "html",
+                "xlsx"
               ],
               "type": "string",
               "default": "markdown",
               "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/intelligence-report/handoff/{role}": {
+      "get": {
+        "tags": [
+          "intelligence_report"
+        ],
+        "summary": "Get Role Handoff Report",
+        "description": "Retrieve or export role-specific engineering deliverables.",
+        "operationId": "get_role_handoff_report_api_v1_projects__project_id__intelligence_report_handoff__role__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "developer",
+                "qa",
+                "automation_agent",
+                "integration",
+                "product_owner",
+                "executive"
+              ],
+              "type": "string",
+              "title": "Role"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "markdown",
+                "html"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/intelligence-report/complete-package": {
+      "get": {
+        "tags": [
+          "intelligence_report"
+        ],
+        "summary": "Get Complete Project Package Endpoint",
+        "description": "Export the standardized complete project package (Schema v2.0.0 JSON or multi-sheet XLSX workbook).",
+        "operationId": "get_complete_project_package_endpoint_api_v1_projects__project_id__intelligence_report_complete_package_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "xlsx"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/intelligence-report/granular-export": {
+      "get": {
+        "tags": [
+          "intelligence_report"
+        ],
+        "summary": "Get Granular Export Endpoint",
+        "description": "Export fine-grained data slices with full dataset coverage.",
+        "operationId": "get_granular_export_endpoint_api_v1_projects__project_id__intelligence_report_granular_export_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "requirements",
+                "acceptance_criteria",
+                "test_cases",
+                "traceability_matrix",
+                "executions",
+                "defects",
+                "uncovered_requirements"
+              ],
+              "type": "string",
+              "default": "requirements",
+              "title": "Entity"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "csv",
+                "json",
+                "markdown",
+                "xlsx"
+              ],
+              "type": "string",
+              "default": "csv",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "group_by_requirement",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Group By Requirement"
+            }
+          },
+          {
+            "name": "include_linked",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Linked"
             }
           }
         ],
