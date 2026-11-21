@@ -298,7 +298,7 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
             env["TRACETEST_TARGET_URL"] = target_url or ""
             env["TRACETEST_ARTIFACT_DIR"] = str(art)
             if settings.chromium_executable:
-                env["TRACETEST_CHROMIUM_EXECUTABLE"] = str(settings.chromium_executable)
+                env["TRACETEST_CHROMIUM_EXECUTABLE"] = settings.chromium_executable
             for k in ("TRACETEST_CHROMIUM_EXECUTABLE", "PLAYWRIGHT_BROWSERS_PATH"):
                 if os.environ.get(k):
                     env[k] = os.environ[k]
@@ -446,7 +446,10 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
             raw, _ = proc.communicate()
         duration = int((time.monotonic() - start) * 1000)
         cap = settings.exec_max_output_bytes
-        text = (raw or b"")[:cap].decode("utf-8", "replace")
+        if isinstance(raw, bytes):
+            text = raw[:cap].decode("utf-8", "replace")
+        else:
+            text = (raw or "")[:cap]
         if raw and len(raw) > cap:
             text += f"\n[output truncated at {cap} bytes]"
 
