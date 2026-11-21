@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import pytest
-from app.db.base import session_scope
-from app.db.models import AcceptanceCriterion, Requirement, TestCase, User
-
 
 def test_acceptance_criteria_phase2_endpoints(qa, reviewer, admin):
     # 1. Get first available project

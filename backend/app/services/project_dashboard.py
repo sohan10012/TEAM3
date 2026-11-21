@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.errors import NotFound
 from app.db.base import utcnow
-from app.services.release_decision import evaluate_release_decision
 from app.db.models import (
     AuditLog,
     Clause,
@@ -32,6 +31,7 @@ from app.db.models import (
     Requirement,
     TestCase,
 )
+from app.services.release_decision import evaluate_release_decision
 
 
 def get_project_dashboard_data(

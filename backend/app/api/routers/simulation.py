@@ -1,6 +1,7 @@
 """Simulation and No-Code Policy YAML Engine Router."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import yaml  # type: ignore[import-untyped]
@@ -19,6 +20,7 @@ from app.services.yaml_workflow import (
 )
 
 router = APIRouter(prefix="/simulation", tags=["simulation"])
+log = logging.getLogger(__name__)
 
 
 class IngestPolicyIn(BaseModel):

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.db.models import (
@@ -14,13 +14,10 @@ from app.db.models import (
     Execution,
     ExecutionResult,
     Project,
-    ProjectIntelligenceReport,
     Requirement,
-    RequirementClarification,
     TestCase,
 )
 from app.services.analytics import traceability
-from app.services.yaml_workflow import get_golden_policies
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +73,7 @@ def get_detailed_project_context(
     )
     all_reqs = db.execute(reqs_query).scalars().all()
     ctx["requirement_count"] = len(all_reqs)
-    
+
     # Priority & Category distributions
     prio_counts: dict[str, int] = {}
     cat_counts: dict[str, int] = {}

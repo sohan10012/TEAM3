@@ -28,7 +28,9 @@ jobs:
       - name: OpenAPI contract
         run: python scripts/export_openapi.py && git diff --exit-code docs/openapi.json
       - name: Tests (MockProvider fixtures, real sandbox)
-        run: cd backend && pytest -q --cov=app --cov-report=term --junitxml=../artifacts/backend-junit.xml
+        run: |
+          mkdir -p artifacts
+          cd backend && pytest -q --cov=app --cov-report=term --junitxml=../artifacts/backend-junit.xml
       - name: Verify Documentation & Invariants
         run: python scripts/verify_docs.py
       - uses: actions/upload-artifact@v4
@@ -75,6 +77,7 @@ jobs:
       - run: pip install -r backend/requirements.txt
       - name: Initialise workspace and export approved tests
         run: |
+          mkdir -p artifacts
           python scripts/db.py init > /dev/null
           python scripts/export_tests.py ci-tests --project PAY
           cp -r reference_hcm ci-tests/
@@ -117,6 +120,7 @@ jobs:
           cd frontend && npm ci && npm run build
       - name: Run Playwright E2E & Accessibility Tests
         run: |
+          mkdir -p artifacts
           PYTHONPATH=backend pytest backend/tests/test_playwright_e2e.py -v --junitxml=artifacts/e2e-junit.xml
       - uses: actions/upload-artifact@v4
         if: always()

@@ -20,16 +20,14 @@ Verifies:
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import func, select, text
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import select, text
+from sqlalchemy.orm import sessionmaker
 
 from app.api.deps import Principal
 from app.api.routers.projects import delete_project
 from app.core.config import REPO_ROOT
 from app.db.base import make_engine
 from app.db.models import (
-    AcceptanceCriterion,
-    Clause,
     Defect,
     Document,
     Environment,
@@ -39,8 +37,10 @@ from app.db.models import (
     Project,
     Requirement,
     TestCase,
-    TestSuite as DBTestSuite,
     User,
+)
+from app.db.models import (
+    TestSuite as DBTestSuite,
 )
 from app.services.project_dashboard import get_project_dashboard_data
 from app.services.project_intelligence import build_project_intelligence_report

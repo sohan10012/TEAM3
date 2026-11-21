@@ -7,27 +7,19 @@ from typing import Any
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
-from app.db.base import utcnow
 from app.db.models import (
     AcceptanceCriterion,
-    AuditLog,
     Clause,
     Defect,
     Document,
     Execution,
     ExecutionResult,
     Project,
-    ProjectIntelligenceReport,
     Requirement,
-    RequirementClarification,
     TestCase,
 )
 from app.services.analytics import traceability
 from app.services.defects import create_manual
-from app.services.execution_intelligence import (
-    compare_executions,
-    get_project_execution_metrics,
-)
 from app.services.test_design import generate_test_scenarios_for_project
 from app.services.yaml_workflow import get_golden_policies
 
@@ -174,8 +166,8 @@ def execute_tool(
                 .join(Requirement, Requirement.id == Clause.requirement_id)
                 .where(Requirement.project_id == project_id, Clause.clause_key == key)
             ).scalars().first()
-            if cl and cl.requirement:
-                req = cl.requirement
+            if cl and cl.requirement_id:
+                req = db.get(Requirement, cl.requirement_id)
 
         if req:
             doc = db.execute(select(Document).where(Document.project_id == project_id).limit(1)).scalars().first()
@@ -414,10 +406,10 @@ def execute_tool(
     # -------------------------------------------------------------------------
     elif tool_name == "list_project_defects":
         status_filter = args.get("status")
-        stmt = select(Defect).where(Defect.project_id == project_id)
+        def_stmt = select(Defect).where(Defect.project_id == project_id)
         if status_filter:
-            stmt = stmt.where(Defect.status == status_filter)
-        defects = db.execute(stmt.order_by(desc(Defect.created_at))).scalars().all()
+            def_stmt = def_stmt.where(Defect.status == status_filter)
+        defects = db.execute(def_stmt.order_by(desc(Defect.created_at))).scalars().all()
         return {
             "count": len(defects),
             "defects": [
@@ -561,7 +553,7 @@ def execute_tool(
         sum_m = tdata.get("summary", {})
         tests_count = db.scalar(select(func.count(TestCase.id)).where(TestCase.project_id == project_id)) or 0
         reqs_count = db.scalar(select(func.count(Requirement.id)).where(Requirement.project_id == project_id)) or 0
-        open_defects = db.execute(select(Defect).where(Defect.project_id == project_id, Defect.status != "closed")).scalars().all()
+        defects_list = db.execute(select(Defect).where(Defect.project_id == project_id, Defect.status != "closed")).scalars().all()
         latest_exec = db.execute(
             select(Execution).where(Execution.project_id == project_id).order_by(desc(Execution.created_at)).limit(1)
         ).scalars().first()
@@ -577,13 +569,13 @@ def execute_tool(
                 "test_cases": tests_count,
                 "traceability_coverage_pct": sum_m.get("coverage_pct", 100.0 if tests_count >= reqs_count else 0.0),
                 "latest_pass_rate_pct": pass_rate,
-                "open_defects_count": len(open_defects),
+                "open_defects_count": len(defects_list),
             },
             "unresolved_defects": [
                 {"key": d.key, "title": d.title, "severity": d.severity, "status": d.status}
-                for d in open_defects
+                for d in defects_list
             ],
-            "release_assessment": "CONDITIONAL_APPROVAL" if len(open_defects) > 0 else "READY_FOR_RELEASE",
+            "release_assessment": "CONDITIONAL_APPROVAL" if len(defects_list) > 0 else "READY_FOR_RELEASE",
         }
 
     raise ToolExecutionError(f"Tool '{tool_name}' is not recognized in ReasonX registry")

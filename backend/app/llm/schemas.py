@@ -218,7 +218,7 @@ class OnboardingRoleOut(BaseModel):
         if isinstance(data, dict):
             r_id = str(data.get("role_id") or data.get("id") or "").strip()
             data["role_id"] = r_id or "ROLE-001"
-            
+
             resps = data.get("responsibilities") or data.get("permissions") or []
             if isinstance(resps, str):
                 resps = [line.strip("-•* ").strip() for line in resps.split("\n") if line.strip()]
@@ -269,7 +269,7 @@ class OnboardingScenarioOut(BaseModel):
         if isinstance(data, dict):
             s_id = str(data.get("scenario_id") or data.get("id") or "").strip()
             data["scenario_id"] = s_id or "SCENARIO-001"
-            
+
             steps = data.get("steps") or []
             if isinstance(steps, str):
                 steps = [line.strip("-•* 0123456789.)").strip() for line in steps.split("\n") if line.strip()]
@@ -347,7 +347,7 @@ class OnboardingAnalysisOut(BaseModel):
     def _normalize_analysis(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             return data
-        
+
         proj = data.get("project") or data.get("project_metadata") or {}
         if isinstance(proj, dict):
             if not data.get("detected_domain"):

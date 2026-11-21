@@ -90,13 +90,13 @@ def dashboard(db: Session, project_ids: list[int], date_from: datetime | None, d
     covered_keys: dict[int, set[str]] = defaultdict(set)
     for _pid, rid, keys in tests:
         covered_keys[rid].update(keys)
-    
+
     req_clause_map: dict[int, list[int]] = defaultdict(lambda: [0, 0])
     for c, r in clauses:
         req_clause_map[r.id][0] += 1
         if c.clause_key in covered_keys[r.id]:
             req_clause_map[r.id][1] += 1
-    
+
     total_reqs_in_map = len(req_clause_map)
     fully_cov_reqs = sum(1 for rid, (t, cv) in req_clause_map.items() if t > 0 and cv == t)
     partially_cov_reqs = sum(1 for rid, (t, cv) in req_clause_map.items() if 0 < cv < t)
@@ -139,11 +139,11 @@ def dashboard(db: Session, project_ids: list[int], date_from: datetime | None, d
         pe = [e for e in executions if e.project_id == p.id]
         pd = [d for d in open_defects if d.project_id == p.id]
         p_res = sum(e.passed for e in pe), sum(e.passed + e.failed + e.errored for e in pe)
-        c = next((x for x in cov if x["project_id"] == p.id), None)
+        cov_item = next((x for x in cov if x["project_id"] == p.id), None)
         per_project.append({"project_id": p.id, "key": p.key, "name": p.name, "status": p.status,
                             "executions": len(pe), "pass_rate": round(100 * p_res[0] / p_res[1], 1) if p_res[1] else None,
                             "open_defects": len(pd), "critical_defects": sum(1 for d in pd if d.severity == "critical"),
-                            "coverage_pct": c["coverage_pct"] if c else 0.0})
+                            "coverage_pct": cov_item["coverage_pct"] if cov_item else 0.0})
     return {
         "filters": {"project_ids": project_ids, "date_from": date_from.isoformat(), "date_to": date_to.isoformat()},
         "kpis": {

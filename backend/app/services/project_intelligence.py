@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.db.base import utcnow
@@ -24,7 +24,6 @@ from app.db.models import (
     Defect,
     Document,
     Execution,
-    ExecutionResult,
     ExtractedContent,
     Project,
     ProjectContext,
@@ -32,11 +31,9 @@ from app.db.models import (
     ProjectRole,
     Requirement,
     RequirementClarification,
-    RequirementVersion,
     TestCase,
 )
 from app.services.release_decision import evaluate_release_decision
-from app.services.requirements_dashboard import get_requirements_project_dashboard_data
 
 
 def _compute_version_hash(
@@ -413,7 +410,7 @@ def build_project_intelligence_report(
     critical_defects = [
         d for d in open_defects if d.severity in ("critical", "blocker") or d.priority == "p1"
     ]
-    high_defects = [d for d in open_defects if d.severity == "high" or d.priority == "p2"]
+    [d for d in open_defects if d.severity == "high" or d.priority == "p2"]
 
     # 11. Traceability Ledger (Document -> Req -> Clause -> AC -> Test -> Exec -> Defect)
     fully_linked_reqs = 0
@@ -1526,8 +1523,8 @@ def generate_html_dossier(rep: dict[str, Any]) -> str:
 
   <h2>3. Requirement Quality & Taxonomy Breakdown</h2>
   <div style="font-size: 9pt; color: #475569; margin-bottom: 8px;">
-    <strong>Verbatim Quotation Coverage:</strong> {req_analysis.get('quote_coverage_pct', 0)}% · 
-    <strong>Physical Page Completeness:</strong> {req_analysis.get('page_coverage_pct', 0)}% · 
+    <strong>Verbatim Quotation Coverage:</strong> {req_analysis.get('quote_coverage_pct', 0)}% ·
+    <strong>Physical Page Completeness:</strong> {req_analysis.get('page_coverage_pct', 0)}% ·
     <strong>Documented Provenance:</strong> {req_analysis.get('provenance', {}).get('explicit_documented', 0)}/{req_analysis.get('total', 0)}
   </div>
   <table>
@@ -1545,7 +1542,7 @@ def generate_html_dossier(rep: dict[str, Any]) -> str:
 
   <h2>4. Test Design & Coverage Analysis</h2>
   <div style="font-size: 9pt; color: #475569; margin-bottom: 8px;">
-    <strong>Acceptance Criteria:</strong> {test_design.get('acceptance_criteria', {}).get('total', 0)} generated ({test_design.get('acceptance_criteria', {}).get('approved', 0)} approved) · 
+    <strong>Acceptance Criteria:</strong> {test_design.get('acceptance_criteria', {}).get('total', 0)} generated ({test_design.get('acceptance_criteria', {}).get('approved', 0)} approved) ·
     <strong>Test Cases:</strong> {test_design.get('total_test_cases', 0)} synthesized across 10 categories
   </div>
   <table>
@@ -1563,8 +1560,8 @@ def generate_html_dossier(rep: dict[str, Any]) -> str:
 
   <h2>5. Execution Verification & Simulation Results</h2>
   <div style="font-size: 9pt; color: #475569; margin-bottom: 8px;">
-    <strong>Simulation Runs:</strong> {rep.get('policy_validation', {}).get('simulation_runs', 0)} · 
-    <strong>Real Runs:</strong> {rep.get('policy_validation', {}).get('real_runs', 0)} · 
+    <strong>Simulation Runs:</strong> {rep.get('policy_validation', {}).get('simulation_runs', 0)} ·
+    <strong>Real Runs:</strong> {rep.get('policy_validation', {}).get('real_runs', 0)} ·
     <strong>Pass Rate:</strong> {exec_results.get('pass_rate_display', 'N/A')}
   </div>
   {exec_html}

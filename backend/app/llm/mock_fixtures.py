@@ -99,7 +99,7 @@ def respond(system: str, user: str) -> dict:
 
         rules = []
         rule_idx = 1
-        for doc_name, doc_type, doc_content in doc_blocks:
+        for doc_name, _doc_type, doc_content in doc_blocks:
             sentences = re.split(r"(?<=[.!?])\s+", doc_content)
             for s in sentences:
                 s_clean = s.strip()

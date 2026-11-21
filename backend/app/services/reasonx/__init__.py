@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from app.services.reasonx.agent import (
     iter_reasonx_agent_events,
+)
+from app.services.reasonx.agent import (
     run_reasonx_agent as process_reasonx_chat,
 )
 from app.services.reasonx.approval import cancel_task, execute_approved_task

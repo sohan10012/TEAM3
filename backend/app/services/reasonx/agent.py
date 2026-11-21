@@ -23,16 +23,12 @@ from app.db.base import utcnow
 from app.db.models import (
     Document,
     Project,
-    ReasonXConversation,
     ReasonXMessage,
-    ReasonXTask,
     Requirement,
 )
-from app.llm.providers import GeminiProvider
 from app.llm.router import generate
 from app.llm.schemas import ReasonXEvidence, ReasonXResponse
 from app.services.reasonx.approval import create_approval_request
-from app.services.reasonx.context import get_detailed_project_context
 from app.services.reasonx.executor import execute_tool
 from app.services.reasonx.tasks import create_task, record_step
 from app.services.reasonx.tools import TOOL_REGISTRY
@@ -496,7 +492,9 @@ def iter_reasonx_agent_events(
         structured["approval_request"] = pending_approval_card
 
     # 8. Save Assistant Message in DB
-    full_content = (res_data.direct_answer or "") + "\n\n" + (res_data.explanation or "")
+    direct_ans = getattr(res_data, "direct_answer", "") or ""
+    expl = getattr(res_data, "explanation", "") or ""
+    full_content = (direct_ans + "\n\n" + expl).strip()
     asst_msg = ReasonXMessage(
         conversation_id=conv.id,
         role="assistant",

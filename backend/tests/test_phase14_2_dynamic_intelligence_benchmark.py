@@ -16,19 +16,16 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-import pytest
+
 from sqlalchemy import select
 
-from app.api.deps import Principal
 from app.db.base import session_scope
-from app.db.models import Document, Project, ProjectContext, ProjectRole
+from app.db.models import Document, Project, ProjectContext
 from app.guardrails.quotes import verify_quote
-from app.llm.providers import GeminiProvider, GroqProvider
 from app.llm.router import provider_status
 from app.services.project_onboarding import (
     analyze_uploaded_documents_for_onboarding,
     commit_approved_onboarding_project,
-    explain_onboarding_item_with_reasonx,
     preload_upi_regulatory_documents_staging,
     stage_uploaded_file,
 )
@@ -123,16 +120,16 @@ def test_dynamic_domain_intelligence_on_unseen_tax_document(app):
 def test_unrelated_domain_information_security_isolation(app):
     """Verify that an independent Information Security document creates security-specific roles/rules with zero leakage."""
     security_spec = (
-        "# ISO/IEC 27001 Information Security Management Specification\n\n"
-        "1. Access Control Policy (Clause 9.1):\n"
-        "Users shall be granted access only to the specific network and network services that they have been specifically authorized to use.\n"
-        "Multi-Factor Authentication (MFA) must be enforced for all remote administrative access sessions.\n\n"
-        "2. Incident Management (Clause 16.1):\n"
-        "Information security events shall be reported through appropriate management channels as quickly as possible.\n"
-        "Critical security incidents must be escalated to the Chief Information Security Officer (CISO) within 1 hour.\n\n"
-        "3. Cryptographic Controls (Clause 10.1):\n"
-        "All sensitive data at rest shall be encrypted using AES-256 or stronger cryptographic algorithms.\n"
-    ).encode("utf-8")
+        b"# ISO/IEC 27001 Information Security Management Specification\n\n"
+        b"1. Access Control Policy (Clause 9.1):\n"
+        b"Users shall be granted access only to the specific network and network services that they have been specifically authorized to use.\n"
+        b"Multi-Factor Authentication (MFA) must be enforced for all remote administrative access sessions.\n\n"
+        b"2. Incident Management (Clause 16.1):\n"
+        b"Information security events shall be reported through appropriate management channels as quickly as possible.\n"
+        b"Critical security incidents must be escalated to the Chief Information Security Officer (CISO) within 1 hour.\n\n"
+        b"3. Cryptographic Controls (Clause 10.1):\n"
+        b"All sensitive data at rest shall be encrypted using AES-256 or stronger cryptographic algorithms.\n"
+    )
 
     staged = stage_uploaded_file(
         filename="ISO_27001_Security_Spec.md",
@@ -167,7 +164,7 @@ def test_unrelated_domain_information_security_isolation(app):
 def test_quote_guardrail_penalizes_hallucinations():
     """Verify that verify_quote rejects hallucinated quotations and flags them as ungrounded."""
     real_source = "All full-time employees shall receive overtime compensation after 40 hours per workweek."
-    
+
     # 1. Authentic verbatim quote
     assert verify_quote("overtime compensation after 40 hours", [real_source]) is True
 
@@ -197,7 +194,7 @@ def test_domain_neutral_project_commit_and_provenance(app):
         "Clause 4.1: The primary efficacy endpoint shall be the change in daytime asthma symptom scores from baseline.\n"
         "Clause 5.2: Investigational product must be stored between 15°C and 25°C under controlled humidity.\n"
         "Clause 7.1: Serious Adverse Events (SAE) must be reported to the Institutional Review Board within 24 hours.\n"
-    ).encode("utf-8")
+    ).encode()
 
     staged = stage_uploaded_file(
         filename="Clinical_Protocol_Asthma_v2.4.md",

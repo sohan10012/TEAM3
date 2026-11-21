@@ -11,22 +11,19 @@ import hashlib
 import json
 import logging
 import re
-import shutil
-import uuid
 import unicodedata
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import Principal
 from app.core.errors import BadRequest, NotFound
 from app.db.base import utcnow
 from app.db.models import (
     BusinessScenario,
     Document,
-    Environment,
     Organisation,
     Project,
     ProjectContext,
@@ -36,8 +33,12 @@ from app.db.models import (
 from app.guardrails.quotes import verify_quote
 from app.llm.prompts import SYSTEM_ONBOARDING, onboarding_analysis_prompt
 from app.llm.router import generate
-from app.llm.schemas import OnboardingAnalysisOut, ReasonXResponse
-from app.services import audit
+from app.llm.schemas import (
+    OnboardingAnalysisOut,
+    OnboardingBusinessRuleOut,
+    OnboardingCrossDocInsightOut,
+    ReasonXResponse,
+)
 from app.services.document_processor import (
     extract_document_content,
     save_document_file,
@@ -76,7 +77,7 @@ def stage_uploaded_file(
 ) -> dict[str, Any]:
     """Store an uploaded file in staging storage and extract content."""
     safe_name, file_type, size = validate_file_upload(filename, raw_bytes)
-    
+
     index = _load_staging_index()
     existing_ids = [int(k) for k in index.keys() if k.isdigit()]
     new_id = max(existing_ids, default=1000) + 1
@@ -125,7 +126,7 @@ def stage_uploaded_file(
 
 def preload_upi_regulatory_documents_staging() -> list[dict[str, Any]]:
     """Stage demonstration test fixtures into staging storage.
-    
+
     NOTE: These files are test fixtures generated to simulate regulatory circulars.
     They are explicitly labeled as synthetic demonstration fixtures and must not be presented
     as official publications of the Reserve Bank of India.
@@ -294,21 +295,21 @@ def find_quote_provenance(quote: str, parsed_doc: dict[str, Any], all_source_tex
             page_txt = page_blocks[i+1]
             page_txt_clean = " ".join(page_txt.split()).lower()
             if q_norm[:35] in page_txt_clean or (len(q_norm) > 15 and q_norm in page_txt_clean):
-                lines = [l.strip() for l in page_txt.splitlines() if l.strip()]
+                lines = [line_item.strip() for line_item in page_txt.splitlines() if line_item.strip()]
                 last_line = lines[-1] if lines else ""
-                printed_page = phys_page
+                printed_page: int | str = phys_page
                 if last_line:
                     m = re.search(r"(\b[ivxIVX]+|\b\d+)$", last_line)
                     if m:
                         val = m.group(1)
                         printed_page = int(val) if val.isdigit() else val
                 section_title = "Specification Section"
-                for l in lines[:5]:
+                for line_item in lines[:5]:
                     if (
-                        re.match(r"^(SEC\d+-[A-Z0-9]+|Section|Chapter|Part|§)\s+", l, re.IGNORECASE)
-                        or (len(l) < 70 and not l.startswith("Security Pillar") and not l.startswith("AWS") and not l.startswith("Related"))
+                        re.match(r"^(SEC\d+-[A-Z0-9]+|Section|Chapter|Part|§)\s+", line_item, re.IGNORECASE)
+                        or (len(line_item) < 70 and not line_item.startswith("Security Pillar") and not line_item.startswith("AWS") and not line_item.startswith("Related"))
                     ):
-                        section_title = l
+                        section_title = line_item
                         break
                 return {
                     "physical_page_number": phys_page,
@@ -620,7 +621,7 @@ def analyze_uploaded_documents_for_onboarding(
     description: str | None = None,
 ) -> dict[str, Any]:
     """Inspect and analyze staged documents to generate evidence-backed project configuration.
-    
+
     Executes a real LLM analysis via app.llm.router, verifies supporting quotes verbatim
     against the actual source document text, and provides full anti-fixture transparency.
     """
@@ -663,7 +664,7 @@ def analyze_uploaded_documents_for_onboarding(
 
     # 1. Call Real AI Provider via router.generate() with resilient fallback
     user_prompt = onboarding_analysis_prompt(project_name, project_key, business_domain, parsed_docs)
-    data: OnboardingAnalysisOut | None = None
+    data: Any = None
     try:
         llm_res = generate(
             task="onboarding_analysis",
@@ -706,10 +707,10 @@ def analyze_uploaded_documents_for_onboarding(
     for idx, rule in enumerate(data.business_rules, start=1):
         rule_dict = rule.model_dump()
         quote = rule_dict.get("supporting_quote", "").strip()
-        
+
         # Verify quote against actual source text
         is_quote_verified = verify_quote(quote, all_source_texts, min_len=12) if quote else False
-        
+
         rule_dict["rule_id"] = f"BR-{idx:03d}"
         raw_title = (rule_dict.get("title") or "").strip()
         desc = (rule_dict.get("description") or "").strip()
@@ -950,7 +951,7 @@ def analyze_uploaded_documents_for_onboarding(
         for idx, sc_item in enumerate(scenario_templates, start=1):
             formatted_scenarios.append({
                 "scenario_id": f"SCENARIO-{idx:03d}",
-                "title": normalize_heading_capitalization(sc_item["title"]),
+                "title": normalize_heading_capitalization(str(sc_item["title"])),
                 "description": sc_item["description"],
                 "regulatory_ref": sc_item["regulatory_ref"],
                 "actor": sc_item["actor"],
@@ -1098,7 +1099,7 @@ def explain_onboarding_item_with_reasonx(
 ) -> dict[str, Any]:
     """Provide grounded, context-aware ReasonX explanation for any extracted rule, role, or scenario."""
     q_lower = query.lower()
-    
+
     rules = configuration.get("business_rules", [])
     insights = configuration.get("cross_document_insights", [])
 
@@ -1144,7 +1145,7 @@ def explain_onboarding_item_with_reasonx(
 
     try:
         res = generate("reasonx_query", system_prompt, user_prompt, ReasonXResponse, use_cache=True)
-        resp_data: ReasonXResponse = res.data
+        resp_data: Any = res.data
         return {
             "answer": f"**{resp_data.direct_answer}**\n\n{resp_data.explanation}",
             "citations": [
@@ -1214,11 +1215,11 @@ def commit_approved_onboarding_project(
         raise BadRequest(f"Project key '{key}' is already in use. Please select a distinct key.")
 
     org = db.execute(select(Organisation)).scalars().first()
-    
+
     # Domain-derived architecture context and technical stack
     ctx_data = approved_config.get("product_context", {})
     domain = meta.get("business_domain", "Enterprise Quality Platform")
-    
+
     # 1. Create Project
     proj = Project(
         key=key,
@@ -1255,7 +1256,7 @@ def commit_approved_onboarding_project(
         f"[{r.get('rule_id')}] {r.get('title')}: {r.get('description')} (Source: {r.get('source_document')}, {r.get('clause_ref')})"
         for r in approved_config.get("business_rules", [])
     ]
-    
+
     provenance_payload = {
         "generation_method": "ai_assisted_onboarding",
         "is_ai_generated": True,
@@ -1332,12 +1333,12 @@ def commit_approved_onboarding_project(
     for d_item in staged_docs:
         s_id = str(d_item["id"])
         staged_info = index.get(s_id)
-        
+
         filename = d_item["filename"]
         display_name = d_item.get("display_name", filename)
         purpose = d_item.get("document_type", "prd")
         file_type = d_item.get("file_type", "pdf")
-        
+
         raw_bytes = b""
         if staged_info and Path(staged_info["file_path"]).exists():
             raw_bytes = Path(staged_info["file_path"]).read_bytes()
@@ -1369,13 +1370,13 @@ def commit_approved_onboarding_project(
 
         extracted = extract_document_content(Path(saved_path), file_type)
         doc.extracted_text = extracted.get("extracted_text", "")
-        doc.sections_json = extracted.get("sections", [])
-        doc.tables_json = extracted.get("tables", [])
-        doc.metadata_json = {
-            "pages_count": extracted.get("pages_count") or (1 if doc.extracted_text else 0),
-            "sha256_hash": hashlib.sha256(raw_bytes).hexdigest(),
-            "is_synthetic_fixture": d_item.get("is_synthetic_fixture", False),
-        }
+        meta_dict = dict(doc.metadata_json or {})
+        meta_dict["sections"] = extracted.get("sections", [])
+        meta_dict["tables"] = extracted.get("tables", [])
+        meta_dict["pages_count"] = extracted.get("pages_count") or (1 if doc.extracted_text else 0)
+        meta_dict["sha256_hash"] = hashlib.sha256(raw_bytes).hexdigest()
+        meta_dict["is_synthetic_fixture"] = d_item.get("is_synthetic_fixture", False)
+        doc.metadata_json = meta_dict
         created_documents.append(doc)
 
     db.commit()

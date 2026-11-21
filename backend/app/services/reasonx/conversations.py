@@ -10,11 +10,7 @@ from app.db.base import utcnow
 from app.db.models import (
     Defect,
     Execution,
-    Project,
     ReasonXConversation,
-    ReasonXMessage,
-    Requirement,
-    TestCase,
 )
 
 
@@ -98,16 +94,13 @@ def get_quick_prompts(page: str = "workspace", project_id: int | None = None, db
     """Return dynamic, context-aware quick actions and templates based on screen and active project data."""
     # Context-aware templates based on actual project metrics if DB provided
     has_defects = False
-    has_failed_tests = False
-    has_uncovered_reqs = False
 
     if db and project_id:
         def_count = db.scalar(select(Defect.id).where(Defect.project_id == project_id, Defect.status != "closed").limit(1))
         has_defects = def_count is not None
-        failed_count = db.scalar(
+        db.scalar(
             select(Execution.id).where(Execution.project_id == project_id, (Execution.failed > 0) | (Execution.errored > 0)).limit(1)
         )
-        has_failed_tests = failed_count is not None
 
     prompts_by_page = {
         "intelligence_report": [

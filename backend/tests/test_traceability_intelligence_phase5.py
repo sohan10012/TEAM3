@@ -1,8 +1,6 @@
 """Phase 5 Enterprise Traceability Intelligence & Coverage Governance tests."""
 from __future__ import annotations
 
-import pytest
-
 
 def test_traceability_overview_metrics(qa):
     """Verifies that traceability overview returns database-grounded governance metrics."""

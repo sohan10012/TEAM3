@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+from collections.abc import Sequence
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
@@ -275,7 +276,7 @@ def ac_impact(
     )
     linked_tests = [t for t in tests if ac.key in (t.ac_keys or [])]
     test_ids = [t.id for t in linked_tests]
-    from app.db.models import ExecutionResult, Defect
+    from app.db.models import Defect, ExecutionResult
     results = list(
         db.execute(select(ExecutionResult).where(ExecutionResult.test_case_id.in_(test_ids or [-1]))).scalars().all()
     )
@@ -403,7 +404,7 @@ def get_criterion_detail(ac_id: int, p: Principal = Depends(current_principal), 
 
     # Linked clauses
     from app.db.models import Clause
-    clause_rows = []
+    clause_rows: Sequence[Clause] = []
     if a.clause_keys:
         clause_rows = db.execute(
             select(Clause).where(Clause.clause_key.in_(a.clause_keys))

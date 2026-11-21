@@ -10,44 +10,34 @@ Tests:
 """
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-
 import pytest
 from sqlalchemy import func, select, text
-from sqlalchemy.orm import Session
-
 from sqlalchemy.orm import sessionmaker
 
-from app.core.config import REPO_ROOT, get_settings
-from app.db.base import make_engine, utcnow
+from app.core.config import REPO_ROOT
+from app.db.base import make_engine
 from app.db.models import (
     AcceptanceCriterion,
-    AuditLog,
     BusinessScenario,
     Clause,
     Defect,
-    DefectComment,
     Document,
     Environment,
     Execution,
     ExecutionResult,
     Module,
     Project,
-    ProjectContext,
     ProjectIntelligenceReport,
-    ProjectMember,
     ReasonXConversation,
-    ReasonXMessage,
     Requirement,
     Review,
     Run,
     RunStep,
-    SimulationModel,
     TestCase,
-    TestSuite as DBTestSuite,
     User,
+)
+from app.db.models import (
+    TestSuite as DBTestSuite,
 )
 
 DBTestSuite.__test__ = False
@@ -245,7 +235,6 @@ def test_synthetic_project_deletion_lifecycle_and_integrity():
         db.commit()
 
         req_id = req.id
-        tc_id = tc.id
 
         # Verify all records exist prior to deletion
         assert db.scalar(select(func.count(Requirement.id)).where(Requirement.project_id == pid)) == 1

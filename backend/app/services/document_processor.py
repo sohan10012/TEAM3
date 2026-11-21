@@ -465,8 +465,8 @@ def parse_html(file_path: Path) -> dict[str, Any]:
     clean = re.sub(r"<p[^>]*>(.*?)</p>", r"\n\1\n", clean, flags=re.DOTALL | re.IGNORECASE)
     clean = re.sub(r"<[^>]+>", " ", clean)
     clean = unescape(clean)
-    lines = [re.sub(r"\s+", " ", l).strip() for l in clean.splitlines()]
-    cleaned_text = "\n".join(l for l in lines if l)
+    lines = [re.sub(r"\s+", " ", line_str).strip() for line_str in clean.splitlines()]
+    cleaned_text = "\n".join(line_str for line_str in lines if line_str)
 
     sections: list[dict[str, Any]] = []
     items: list[dict[str, Any]] = []

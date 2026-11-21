@@ -225,36 +225,51 @@ def evaluate_provider_multi_run(
     return summary
 
 
-def run_comparative_benchmark(iterations: int = 3) -> dict[str, Any]:
+def run_comparative_benchmark(iterations: int = 3, provider: str = "all") -> dict[str, Any]:
     """Runs multi-run comparative benchmark across Mock, Groq, and Gemini providers."""
     settings = get_settings()
     results = {}
 
+    target = provider.lower()
+
     # 1. Mock baseline (deterministic)
-    print("\n--- Evaluating Mock Baseline ---")
-    results["mock"] = evaluate_provider_multi_run("mock", "fixture-v1", iterations=iterations)
+    if target in ("all", "mock"):
+        print("\n--- Evaluating Mock Baseline ---")
+        results["mock"] = evaluate_provider_multi_run("mock", "fixture-v1", iterations=iterations)
 
     # 2. Groq (if configured)
-    if settings.groq_keys:
-        print("\n--- Evaluating Groq Provider ---")
-        results["groq"] = evaluate_provider_multi_run("groq", settings.groq_model, iterations=iterations)
-    else:
-        results["groq"] = {"status": "skipped", "reason": "No Groq API keys configured"}
+    if target in ("all", "groq"):
+        if settings.groq_keys:
+            print("\n--- Evaluating Groq Provider ---")
+            results["groq"] = evaluate_provider_multi_run("groq", settings.groq_model, iterations=iterations)
+        else:
+            results["groq"] = {"status": "skipped", "reason": "No Groq API keys configured"}
 
     # 3. Gemini (if configured)
-    if settings.gemini_keys:
-        print("\n--- Evaluating Gemini Provider ---")
-        results["gemini"] = evaluate_provider_multi_run("gemini", settings.gemini_model, iterations=iterations)
-    else:
-        results["gemini"] = {"status": "skipped", "reason": "No Gemini API keys configured"}
+    if target in ("all", "gemini"):
+        if settings.gemini_keys:
+            print("\n--- Evaluating Gemini Provider ---")
+            results["gemini"] = evaluate_provider_multi_run("gemini", settings.gemini_model, iterations=iterations)
+        else:
+            results["gemini"] = {"status": "skipped", "reason": "No Gemini API keys configured"}
 
     return results
 
 
-if __name__ == "__main__":
-    benchmark = run_comparative_benchmark(iterations=3)
+def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="Run AI Evaluation Benchmark")
+    parser.add_argument("--provider", default="all", choices=["groq", "gemini", "mock", "all"], help="Provider to benchmark")
+    parser.add_argument("--iterations", type=int, default=3, help="Number of benchmark iterations")
+    args = parser.parse_args()
+
+    benchmark = run_comparative_benchmark(iterations=args.iterations, provider=args.provider)
     repo_root = Path(__file__).resolve().parents[3]
     out_file = repo_root / "docs" / "ai_eval_benchmark.json"
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(benchmark, indent=2))
     print(f"Benchmark results written to {out_file}")
+
+
+if __name__ == "__main__":
+    main()

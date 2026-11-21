@@ -1,9 +1,8 @@
-import pytest
 from app.services.project_onboarding import (
-    normalize_heading_capitalization,
-    find_quote_provenance,
-    calculate_rule_confidence,
     _synthesize_grounded_rules_from_text,
+    calculate_rule_confidence,
+    find_quote_provenance,
+    normalize_heading_capitalization,
 )
 
 
@@ -42,7 +41,7 @@ def test_source_page_provenance_physical_vs_printed():
         "extracted_text": dummy_text,
         "id": 1067,
     }
-    
+
     prov = find_quote_provenance(quote_br1, doc_dict, [dummy_text])
     assert prov["physical_page_number"] == 13
     assert prov["printed_page_number"] == 7
@@ -66,7 +65,7 @@ def test_multi_factor_confidence_calculation_no_static_92():
     # Verbatim match on high-confidence rule
     quote = "Account-level separation is strongly recommended"
     doc_text = f"AWS Whitepaper: {quote} for workload isolation."
-    
+
     res = calculate_rule_confidence(
         quote=quote,
         title="Account-Level Separation",
@@ -86,7 +85,7 @@ def test_multi_factor_confidence_calculation_no_static_92():
     assert "classification_certainty" in breakdown
     assert "context_clarity" in breakdown
     assert "extraction_ambiguity" in breakdown
-    
+
     # Must NOT be hardcoded 0.92
     assert score != 0.92
     assert 0.90 <= score <= 0.99
@@ -123,7 +122,7 @@ def test_synthesized_grounded_rules_and_scenario_traceability():
         "sha256_hash": "abc123sha",
         "extracted_text": aws_text,
     }]
-    
+
     rules = _synthesize_grounded_rules_from_text(
         parsed_docs=parsed_docs,
         all_source_texts=[aws_text],
@@ -155,7 +154,7 @@ def test_synthesized_grounded_rules_and_scenario_traceability():
 
 def test_rejected_rule_pruning_safeguard(admin):
     from app.db.base import SessionLocal
-    from app.db.models import BusinessScenario, Requirement
+    from app.db.models import BusinessScenario
 
     # Setup approved configuration where BR-001 is accepted but BR-007 is REJECTED (not in business_rules)
     approved_config = {

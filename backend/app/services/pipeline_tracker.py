@@ -7,17 +7,17 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from sqlalchemy import select, func, desc
+
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.db.models import (
+    Defect,
     Document,
+    Execution,
+    Project,
     Requirement,
     TestCase,
-    Execution,
-    ExecutionResult,
-    Defect,
-    Project,
 )
 
 log = logging.getLogger("tracetest.pipeline_tracker")
@@ -57,14 +57,14 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
         )
     ).scalar_one()
 
-    invalid_tests = db.execute(
+    db.execute(
         select(func.count(TestCase.id)).where(
             TestCase.project_id == project_id,
             TestCase.validation_status.in_(["invalid", "failed"])
         )
     ).scalar_one()
 
-    approved_tests = db.execute(
+    db.execute(
         select(func.count(TestCase.id)).where(
             TestCase.project_id == project_id,
             TestCase.status == "approved"
@@ -98,6 +98,7 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
     # =========================================================================
     # PHASE 1: PREPARATION PHASE (Data Collection & Intake)
     # =========================================================================
+    prep_steps: list[dict[str, Any]] = []
     if is_payments:
         prep_steps = [
             {
@@ -318,7 +319,7 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
             },
         ]
 
-    prep_completed_steps = sum(1 for s in prep_steps if s["completed"])
+    prep_completed_steps = len([s for s in prep_steps if s.get("completed")])
     prep_total_steps = len(prep_steps)
     prep_pct = round(100.0 * prep_completed_steps / prep_total_steps, 1)
     if prep_completed_steps == prep_total_steps:
@@ -331,6 +332,7 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
     # =========================================================================
     # PHASE 2: PRE-VALIDATION / ADJUDICATION PHASE
     # =========================================================================
+    pre_steps: list[dict[str, Any]] = []
     if is_payments:
         pre_steps = [
             {
@@ -540,9 +542,9 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
             },
         ]
 
-    pre_completed_steps = sum(1 for s in pre_steps if s["completed"])
+    pre_completed_steps = len([s for s in pre_steps if s.get("completed")])
     pre_total_steps = len(pre_steps)
-    pre_failed_steps = sum(1 for s in pre_steps if s["status"] in ["failed", "blocked"])
+    pre_failed_steps = len([s for s in pre_steps if s.get("status") in ["failed", "blocked"]])
     pre_pct = round(100.0 * pre_completed_steps / pre_total_steps, 1)
 
     if pre_failed_steps > 0:
@@ -557,6 +559,7 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
     # =========================================================================
     # PHASE 3: POST-VALIDATION / RESOLUTION PHASE
     # =========================================================================
+    post_steps: list[dict[str, Any]] = []
     if is_payments:
         post_steps = [
             {
@@ -700,9 +703,9 @@ def compute_pipeline_progress(db: Session, project_id: int) -> dict[str, Any]:
             },
         ]
 
-    post_completed_steps = sum(1 for s in post_steps if s["completed"])
+    post_completed_steps = len([s for s in post_steps if s.get("completed")])
     post_total_steps = len(post_steps)
-    post_failed_steps = sum(1 for s in post_steps if s["status"] in ["failed", "blocked"])
+    post_failed_steps = len([s for s in post_steps if s.get("status") in ["failed", "blocked"]])
     post_pct = round(100.0 * post_completed_steps / post_total_steps, 1)
 
     if post_failed_steps > 0 and post_completed_steps > 0:

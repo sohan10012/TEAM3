@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -189,50 +189,7 @@ export function GlobalSearchPalette({ open, onClose }: GlobalSearchPaletteProps)
     ? results
     : results.filter((r) => r.type === activeFilter);
 
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
-
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (filteredResults.length > 0 ? (prev + 1) % filteredResults.length : 0));
-        return;
-      }
-
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (filteredResults.length > 0 ? (prev - 1 + filteredResults.length) % filteredResults.length : 0));
-        return;
-      }
-
-      if (e.key === "Enter" && filteredResults[selectedIndex]) {
-        e.preventDefault();
-        handleSelect(filteredResults[selectedIndex]);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, filteredResults, selectedIndex]);
-
-  // Scroll selected item into view
-  useEffect(() => {
-    if (resultsListRef.current) {
-      const selectedEl = resultsListRef.current.querySelector(`[data-index="${selectedIndex}"]`);
-      if (selectedEl) {
-        selectedEl.scrollIntoView({ block: "nearest" });
-      }
-    }
-  }, [selectedIndex]);
-
-  const handleSelect = (item: SearchResultItem) => {
+  const handleSelect = useCallback((item: SearchResultItem) => {
     onClose();
     switch (item.type) {
       case "project":
@@ -271,7 +228,50 @@ export function GlobalSearchPalette({ open, onClose }: GlobalSearchPaletteProps)
       default:
         navigate("/");
     }
-  };
+  }, [navigate, onClose]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!open) return;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (filteredResults.length > 0 ? (prev + 1) % filteredResults.length : 0));
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (filteredResults.length > 0 ? (prev - 1 + filteredResults.length) % filteredResults.length : 0));
+        return;
+      }
+
+      if (e.key === "Enter" && filteredResults[selectedIndex]) {
+        e.preventDefault();
+        handleSelect(filteredResults[selectedIndex]);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, filteredResults, selectedIndex, handleSelect, onClose]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (resultsListRef.current) {
+      const selectedEl = resultsListRef.current.querySelector(`[data-index="${selectedIndex}"]`);
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [selectedIndex]);
 
   if (!open) return null;
 

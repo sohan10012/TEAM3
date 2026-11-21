@@ -11,12 +11,11 @@ Covers:
 """
 from __future__ import annotations
 
-import pytest
-from app.services.reasonx.tools import TOOL_REGISTRY
-from app.services.reasonx.context import get_detailed_project_context
-from app.services.reasonx.tasks import create_task, get_task_details, list_project_tasks
-from app.services.reasonx.approval import cancel_task, create_approval_request, execute_approved_task
 from app.db.base import SessionLocal
+from app.services.reasonx.approval import create_approval_request
+from app.services.reasonx.context import get_detailed_project_context
+from app.services.reasonx.tasks import create_task
+from app.services.reasonx.tools import TOOL_REGISTRY
 
 
 def test_tool_registry_specifications():

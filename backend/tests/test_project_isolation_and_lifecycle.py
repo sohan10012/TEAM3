@@ -1,11 +1,6 @@
 """Automated Regression Suite for Global Project Data Isolation, Release Decisions, and Project Lifecycle Deletion."""
 from __future__ import annotations
 
-import pytest
-from app.db.base import get_db
-from app.db.models import Defect, Project, Requirement, TestCase
-from app.services.release_decision import evaluate_release_decision
-
 
 def test_global_project_data_isolation_and_cross_project_rejection(admin):
     # 1. Create two isolated test projects
@@ -82,7 +77,7 @@ def test_global_project_data_isolation_and_cross_project_rejection(admin):
         })
         assert r_test_b.status_code == 201, r_test_b.text
         test_b = r_test_b.json()
-        test_b_id = test_b["id"]
+        test_b["id"]
 
         # 4. Create Defect in Project A linked to Test A
         r_def_a = admin.post("/defects", json={
@@ -95,7 +90,7 @@ def test_global_project_data_isolation_and_cross_project_rejection(admin):
             "actual_result": "Bucket accessible publicly",
         })
         assert r_def_a.status_code == 201, r_def_a.text
-        def_a = r_def_a.json()
+        r_def_a.json()
 
         # 5. Verify Project Scoping: Project B views must NOT leak Project A data
         r_list_b_reqs = admin.get(f"/requirements?project_id={proj_b_id}")

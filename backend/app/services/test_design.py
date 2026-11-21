@@ -114,7 +114,7 @@ def _generate_criteria_for_requirement_model(
             action=f"Attempts operation with violated boundary or invalid state: {first_clause}",
             input_conditions=[{"field": "input_payload", "condition": "boundary_exceeded_or_unauthorized"}],
             expected_behaviour=f"The system prevents execution of {req.key} and retains invariant integrity.",
-            expected_output=f"Operation is securely rejected with deterministic diagnostic error; zero unauthorized mutation.",
+            expected_output="Operation is securely rejected with deterministic diagnostic error; zero unauthorized mutation.",
             validation_conditions=[
                 "Verify state remains unmutated upon rejection",
                 "Verify fail-closed behavior and audit log emission",

@@ -10,27 +10,23 @@ import csv
 import io
 import json
 from collections import defaultdict
-from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from app.core.errors import BadRequest, NotFound
+from app.core.errors import NotFound
 from app.db.base import utcnow
 from app.db.models import (
     AcceptanceCriterion,
     AuditLog,
     Clause,
     Defect,
-    Document,
     Execution,
     ExecutionResult,
     Project,
     Requirement,
-    RequirementVersion,
     TestCase,
-    User,
 )
 
 
@@ -423,9 +419,9 @@ def get_traceability_hierarchy(
     )
     latest_result_by_test: dict[int, ExecutionResult] = {}
     history_by_test: dict[int, list[ExecutionResult]] = defaultdict(list)
-    for r in results:
-        latest_result_by_test[r.test_case_id] = r
-        history_by_test[r.test_case_id].append(r)
+    for res_row in results:
+        latest_result_by_test[res_row.test_case_id] = res_row
+        history_by_test[res_row.test_case_id].append(res_row)
 
     # Preload defects
     defects = list(
@@ -502,7 +498,7 @@ def get_traceability_hierarchy(
             test_nodes = []
             for t in a_tests:
                 latest_res = latest_result_by_test.get(t.id)
-                t_history = history_by_test[t.id][-5:]  # last 5 attempts
+                history_by_test[t.id][-5:]  # last 5 attempts
                 t_defects = defects_by_test[t.id]
                 test_nodes.append({
                     "id": t.id,
@@ -646,8 +642,8 @@ def get_coverage_gaps(
         ).scalars().all()
     )
     latest_result_by_test: dict[int, ExecutionResult] = {}
-    for r in results:
-        latest_result_by_test[r.test_case_id] = r
+    for res_row in results:
+        latest_result_by_test[res_row.test_case_id] = res_row
 
     # Preload defects
     defects = list(
@@ -815,7 +811,7 @@ def get_coverage_gaps(
                 "severity": "critical" if r.priority == "critical" else "high",
                 "evidence": f"{len(failing_tests)} tests ({', '.join(t.key for t in failing_tests[:3])}) are currently failing for {r.key}.",
                 "why_it_matters": "Active test failures mean requirement functionality does not meet specifications in the target build.",
-                "recommended_action": f"Review execution logs for failing tests and verify associated defects.",
+                "recommended_action": "Review execution logs for failing tests and verify associated defects.",
                 "navigation_link": f"/executions?project_id={project_id}&requirement_id={r.id}",
             })
 
@@ -834,7 +830,7 @@ def get_coverage_gaps(
                 "severity": "critical" if any(d.severity == "critical" for d in r_defects) else "high",
                 "evidence": f"{len(r_defects)} open defects ({', '.join(d.key for d in r_defects)}) linked to {r.key}.",
                 "why_it_matters": "Open defects represent recognized functional variances from statutory or business rules.",
-                "recommended_action": f"Prioritize engineering fix for linked defects and rerun verification suite.",
+                "recommended_action": "Prioritize engineering fix for linked defects and rerun verification suite.",
                 "navigation_link": f"/defects?project_id={project_id}&requirement_id={r.id}",
             })
 
@@ -993,7 +989,7 @@ def get_coverage_recommendations(db: Session, project_id: int) -> dict[str, Any]
             "expected_coverage_improvement": "100% Pass Rate across Dayforce Test Suite",
             "ai_assisted": True,
             "requires_human_approval": True,
-            "action_endpoint": f"/api/v1/executions/37",
+            "action_endpoint": "/api/v1/executions/37",
         })
 
     # 3. Recommendation for flaky tests
@@ -1046,7 +1042,7 @@ def get_advanced_coverage_matrix(
         reqs = [r for r in reqs if s.lower() in r.key.lower() or s.lower() in r.title.lower()]
 
     req_ids = [r.id for r in reqs]
-    req_map = {r.id: r for r in reqs}
+    {r.id: r for r in reqs}
 
     acs = list(
         db.execute(
@@ -1189,18 +1185,18 @@ def get_traceability_audit_ledger(
     )
 
     ledger_entries = []
-    for l in logs:
+    for entry in logs:
         ledger_entries.append({
-            "id": l.id,
-            "timestamp": l.created_at.isoformat() if l.created_at else None,
-            "actor_id": l.actor_id,
-            "action": l.action,
-            "entity_type": l.entity_type,
-            "entity_id": l.entity_id,
-            "entity_key": l.entity_key,
-            "project_id": l.project_id,
-            "source": l.source,
-            "details": l.details or {},
+            "id": entry.id,
+            "timestamp": entry.created_at.isoformat() if entry.created_at else None,
+            "actor_id": entry.actor_id,
+            "action": entry.action,
+            "entity_type": entry.entity_type,
+            "entity_id": entry.entity_id,
+            "entity_key": entry.entity_key,
+            "project_id": entry.project_id,
+            "source": entry.source,
+            "details": entry.details or {},
         })
 
     return ledger_entries
@@ -1260,22 +1256,22 @@ def export_traceability_report(
 
     elif fmt == "md":
         lines = [
-            f"# TraceTest Traceability Intelligence & Coverage Dossier",
-            f"",
+            "# TraceTest Traceability Intelligence & Coverage Dossier",
+            "",
             f"**Project:** {overview['project_name']} (`{proj_key}`)  ",
             f"**Generated At:** {overview['data_freshness_timestamp']}  ",
             f"**Overall Health Grade:** {health['status_grade'].upper()} (Score: {health['composite_score']}/100)  ",
-            f"",
-            f"## Executive Governance Summary",
+            "",
+            "## Executive Governance Summary",
             f"- **Requirements:** {overview['total_requirements']} ({overview['requirement_coverage_pct']}% covered)",
             f"- **Clauses:** {overview['total_clauses']} ({overview['clause_coverage_pct']}% covered)",
             f"- **Acceptance Criteria:** {overview['total_acceptance_criteria']} total, {overview['acs_with_linked_tests']} tested, **{overview['acs_without_linked_tests']} uncovered** ({overview['ac_coverage_pct']}% coverage)",
             f"- **Test Cases:** {overview['total_test_cases']} total, {overview['executed_test_cases']} executed, {overview['tests_with_passing_results']} passed, {overview['tests_with_failing_results']} failed",
             f"- **Defects:** {overview['open_defects']} open defects",
-            f"",
+            "",
             f"## Key Identified Coverage Gaps ({gaps['total_gaps']} Total)",
-            f"| Gap ID | Category | Entity | Severity | Recommended Action |",
-            f"| :--- | :--- | :--- | :--- | :--- |",
+            "| Gap ID | Category | Entity | Severity | Recommended Action |",
+            "| :--- | :--- | :--- | :--- | :--- |",
         ]
         for g in gaps["gaps"][:20]:
             lines.append(f"| {g['gap_id']} | {g['category_label']} | `{g['entity_key']}` | {g['severity'].upper()} | {g['recommended_action']} |")

@@ -5,17 +5,17 @@ import csv
 import io
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import Principal, current_principal, scoped_project_ids
 from app.core.config import get_settings
-from app.core.errors import BadRequest, NotFound
+from app.core.errors import NotFound
 from app.db.base import get_db, utcnow
 from app.db.models import Project, ProviderTrace
 from app.llm.pricing import CURRENT_PRICING_VERSION, get_model_pricing, list_pricing_catalog
@@ -76,7 +76,7 @@ def _filter_traces_by_time_and_scope(
         )
 
     # 2. Time range filtering
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if time_range == "today":
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         query = query.where(ProviderTrace.created_at >= start)
@@ -395,7 +395,7 @@ def export_ai_usage_report(
     traces = db.execute(base_query.order_by(ProviderTrace.created_at.desc())).scalars().all()
 
     project_names = {row.id: row.name for row in db.execute(select(Project.id, Project.name)).all()}
-    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    timestamp_str = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
 
     if format == "json":
         records = [

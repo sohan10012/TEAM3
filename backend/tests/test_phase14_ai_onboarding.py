@@ -11,18 +11,17 @@ Verifies:
 8. API endpoints integration via TestClient.
 """
 from pathlib import Path
-import pytest
+
 from app.db.base import session_scope
-from app.db.models import Project, ProjectContext, ProjectRole, BusinessScenario, Document, User
-from app.api.deps import Principal
+from app.db.models import BusinessScenario, Document, Project, ProjectContext, ProjectRole, User
+from app.services.pipeline_tracker import compute_pipeline_progress
 from app.services.project_onboarding import (
+    analyze_uploaded_documents_for_onboarding,
+    commit_approved_onboarding_project,
+    explain_onboarding_item_with_reasonx,
     preload_upi_regulatory_documents_staging,
     stage_uploaded_file,
-    analyze_uploaded_documents_for_onboarding,
-    explain_onboarding_item_with_reasonx,
-    commit_approved_onboarding_project,
 )
-from app.services.pipeline_tracker import compute_pipeline_progress
 
 
 def test_preload_upi_circulars_staging(app):

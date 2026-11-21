@@ -227,9 +227,9 @@ erDiagram
     users ||--o{ reviews : conducts
 ```
 
-### Complete Model Catalog (All 44 Tables)
+### Complete Model Catalog (All 48 Tables)
 
-Below is the exhaustive documentation of all 44 SQLAlchemy database tables:
+Below is the exhaustive documentation of all 48 SQLAlchemy database tables:
 
 1. **`organisations`**: Multi-tenant organization containers (`id`, `name`, `slug`, `created_at`).
 2. **`users`**: System operators and engineers (`id`, `email`, `full_name`, `title`, `password_hash`, `is_active`).
@@ -275,6 +275,10 @@ Below is the exhaustive documentation of all 44 SQLAlchemy database tables:
 42. **`eval_runs`**: Benchmark evaluation runs (`id`, `provider`, `model`, `is_fixture`, `status`, `scenario_count`, `pass_rate`).
 43. **`eval_results`**: Per-scenario evaluation outcomes (`id`, `eval_run_id`, `scenario_key`, `passed`, `metrics`).
 44. **`provider_traces`**: Token usage, latency, and telemetry per LLM call (`id`, `run_id`, `provider`, `model`, `slot_id`, `prompt_tokens`, `completion_tokens`, `duration_ms`).
+45. **`project_intelligence_reports`**: Persisted intelligence reports, evidence-weighted quality scores, governance area breakdowns, and release decision snapshots (`id`, `project_id`, `version_hash`, `executive_summary`, `readiness_score`, `metrics_by_area`, `critical_gaps`, `document_analysis`, `requirements_analysis`, `ai_insights`, `test_design`, `policy_validation`, `execution_results`, `traceability`, `recommendations`, `generated_at`, `created_at`).
+46. **`reasonx_conversations`**: ReasonX interactive assistant conversation sessions with page and project context (`id`, `project_id`, `user_id`, `title`, `page_context`, `created_at`, `updated_at`).
+47. **`reasonx_messages`**: Conversational messages, grounded evidence citations, tool invocation logs, and operator queries (`id`, `conversation_id`, `role`, `content`, `structured_payload`, `screen_context`, `created_at`).
+48. **`reasonx_tasks`**: Stateful asynchronous background reasoning and dual-control approval tasks (`id`, `project_id`, `conversation_id`, `user_id`, `task_type`, `title`, `status`, `risk_level`, `plan`, `steps`, `pending_action`, `result_summary`, `evidence`, `created_at`, `updated_at`).
 
 ---
 

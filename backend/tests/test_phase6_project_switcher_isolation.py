@@ -8,8 +8,8 @@ Verifies that:
 """
 from __future__ import annotations
 
-import pytest
 from sqlalchemy import select
+
 from app.db.base import make_engine
 from app.db.init_db import initialise
 from app.db.models import Project
@@ -38,15 +38,15 @@ def test_analytics_and_matrix_endpoints_strict_project_isolation(admin):
     reject nonexistent/deleted project_id with 404 rather than silently broadening scope.
     """
     invalid_pid = 999999
-    
+
     # 1. Analytics Dashboard
     r_dash = admin.get(f"/analytics/dashboard?project_id={invalid_pid}")
     assert r_dash.status_code == 404, f"Expected 404 for invalid project_id, got {r_dash.status_code}"
-    
+
     # 2. Analytics Quality
     r_qual = admin.get(f"/analytics/quality?project_id={invalid_pid}")
     assert r_qual.status_code == 404, f"Expected 404 for invalid project_id, got {r_qual.status_code}"
-    
+
     # 3. Traceability Matrix
     r_matrix = admin.get(f"/traceability/matrix?project_id={invalid_pid}")
     assert r_matrix.status_code == 404, f"Expected 404 for invalid project_id, got {r_matrix.status_code}"
@@ -61,7 +61,7 @@ def test_project_listing_contains_only_authorized_projects(admin):
     data = res.json()
     items = data.get("items", [])
     keys = {p["key"] for p in items}
-    
+
     # Ensure purged projects are not in the response
     assert "CUREON" not in keys
     assert "DAYFORCE" not in keys

@@ -1,8 +1,6 @@
 """Phase 4 Enterprise Execution Intelligence & Results Management tests."""
 from __future__ import annotations
 
-import pytest
-
 
 def test_execution_metrics_and_governance(qa, admin):
     """Verifies that execution metrics return all 12 real database metrics and breakdowns."""

@@ -5,9 +5,9 @@ import re
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, Response, Query
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.api import serializers as S
@@ -176,7 +176,6 @@ def analyze_onboarding_documents(
     db: Session = Depends(get_db),
 ):
     """Analyze uploaded documents and extract structured, evidence-backed project configuration."""
-    from app.services.project_onboarding import analyze_uploaded_documents_for_onboarding
 
     configuration = analyze_uploaded_documents_for_onboarding(
         db=db,
@@ -196,7 +195,6 @@ def reasonx_explain_onboarding(
     db: Session = Depends(get_db),
 ):
     """Provide grounded ReasonX answers regarding extracted onboarding configuration, rules, and cross-document reconciliation."""
-    from app.services.project_onboarding import explain_onboarding_item_with_reasonx
 
     return explain_onboarding_item_with_reasonx(
         configuration=body.configuration,
@@ -211,7 +209,6 @@ def create_project_from_onboarding_flow(
     db: Session = Depends(get_db),
 ):
     """Persist human-approved onboarding configuration and trigger initial requirements extraction."""
-    from app.services.project_onboarding import commit_approved_onboarding_project
 
     return commit_approved_onboarding_project(
         db=db,
@@ -748,8 +745,9 @@ def delete_project(
     if confirm_key and confirm_key.strip() != proj.key:
         raise BadRequest(f"Confirmation key '{confirm_key}' does not match project key '{proj.key}'")
 
-    from app.core.config import get_settings
     import shutil
+
+    from app.core.config import get_settings
 
     # 1. Clean up polymorphic Review records referencing project requirements, test cases, or ACs
     req_ids = [r for r in db.execute(select(Requirement.id).where(Requirement.project_id == proj.id)).scalars().all()]
@@ -1068,11 +1066,11 @@ def get_project_test_metrics(
         .group_by(ExecutionResult.test_case_id)
         .subquery()
     )
-    latest_results = dict(db.execute(
+    latest_results = dict([(row[0], row[1]) for row in db.execute(
         select(ExecutionResult.status, func.count())
         .join(subq, ExecutionResult.id == subq.c.max_id)
         .group_by(ExecutionResult.status)
-    ).all())
+    ).all()])
 
     executed = sum(latest_results.values())
     unexecuted = max(0, total - executed)

@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import os
 import re
-import time
 from pathlib import Path
 
 import pytest
@@ -40,6 +39,25 @@ BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
 SCREENSHOT_DIR = Path("/home/Sohan/PROJECTS/tracetest-ai/docs/screenshots/phase-13")
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 CHROME_PATH = "/usr/bin/chromium" if os.path.exists("/usr/bin/chromium") else None
+
+
+def _is_server_available() -> bool:
+    import socket
+    from urllib.parse import urlparse
+    try:
+        u = urlparse(BASE_URL)
+        host = u.hostname or "127.0.0.1"
+        port = u.port or (443 if u.scheme == "https" else 80)
+        with socket.create_connection((host, port), timeout=0.3):
+            return True
+    except OSError:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _is_server_available(),
+    reason=f"Requires live server running at {BASE_URL}",
+)
 
 
 @pytest.fixture(scope="module")

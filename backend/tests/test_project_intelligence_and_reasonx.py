@@ -10,8 +10,6 @@ Covers:
 """
 from __future__ import annotations
 
-import pytest
-
 
 def test_project_intelligence_report_generation(admin):
     """Test generating and fetching Project Intelligence Report for a project."""

@@ -14,7 +14,8 @@ from __future__ import annotations
 import csv
 import io
 import json
-from datetime import datetime, timezone
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any
 
 import openpyxl
@@ -42,7 +43,7 @@ from app.services.release_decision import evaluate_release_decision
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _safe_str(val: Any) -> str:
@@ -96,7 +97,7 @@ def gather_project_engineering_data(db: Session, project_id: int) -> dict[str, A
     ).scalars().all()
 
     test_ids = [t.id for t in tests]
-    steps: list[TestStep] = []
+    steps: Sequence[TestStep] = []
     if test_ids:
         steps = db.execute(
             select(TestStep).where(TestStep.test_case_id.in_(test_ids)).order_by(TestStep.test_case_id, TestStep.position)
@@ -1477,8 +1478,8 @@ def export_granular_slice(
                 cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
             for r in rows:
                 ws.append([_safe_str(r.get(h, "")) for h in headers])
-        buf = io.BytesIO()
-        wb.save(buf)
-        return buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename
+        bytes_buf = io.BytesIO()
+        wb.save(bytes_buf)
+        return bytes_buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename
 
     raise ValueError(f"Unsupported format '{fmt}'. Choose json, csv, markdown, or xlsx.")

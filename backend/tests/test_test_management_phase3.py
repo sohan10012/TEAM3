@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def test_test_management_phase3_endpoints(qa, reviewer, admin):
     # 1. Fetch project list and select Dayforce project (or first project)

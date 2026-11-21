@@ -411,7 +411,11 @@ export interface paths {
         get: operations["get_project_api_v1_projects__project_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Project
+         * @description Safely and permanently deletes a project, cascading deletion across all project-owned assets and cleaning up polymorphic reviews, runs, and disk storage.
+         */
+        delete: operations["delete_project_api_v1_projects__project_id__delete"];
         options?: never;
         head?: never;
         /** Update Project */
@@ -2769,7 +2773,7 @@ export interface paths {
         };
         /**
          * Get Pipeline Progress
-         * @description Calculate and return operational data processing pipeline progress across Preparation, Pre-Payroll, and Post-Payroll phases.
+         * @description Calculate and return operational data processing pipeline progress across Preparation, Validation, and Post-Validation phases.
          */
         get: operations["get_pipeline_progress_api_v1_simulation_pipeline_progress_get"];
         put?: never;
@@ -2849,9 +2853,89 @@ export interface paths {
         };
         /**
          * Export Project Intelligence Report
-         * @description Export the Project Intelligence Report in JSON, Markdown, or print-ready format.
+         * @description Export the Project Intelligence Report in JSON, Markdown, XLSX or print-ready HTML/PDF format.
          */
         get: operations["export_project_intelligence_report_api_v1_projects__project_id__intelligence_report_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/intelligence-report/handoff/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Role Handoff Report
+         * @description Retrieve or export role-specific engineering deliverables.
+         */
+        get: operations["get_role_handoff_report_api_v1_projects__project_id__intelligence_report_handoff__role__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/intelligence-report/complete-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Complete Project Package Endpoint
+         * @description Export the standardized complete project package (Schema v2.0.0 JSON or multi-sheet XLSX workbook).
+         */
+        get: operations["get_complete_project_package_endpoint_api_v1_projects__project_id__intelligence_report_complete_package_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/intelligence-report/granular-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Granular Export Endpoint
+         * @description Export fine-grained data slices with full dataset coverage.
+         */
+        get: operations["get_granular_export_endpoint_api_v1_projects__project_id__intelligence_report_granular_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/release-decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Release Decision
+         * @description Retrieve the authoritative release decision and evidence breakdown for a project.
+         */
+        get: operations["get_project_release_decision_api_v1_projects__project_id__release_decision_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2871,9 +2955,109 @@ export interface paths {
         put?: never;
         /**
          * Reasonx Chat
-         * @description Send a question to ReasonX AI with active screen and project context.
+         * @description Send a query to ReasonX AI Autonomous Agent with active screen and project context.
          */
         post: operations["reasonx_chat_api_v1_reasonx_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reasonx/chat/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reasonx Chat Stream
+         * @description Server-Sent Events (SSE) streaming endpoint for ReasonX Autonomous Agent.
+         */
+        post: operations["reasonx_chat_stream_api_v1_reasonx_chat_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reasonx/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Task
+         * @description Retrieve full task status, execution trace, and planned steps.
+         */
+        get: operations["get_task_api_v1_reasonx_tasks__task_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reasonx/tasks/{task_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Task Action
+         * @description Approve and execute a pending Level 3/4 action on a ReasonX task.
+         */
+        post: operations["approve_task_action_api_v1_reasonx_tasks__task_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reasonx/tasks/{task_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Task Action
+         * @description Cancel a pending or running ReasonX task.
+         */
+        post: operations["cancel_task_action_api_v1_reasonx_tasks__task_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reasonx/projects/{project_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Tasks
+         * @description List recent ReasonX agent tasks for a project.
+         */
+        get: operations["get_project_tasks_api_v1_reasonx_projects__project_id__tasks_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2949,9 +3133,89 @@ export interface paths {
         };
         /**
          * Quick Prompts
-         * @description Get context-aware suggested quick prompts for the active screen.
+         * @description Get context-aware suggested quick prompts for the active screen and project.
          */
         get: operations["quick_prompts_api_v1_reasonx_quick_prompts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/ai-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ai Usage Analytics
+         * @description Aggregate token usage, AI cost analytics, provider breakdown, and historical trend.
+         */
+        get: operations["get_ai_usage_analytics_api_v1_settings_ai_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/ai-usage/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Ai Usage Report
+         * @description Export filtered AI token usage and cost accounting report as CSV or JSON.
+         */
+        get: operations["export_ai_usage_report_api_v1_settings_ai_usage_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/llm/health-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Live Provider Health Check
+         * @description Perform a live health probe against Gemini or Groq without exposing credentials or internal slot counts.
+         */
+        post: operations["live_provider_health_check_api_v1_settings_llm_health_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Clean Providers Status
+         * @description Return clean provider summary for Settings page: role, provider, model, status (zero secrets, zero slot arrays).
+         */
+        get: operations["get_clean_providers_status_api_v1_settings_providers_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3488,6 +3752,11 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthProbeRequest */
+        HealthProbeRequest: {
+            /** Provider */
+            provider: string;
         };
         /** ImportIn */
         ImportIn: {
@@ -4035,6 +4304,14 @@ export interface components {
         SwitchOperatorIn: {
             /** Persona */
             persona: string;
+        };
+        /** TaskCancelIn */
+        TaskCancelIn: {
+            /**
+             * Reason
+             * @default User cancelled action
+             */
+            reason: string;
         };
         /** TestCommitIn */
         TestCommitIn: {
@@ -5143,6 +5420,38 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_api_v1_projects__project_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Must match the project key to confirm permanent deletion */
+                confirm_key?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -9666,6 +9975,8 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
+                project_id?: number | null;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -9925,9 +10236,9 @@ export interface operations {
     };
     get_pipeline_progress_api_v1_simulation_pipeline_progress_get: {
         parameters: {
-            query?: {
+            query: {
                 /** @description Target Project ID */
-                project_id?: number;
+                project_id: number;
             };
             header?: never;
             path?: never;
@@ -9957,9 +10268,9 @@ export interface operations {
     };
     run_pipeline_step_api_v1_simulation_run_pipeline_step_post: {
         parameters: {
-            query?: {
+            query: {
                 /** @description Target Project ID */
-                project_id?: number;
+                project_id: number;
                 /** @description Optional step identifier */
                 step_id?: string | null;
             };
@@ -10054,8 +10365,142 @@ export interface operations {
     export_project_intelligence_report_api_v1_projects__project_id__intelligence_report_export_get: {
         parameters: {
             query?: {
-                format?: "json" | "markdown" | "pdf";
+                format?: "json" | "markdown" | "pdf" | "html" | "xlsx";
             };
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_role_handoff_report_api_v1_projects__project_id__intelligence_report_handoff__role__get: {
+        parameters: {
+            query?: {
+                format?: "json" | "markdown" | "html";
+            };
+            header?: never;
+            path: {
+                project_id: number;
+                role: "developer" | "qa" | "automation_agent" | "integration" | "product_owner" | "executive";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_complete_project_package_endpoint_api_v1_projects__project_id__intelligence_report_complete_package_get: {
+        parameters: {
+            query?: {
+                format?: "json" | "xlsx";
+            };
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_granular_export_endpoint_api_v1_projects__project_id__intelligence_report_granular_export_get: {
+        parameters: {
+            query?: {
+                entity?: "requirements" | "acceptance_criteria" | "test_cases" | "traceability_matrix" | "executions" | "defects" | "uncovered_requirements";
+                format?: "csv" | "json" | "markdown" | "xlsx";
+                group_by_requirement?: boolean;
+                include_linked?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_release_decision_api_v1_projects__project_id__release_decision_get: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 project_id: number;
@@ -10096,6 +10541,169 @@ export interface operations {
                 "application/json": components["schemas"]["ReasonXChatIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reasonx_chat_stream_api_v1_reasonx_chat_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonXChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_api_v1_reasonx_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_task_action_api_v1_reasonx_tasks__task_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_task_action_api_v1_reasonx_tasks__task_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TaskCancelIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_tasks_api_v1_reasonx_projects__project_id__tasks_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -10216,6 +10824,7 @@ export interface operations {
         parameters: {
             query?: {
                 page?: string;
+                project_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -10239,6 +10848,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_usage_analytics_api_v1_settings_ai_usage_get: {
+        parameters: {
+            query?: {
+                range?: string;
+                start_date?: string | null;
+                end_date?: string | null;
+                project_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_ai_usage_report_api_v1_settings_ai_usage_export_get: {
+        parameters: {
+            query?: {
+                format?: string;
+                range?: string;
+                start_date?: string | null;
+                end_date?: string | null;
+                project_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    live_provider_health_check_api_v1_settings_llm_health_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HealthProbeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_clean_providers_status_api_v1_settings_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
