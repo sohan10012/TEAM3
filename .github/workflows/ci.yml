@@ -53,7 +53,7 @@ jobs:
       - name: Backend unit & integration tests
         run: |
           mkdir -p artifacts
-          cd backend && pytest -q --cov=app --cov-report=term --cov-report=xml:../artifacts/backend-coverage.xml --junitxml=../artifacts/backend-junit.xml
+          cd backend && pytest -q --ignore=tests/test_playwright_e2e.py --cov=app --cov-report=term --cov-report=xml:../artifacts/backend-coverage.xml --junitxml=../artifacts/backend-junit.xml
 
       - name: Verify Documentation & Invariants
         run: python scripts/verify_docs.py

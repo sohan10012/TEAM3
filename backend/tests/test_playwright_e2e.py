@@ -12,10 +12,18 @@ import subprocess
 import sys
 import time
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from axe_core_python.sync_playwright import Axe
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DIST_INDEX = REPO_ROOT / "frontend" / "dist" / "index.html"
+pytestmark = pytest.mark.skipif(
+    not DIST_INDEX.exists(),
+    reason="frontend/dist/index.html not built; Playwright E2E tests require built frontend and run in the dedicated 'e2e' CI job",
+)
 
 
 def _find_free_port() -> int:

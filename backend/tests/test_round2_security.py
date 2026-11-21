@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import REPO_ROOT
+from app.core.config import REPO_ROOT, get_settings
 from app.core.errors import AppError
 from app.execution.sandbox import detect_isolation_level, run_sandboxed_pytest
 from app.guardrails.ast_validator import validate_test_syntax
@@ -85,7 +85,7 @@ def test_bwrap_sandbox_prohibits_host_filesystem_and_secrets():
 
     repo_root = Path(__file__).resolve().parents[2]
     host_env_path = str(repo_root / ".env")
-    host_db_path = str(repo_root / "var" / "tracetest.db")
+    host_db_path = str(get_settings().db_path)
 
     # Probe script that attempts to access host paths and inspect environment variables
     probe_script = f"""

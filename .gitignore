@@ -31,10 +31,13 @@ docs/screenshots/
 docs/screenshots.zip
 docs/delivery/
 docs/reports/
+!docs/reports/enterprise-evaluation/HMRC_PAYE_Tax_Table_Specification_v4.0.pdf
 docs/**/*.pdf
+!docs/reports/enterprise-evaluation/HMRC_PAYE_Tax_Table_Specification_v4.0.pdf
 docs/**/*.png
 *.zip
 *.pdf
+!docs/reports/enterprise-evaluation/HMRC_PAYE_Tax_Table_Specification_v4.0.pdf
 TRACETEST_SOHAN.pdf
 tracetest_architecture.html
 tracetest_architecture.png
