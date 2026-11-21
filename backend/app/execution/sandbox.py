@@ -350,12 +350,49 @@ def run_pytest(specs: list[ScriptSpec], hcm_version: str | None, runner: str = "
                 ])
                 if Path("/etc").exists():
                     bwrap_cmd.extend(["--ro-bind", "/etc", "/etc"])
+
+                # Mount GitHub Actions hosted tool cache if present
+                if Path("/opt/hostedtoolcache").exists():
+                    bwrap_cmd.extend(["--ro-bind", "/opt/hostedtoolcache", "/opt/hostedtoolcache"])
+
                 venv_dir = Path(sys.prefix).resolve()
-                if venv_dir != Path("/usr"):
+                base_prefix = Path(sys.base_prefix).resolve()
+
+                # If base Python interpreter is outside /usr and not inside /home, mount it at its real path
+                if (
+                    base_prefix != Path("/usr")
+                    and not str(base_prefix).startswith("/home")
+                    and base_prefix != Path("/opt/hostedtoolcache")
+                    and not str(base_prefix).startswith("/opt/hostedtoolcache/")
+                ):
+                    if base_prefix.exists():
+                        bwrap_cmd.extend(["--ro-bind", str(base_prefix), str(base_prefix)])
+
+                path_entries = ["/usr/bin", "/bin"]
+                ld_paths = ["/usr/lib", "/usr/lib64", "/lib", "/lib64"]
+
+                if str(venv_dir).startswith("/home"):
+                    # Virtual environment inside user home: map to /opt/venv to keep /home masked
                     bwrap_cmd.extend(["--ro-bind", str(venv_dir), "/opt/venv"])
-                    python_bin = "/opt/venv/bin/python3"
+                    python_bin = "/opt/venv/bin/python3" if (venv_dir / "bin" / "python3").exists() else "/opt/venv/bin/python"
+                    path_entries.insert(0, "/opt/venv/bin")
+                    ld_paths = ["/opt/venv/lib", "/opt/venv/lib64"] + ld_paths
+                elif venv_dir != Path("/usr"):
+                    # Environment is already outside /home (e.g., /opt/hostedtoolcache)
+                    if not str(venv_dir).startswith("/opt/hostedtoolcache/"):
+                        bwrap_cmd.extend(["--ro-bind", str(venv_dir), str(venv_dir)])
+                    python_bin = sys.executable
+                    path_entries.insert(0, str(venv_dir / "bin"))
+                    ld_paths = [str(venv_dir / "lib"), str(venv_dir / "lib64")] + ld_paths
                 else:
                     python_bin = sys.executable
+
+                if base_prefix != venv_dir and not str(base_prefix).startswith("/home"):
+                    ld_paths = [str(base_prefix / "lib"), str(base_prefix / "lib64")] + ld_paths
+
+                bwrap_cmd.extend(["--setenv", "PATH", ":".join(path_entries)])
+                bwrap_cmd.extend(["--setenv", "LD_LIBRARY_PATH", ":".join(ld_paths)])
+
                 if hcm_version:
                     bwrap_cmd.extend(["--setenv", "REFERENCE_HCM_VERSION", hcm_version])
                 bwrap_cmd.extend(["--bind", str(work), "/work", "--chdir", "/work"])
