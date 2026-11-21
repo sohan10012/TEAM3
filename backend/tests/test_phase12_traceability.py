@@ -31,8 +31,8 @@ import requests
 from playwright.sync_api import Browser, sync_playwright
 
 BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
-SCREENSHOT_DIR = Path("/home/Sohan/PROJECTS/tracetest-ai/docs/screenshots/phase-12")
-SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SCREENSHOT_DIR = REPO_ROOT / "docs" / "screenshots" / "phase-12"
 CHROME_PATH = "/usr/bin/chromium" if os.path.exists("/usr/bin/chromium") else None
 
 

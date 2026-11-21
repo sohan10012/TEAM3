@@ -35,9 +35,9 @@ import pytest
 import requests
 from playwright.sync_api import Browser, sync_playwright
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
-SCREENSHOT_DIR = Path("/home/Sohan/PROJECTS/tracetest-ai/docs/screenshots/phase-13")
-SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+SCREENSHOT_DIR = REPO_ROOT / "docs" / "screenshots" / "phase-13"
 CHROME_PATH = "/usr/bin/chromium" if os.path.exists("/usr/bin/chromium") else None
 
 
@@ -146,6 +146,7 @@ def test_reasonx_quick_prompts_and_chat_for_validation():
 
 def test_phase13_playwright_acceptance_and_screenshots(browser: Browser):
     """Multi-viewport end-to-end acceptance test capturing 7 authentic screenshots."""
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
     # -------------------------------------------------------------------------
     # 1. Desktop 1920x1080: Policy Validation Screen with Live Pipeline Progress
     # -------------------------------------------------------------------------

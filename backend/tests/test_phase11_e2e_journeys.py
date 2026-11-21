@@ -27,8 +27,8 @@ import pytest
 from axe_core_python.sync_playwright import Axe
 from playwright.sync_api import Browser, sync_playwright
 
-SCREENSHOT_DIR = Path("/home/Sohan/PROJECTS/tracetest-ai/docs/screenshots/phase-11")
-SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SCREENSHOT_DIR = REPO_ROOT / "docs" / "screenshots" / "phase-11"
 BASE_URL = os.environ.get("TRACETEST_URL", "http://127.0.0.1:8000")
 CHROME_PATH = "/usr/bin/chromium" if os.path.exists("/usr/bin/chromium") else None
 
@@ -61,6 +61,7 @@ def browser() -> Browser:
 
 
 def capture_viewports(browser: Browser, path: str, prefix: str, wait_selector: str = "#root"):
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
     viewports = [
         ("desktop_1920x1080", 1920, 1080),
         ("desktop_1440x900", 1440, 900),

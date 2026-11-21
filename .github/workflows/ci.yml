@@ -4,125 +4,196 @@ on:
   push:
     branches: ["**"]
   pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   backend:
+    name: Backend (Lint, Typecheck, Contract, Tests, Docs)
     runs-on: ubuntu-latest
     env:
       TRACETEST_LLM_MODE: mock
       TRACETEST_ALLOW_WEAK_SANDBOX: "1"
+      TRACETEST_ENV: test
+      PYTHONPATH: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
-      - run: pip install -r backend/requirements-dev.txt
-      - name: Dependency vulnerability check
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements-dev.txt
+
+      - name: Dependency vulnerability audit
         run: pip-audit -r backend/requirements.txt
-      - name: Lint
+
+      - name: Lint with Ruff
         run: cd backend && ruff check app tests
-      - name: Type check
+
+      - name: Type check with Mypy
         run: cd backend && mypy app
-      - name: OpenAPI contract
+
+      - name: OpenAPI contract sync check
         run: python scripts/export_openapi.py && git diff --exit-code docs/openapi.json
-      - name: Tests (MockProvider fixtures, real sandbox)
+
+      - name: Backend unit & integration tests
         run: |
           mkdir -p artifacts
-          cd backend && pytest -q --cov=app --cov-report=term --junitxml=../artifacts/backend-junit.xml
+          cd backend && pytest -q --cov=app --cov-report=term --cov-report=xml:../artifacts/backend-coverage.xml --junitxml=../artifacts/backend-junit.xml
+
       - name: Verify Documentation & Invariants
         run: python scripts/verify_docs.py
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload backend test artifacts
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: backend-junit
-          path: artifacts/backend-junit.xml
+          name: backend-artifacts
+          path: artifacts/
 
   frontend:
+    name: Frontend (Audit, Lint, Typecheck, Test, Build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci
-      - name: Dependency audit
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Security audit (critical level)
         run: cd frontend && npm audit --audit-level=critical
-      - run: cd frontend && npm run gen:api && git diff --exit-code src/types/api.gen.ts
-      - run: cd frontend && npm run lint
-      - run: cd frontend && npm run typecheck
-      - run: cd frontend && npm test
-      - run: cd frontend && npm run build
+
+      - name: Generated TypeScript API contract check
+        run: cd frontend && npm run gen:api && git diff --exit-code src/types/api.gen.ts
+
+      - name: ESLint check
+        run: cd frontend && npm run lint
+
+      - name: TypeScript typecheck
+        run: cd frontend && npm run typecheck
+
+      - name: Vitest test suite
+        run: cd frontend && npm test
+
+      - name: Production Vite build
+        run: cd frontend && npm run build
 
   reference-hcm-regression:
+    name: Reference HCM Regression (${{ matrix.hcm_version }})
     needs: backend
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         hcm_version: ["1.0", "1.1"]
     env:
       TRACETEST_DATA_DIR: ${{ github.workspace }}/var
       TRACETEST_ENV: test
       TRACETEST_SEED_ON_STARTUP: "true"
+      PYTHONPATH: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements.txt
-      - run: pip install -r backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
       - name: Initialise workspace and export approved tests
         run: |
           mkdir -p artifacts
           python scripts/db.py init > /dev/null
           python scripts/export_tests.py ci-tests --project PAY
           cp -r reference_hcm ci-tests/
+
       - name: Run approved tests against Reference HCM ${{ matrix.hcm_version }}
         env:
           REFERENCE_HCM_VERSION: ${{ matrix.hcm_version }}
         run: cd ci-tests && python -m pytest -q --junitxml=../artifacts/hcm-${{ matrix.hcm_version }}.xml || true
-      - name: Report results to TraceTest (when configured)
+
+      - name: Report results to TraceTest
         env:
           TRACETEST_URL: ${{ secrets.TRACETEST_URL }}
           TRACETEST_CI_TOKEN: ${{ secrets.TRACETEST_CI_TOKEN }}
         run: python scripts/ci_report.py artifacts/hcm-${{ matrix.hcm_version }}.xml PAY ${{ matrix.hcm_version }}
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload HCM ${{ matrix.hcm_version }} test results
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: hcm-${{ matrix.hcm_version }}-junit
           path: artifacts/hcm-${{ matrix.hcm_version }}.xml
 
   e2e:
+    name: Playwright E2E & Accessibility Tests
     needs: [backend, frontend]
     runs-on: ubuntu-latest
     env:
       TRACETEST_LLM_MODE: mock
       TRACETEST_ENV: test
+      PYTHONPATH: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
+
+      - name: Install dependencies and browsers
         run: |
+          python -m pip install --upgrade pip
           pip install -r backend/requirements-dev.txt
           playwright install --with-deps chromium
           cd frontend && npm ci && npm run build
+
       - name: Run Playwright E2E & Accessibility Tests
         run: |
           mkdir -p artifacts
           PYTHONPATH=backend pytest backend/tests/test_playwright_e2e.py -v --junitxml=artifacts/e2e-junit.xml
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-junit

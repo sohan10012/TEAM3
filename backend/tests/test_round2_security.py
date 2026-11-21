@@ -10,6 +10,7 @@ Tests:
 from __future__ import annotations
 
 import stat
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -82,32 +83,36 @@ def test_bwrap_sandbox_prohibits_host_filesystem_and_secrets():
     if iso != "bwrap+rlimits":
         pytest.skip("Bubblewrap not active on this environment")
 
+    repo_root = Path(__file__).resolve().parents[2]
+    host_env_path = str(repo_root / ".env")
+    host_db_path = str(repo_root / "var" / "tracetest.db")
+
     # Probe script that attempts to access host paths and inspect environment variables
-    probe_script = """
+    probe_script = f"""
 import os
 import sys
 from pathlib import Path
 
 def test_sandbox_filesystem_and_env_isolation():
     # 1. Assert host .env does not exist or is empty/inaccessible
-    env_file = Path("/home/Sohan/PROJECTS/tracetest-ai/.env")
-    assert not env_file.exists(), f"Host .env file leaked into sandbox: {env_file}"
+    env_file = Path({repr(host_env_path)})
+    assert not env_file.exists(), f"Host .env file leaked into sandbox: {{env_file}}"
 
     # 2. Assert host DB is inaccessible
-    db_file = Path("/home/Sohan/PROJECTS/tracetest-ai/var/tracetest.db")
-    assert not db_file.exists(), f"Host database leaked into sandbox: {db_file}"
+    db_file = Path({repr(host_db_path)})
+    assert not db_file.exists(), f"Host database leaked into sandbox: {{db_file}}"
 
     # 3. Assert /home does not contain user directories
     home_dir = Path("/home")
     if home_dir.exists():
         entries = [e.name for e in home_dir.iterdir() if e.name != "tmp"]
-        assert len(entries) == 0, f"/home is not masked: found {entries}"
+        assert len(entries) == 0, f"/home is not masked: found {{entries}}"
 
     # 4. Assert secret env vars are not present in sandbox
     banned_prefixes = ["GROQ_", "GEMINI_", "SECRET_", "DATABASE_", "AWS_"]
     for k in os.environ:
         for prefix in banned_prefixes:
-            assert not k.startswith(prefix), f"Sensitive env var {k} leaked into sandbox!"
+            assert not k.startswith(prefix), f"Sensitive env var {{k}} leaked into sandbox!"
 """
     # Execute probe script in sandbox
     res = run_sandboxed_pytest(
