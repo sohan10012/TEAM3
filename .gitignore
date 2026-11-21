@@ -25,3 +25,16 @@ artifacts/*
 test-results/
 playwright-report/
 scratch/
+
+# Documentation archives, screenshots & heavy assets
+docs/screenshots/
+docs/screenshots.zip
+docs/delivery/
+docs/reports/
+docs/**/*.pdf
+docs/**/*.png
+*.zip
+*.pdf
+TRACETEST_SOHAN.pdf
+tracetest_architecture.html
+tracetest_architecture.png
